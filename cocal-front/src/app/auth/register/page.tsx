@@ -1,1 +1,6 @@
 // 회원가입 페이지
+// ... import 구문 ...
+
+export default function RegisterPage() {
+    // ... 컴포넌트 내용 ...
+}
