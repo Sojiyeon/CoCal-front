@@ -1,3 +1,4 @@
+// 홈페이지(로그인 리디렉션)
 import MyCalendar from '@/components/calendar/Calendar';
 import Image from "next/image";
 

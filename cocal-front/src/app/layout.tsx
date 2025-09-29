@@ -1,3 +1,4 @@
+// 전역 레이아웃
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
