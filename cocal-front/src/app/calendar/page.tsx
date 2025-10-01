@@ -1,6 +1,6 @@
 //import Image from "next/image";
 
-import CalendarUI from "@/components/calendar/Calendar";
+import CalendarUI from "@/components/calendar/Month";
 
 export default function Home() {
   return (<div className="p-4">
