@@ -1,8 +1,8 @@
 // components/Login.tsx
 import React from 'react';
 import { FcGoogle } from 'react-icons/fc';
-// 👇 경로 수정: components/ui/Button에서 불러옴
-import Button from './ui/Button';
+import Button from '../ui/Button';
+import Link from 'next/link'; // next/link 임포트 필요
 
 const Login: React.FC = () => {
     return (
@@ -39,12 +39,15 @@ const Login: React.FC = () => {
                             SIGN IN
                         </Button>
 
+                        <Link href="/register" className="flex-1 w-full">
                         <Button
                             type="button"
                             variant="secondary" // SIGN UP 스타일
+                            fullWidth={true}
                         >
                             SIGN UP
-                        </Button>
+                        </Button></Link>
+
                     </div>
                 </form>
 
