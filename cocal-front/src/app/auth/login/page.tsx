@@ -1,6 +1,0 @@
-// src/app/auth/login/page.tsx
-// ... import 구문 ...
-
-export default function LoginPage() {
-    // ... 컴포넌트 내용 ...
-}
