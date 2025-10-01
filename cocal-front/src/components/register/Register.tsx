@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useState } from 'react';
-// Button 컴포넌트의 경로는 components/ui/Button.tsx에 있다고 가정합니다.
 import Button from '../ui/Button';
 
 const PASSWORD_REGEX = /^[A-Za-z0-9!@%=*_-]{8,16}$/;
@@ -32,23 +31,23 @@ const Register: React.FC = () => {
     };
 
     const validate = () => {
-        let newErrors = { email: '', password: '', confirmPassword: '', apiError: '' };
+        const newErrors = { email: '', password: '', confirmPassword: '', apiError: '' };
         let isValid = true;
 
-        // 1. Email 유효성 검사 (기본 형식 검사)
+        // Email 유효성 검사 (기본 형식 검사)
         if (!formData.email || !formData.email.includes('@') || !formData.email.includes('.')) {
             newErrors.email = '올바른 이메일 형식이 아닙니다.';
             isValid = false;
         }
         // '이미 가입된 이메일' 경고는 서버 통신 후 API 오류로 처리 (handleSubmit에서 처리)
 
-        // 2. Password 유효성 검사 (정규식 검사)
+        // Password 유효성 검사 (정규식 검사)
         if (!formData.password || !PASSWORD_REGEX.test(formData.password)) {
             newErrors.password = '8~16자의 대소문자, 숫자, !@%=*-_ 문자만 사용할 수 있습니다.';
             isValid = false;
         }
 
-        // 3. Confirm Password 일치 검사
+        // Confirm Password 일치 검사
         if (formData.confirmPassword && formData.password !== formData.confirmPassword) {
             newErrors.confirmPassword = '비밀번호가 일치하지 않습니다.';
             isValid = false;
@@ -66,7 +65,7 @@ const Register: React.FC = () => {
             return; // 클라이언트 유효성 검사 실패 시
         }
 
-        // 🚨 4. 서버 통신 (이미 가입된 이메일 체크 및 가입 처리)
+        // 서버 통신 (이미 가입된 이메일 체크 및 가입 처리)
         try {
             // 실제 API 호출 로직을 여기에 구현 (fetch 또는 axios 사용)
             const response = await fetch('/api/register', {
@@ -92,7 +91,7 @@ const Register: React.FC = () => {
             console.log('회원가입 성공:', data);
             // router.push('/'); // Next.js router 사용 예시
 
-        } catch (error) {
+        } catch (_error) {
             setErrors(prev => ({ ...prev, apiError: '네트워크 오류가 발생했습니다.' }));
         }
     };
@@ -118,7 +117,7 @@ const Register: React.FC = () => {
                         />
                     </div>
 
-                    {/* 1. Email 입력 필드 + 경고 문구 */}
+                    {/* Email 입력 필드 + 경고 문구 */}
                     <div>
                         <input
                             type="email"
@@ -136,7 +135,7 @@ const Register: React.FC = () => {
                         )}
                     </div>
 
-                    {/* 2. Password 입력 필드 + 경고 문구 */}
+                    {/* Password 입력 필드 + 경고 문구 */}
                     <div>
                         <input
                             type="password"
@@ -154,7 +153,7 @@ const Register: React.FC = () => {
                         )}
                     </div>
 
-                    {/* 3. Confirm Password 입력 필드 + 경고 문구 */}
+                    {/* Confirm Password 입력 필드 + 경고 문구 */}
                     <div>
                         <input
                             type="password"

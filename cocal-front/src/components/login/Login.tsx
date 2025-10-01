@@ -76,7 +76,7 @@ const Login: React.FC = () => {
 
                             {/* SIGN UP 텍스트 링크 (사진의 디자인) */}
                             <div className="text-center text-sm">
-                                Don't have an account?
+                                Don&apos;t have an account?
                                 <Link href="/register" className="text-blue-500 font-semibold hover:text-blue-700 ml-1">
                                     Sign up
                                 </Link>
