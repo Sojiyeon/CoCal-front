@@ -226,7 +226,7 @@ const ProjectDashboardPage: React.FC = () => {
                     // 프로젝트는 있지만 필터링 결과가 없을 때
                     <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
                         <Folder className="w-16 h-16 text-gray-300" strokeWidth={1} />
-                        <h3 className="mt-6 text-xl font-semibold text-gray-600">No projects in "{selectedCategory}"</h3>
+                        <h3 className="mt-6 text-xl font-semibold text-gray-600">No projects in &rdquo;{selectedCategory}&rdquo;</h3>
                         <p className="mt-1 text-gray-400">Try selecting a different category.</p>
                     </div>
                 ) : (

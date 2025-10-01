@@ -12,10 +12,10 @@ interface ModalProps {
     className?: string;
 }
 
-const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, className = '' }) => {
-    if (!isOpen) return null;
 
+const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, className = '' }) => {
     const modalRef = useRef<HTMLDivElement>(null);
+    if (!isOpen) return null;
 
     // 모달 외부 클릭 시 닫기
     const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
