@@ -19,7 +19,7 @@
 //     );
 // }
 "use client";
-
+import Image from 'next/image';
 
 import React, { useState } from "react";
 
@@ -108,7 +108,7 @@ export default function CalendarUI() {
                         <div className="text-sm text-slate-500">Name
                             <div className="text-xs text-slate-400">test123@gmail.com</div>
                         </div>
-                        <img src="" alt="avatar" className="w-8 h-8 rounded-full object-cover"/>
+                        <Image src="" alt="avatar" className="w-8 h-8 rounded-full object-cover"/>
                     </div>
                 </div>
 
