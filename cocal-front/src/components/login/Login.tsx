@@ -9,7 +9,7 @@ import Link from 'next/link'; // next/link 임포트 필요
 const API_LOGIN_ENDPOINT = 'https://cocal-server.onrender.com/api/auth/login';
 
 const handleGoogleLogin = () => {
-    window.location.href = 'https://cocal-server.onrender.com/api/google';
+    window.location.href = 'https://cocal-server.onrender.com/oauth2/authorization/google';
 };
 
 const Login: React.FC = () => {

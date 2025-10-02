@@ -15,14 +15,13 @@ export interface ProjectFormData {
     endDate: string;
 }
 
-interface CreateEventModalProps {
+interface CreateProjectModalProps {
     isOpen: boolean;
     onClose: () => void;
     onCreateProject: (data: ProjectFormData) => void;
 }
 
-// 파일명은 CreateEventModal.tsx이지만, 내용은 프로젝트 생성 폼입니다.
-const CreateEventModal: FC<CreateEventModalProps> = ({ isOpen, onClose, onCreateProject }) => {
+const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, onCreateProject }) => {
     const [formData, setFormData] = useState<ProjectFormData>({
         name: '',
         client: '',
@@ -123,4 +122,4 @@ const CreateEventModal: FC<CreateEventModalProps> = ({ isOpen, onClose, onCreate
     );
 };
 
-export default CreateEventModal;
+export default CreateProjectModal;

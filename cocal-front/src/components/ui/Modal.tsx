@@ -1,4 +1,3 @@
-// 공통 UI(뒷배경, 닫기 버튼, 저장 버튼, 삭제 버튼 등)
 "use client";
 
 import React, { FC, ReactNode, useRef } from 'react';
@@ -27,7 +26,8 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, className = '
     return (
         // 배경 (Overlay)
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
             ref={modalRef}
             onClick={handleOutsideClick}
         >
