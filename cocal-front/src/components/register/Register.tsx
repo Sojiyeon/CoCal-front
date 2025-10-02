@@ -137,7 +137,7 @@ const Register: React.FC = () => {
             console.log('회원가입 성공:', data);
 
             // 로그인 페이지로 리디렉션
-            router.push('/login');
+            router.push('/');
 
         } catch (error) {
             console.error("Network or Fetch Error:", error);
@@ -246,7 +246,7 @@ const Register: React.FC = () => {
                     {/* 로그인 페이지 링크 (Next.js Link 사용) */}
                     <p className="mt-4 text-center text-sm text-gray-600">
                         Already have an account?{' '}
-                        <Link href="../login/Login.tsx" className="font-medium text-blue-600 hover:text-blue-500">
+                        <Link href="/" className="font-medium text-blue-600 hover:text-blue-500">
                             Sign In
                         </Link>
                     </p>
