@@ -3,6 +3,8 @@
 import React, { useState, FC } from 'react';
 // lucide-react에서 필요한 아이콘들을 가져옵니다.
 import { MoreVertical, Folder } from 'lucide-react';
+// 모달 및 타입 임포트 유지
+import CreateProjectModal, { ProjectFormData } from '../../components/modals/CreateProjectModal';
 
 // --- DUMMY DATA & TYPES ---
 
@@ -35,36 +37,55 @@ const INITIAL_PROJECTS: Project[] = [
     { id: 5, name: 'Project name5', startDate: '2025-08-22', endDate: '2025-10-15', status: 'Completed', colorTags: ['#A78BFA', '#93C5FD'] },
 ];
 
+
 // --- ProjectCategoryFilter Component (Inline) ---
+// 이제 버튼을 분리하기 위해 이 컴포넌트도 수정해야 합니다.
 interface ProjectCategoryFilterProps {
     selectedCategory: ProjectCategory;
     onSelectCategory: (category: ProjectCategory) => void;
+    // 🚨 Create 버튼을 헤더에서 이 영역으로 옮겼습니다.
+    onOpenCreateModal: () => void;
 }
 
 const categories: ProjectCategory[] = ['All', 'In Progress', 'Completed'];
 
-const ProjectCategoryFilter: FC<ProjectCategoryFilterProps> = ({ selectedCategory, onSelectCategory }) => {
+const ProjectCategoryFilter: FC<ProjectCategoryFilterProps> = ({
+                                                                   selectedCategory,
+                                                                   onSelectCategory,
+                                                                   onOpenCreateModal // 추가된 prop
+                                                               }) => {
     return (
-        // 카테고리 탭 (All, In Progress, Completed)
-        <div className="flex space-x-8 border-b border-gray-200 mb-8">
-            {categories.map(category => (
-                <button
-                    key={category}
-                    onClick={() => onSelectCategory(category)}
-                    className={`py-2 text-lg font-medium transition duration-200 
-            ${selectedCategory === category
-                        ? 'text-blue-600 border-b-2 border-blue-600'
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                >
-                    {category === 'All' ? 'All' : category === 'In Progress' ? 'In Progress' : 'Completed'}
-                </button>
-            ))}
+        <div className="flex justify-between items-center mb-8">
+            {/* 카테고리 탭 */}
+            <div className="flex space-x-8 border-b border-gray-200">
+                {categories.map(category => (
+                    <button
+                        key={category}
+                        onClick={() => onSelectCategory(category)}
+                        className={`py-2 text-lg font-medium transition duration-200 
+                ${selectedCategory === category
+                            ? 'text-blue-600 border-b-2 border-blue-600'
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                        {category === 'All' ? 'All' : category === 'In Progress' ? 'In Progress' : 'Completed'}
+                    </button>
+                ))}
+            </div>
+
+            <button
+                type="button"
+                className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg shadow-md transition duration-200"
+                onClick={onOpenCreateModal}
+            >
+                Create
+            </button>
         </div>
     );
 };
 
-// --- ProjectCard Component ---
+
+// --- ProjectCard Component (생략) ---
 const ProjectCard: FC<{ project: Project }> = ({ project }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -153,23 +174,22 @@ const EmptyState = () => (
 const ProjectDashboardPage: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
     const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('All');
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // 프로젝트 생성 임시 핸들러 (모달 제외 요청 반영)
-    const handleCreateButtonClick = () => {
-        // 실제로는 여기에 모달을 띄우는 로직이 들어갑니다.
-        console.log("Create Project button clicked. (Modal logic skipped as requested.)");
+    // 프로젝트 생성 핸들러
+    const handleCreateProject = (data: ProjectFormData) => {
+        // 실제 API 호출 로직은 여기에 들어갑니다.
+        console.log("Creating project with data:", data);
 
-        // 임시로 새 프로젝트를 추가하는 예시 (더미 데이터가 필요 없어질 때까지)
-        const newId = Date.now();
         const newProject: Project = {
-            id: newId,
-            name: `New Project ${projects.length + 1}`,
-            startDate: '2025-10-01',
-            endDate: '2026-03-30',
+            id: Date.now(),
+            name: data.name,
+            startDate: data.startDate,
+            endDate: data.endDate,
             status: 'In Progress',
             colorTags: ['#34D399'],
         };
-        setProjects(prev => [...prev, newProject]);
+        setProjects(prev => [newProject, ...prev]);
     };
 
     // 프로젝트 필터링 로직
@@ -180,20 +200,12 @@ const ProjectDashboardPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
+
             {/* 상단 통합 헤더 영역 */}
             <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 bg-white sticky top-0 z-10 shadow-sm">
                 <h1 className="text-2xl font-bold text-gray-800">My projects</h1>
 
                 <div className="flex items-center space-x-4">
-                    {/* Create 버튼 */}
-                    <button
-                        type="button"
-                        className="px-6 py-2 bg-blue-700 hover:bg-blue-800 text-white font-medium rounded-lg shadow-md transition duration-200"
-                        onClick={handleCreateButtonClick}
-                    >
-                        Create
-                    </button>
-
                     {/* 유저 프로필 */}
                     <div className="flex items-center space-x-2 cursor-pointer p-1">
                         <img
@@ -202,10 +214,14 @@ const ProjectDashboardPage: React.FC = () => {
                             className="w-10 h-10 rounded-full object-cover shadow-inner ring-1 ring-gray-200"
                             onError={(e) => { e.currentTarget.src = 'https://placehold.co/40x40/cccccc/ffffff?text=U' }}
                         />
-                        <div className="flex-col text-right text-xs hidden sm:block">
-                            <span className="font-semibold text-gray-900 leading-none">{DUMMY_USER.name}</span>
-                            <span className="text-gray-500 leading-none">{DUMMY_USER.email}</span>
+
+                        <div className="flex flex-col text-xs hidden sm:block">
+                            <div className="font-semibold text-gray-900">
+                                {DUMMY_USER.name}
+                                <div className="text-xs font-light text-gray-500">{DUMMY_USER.email}</div>
+                            </div>
                         </div>
+
                     </div>
                 </div>
             </header>
@@ -216,28 +232,33 @@ const ProjectDashboardPage: React.FC = () => {
                 <ProjectCategoryFilter
                     selectedCategory={selectedCategory}
                     onSelectCategory={setSelectedCategory}
+                    onOpenCreateModal={() => setIsModalOpen(true)}
                 />
 
                 {/* 프로젝트 목록 표시 */}
                 {projects.length === 0 ? (
-                    // 프로젝트가 하나도 없을 때
                     <EmptyState />
                 ) : filteredProjects.length === 0 ? (
-                    // 프로젝트는 있지만 필터링 결과가 없을 때
                     <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
                         <Folder className="w-16 h-16 text-gray-300" strokeWidth={1} />
                         <h3 className="mt-6 text-xl font-semibold text-gray-600">No projects in &rdquo;{selectedCategory}&rdquo;</h3>
                         <p className="mt-1 text-gray-400">Try selecting a different category.</p>
                     </div>
                 ) : (
-                    // 프로젝트 목록
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {filteredProjects.map(project => (
                             <ProjectCard key={project.id} project={project} />
                         ))}
                     </div>
                 )}
             </main>
+
+            {/* 모달 렌더링 */}
+            <CreateProjectModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onCreateProject={handleCreateProject}
+            />
         </div>
     );
 };
