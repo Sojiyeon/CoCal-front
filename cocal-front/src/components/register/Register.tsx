@@ -5,7 +5,16 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-const Button: React.FC<any> = ({ children, onClick, type, disabled, fullWidth, variant }) => (
+interface ButtonProps {
+    children: React.ReactNode;
+    onClick?: (e: React.MouseEvent) => void;
+    type?: 'button' | 'submit' | 'reset';
+    disabled?: boolean;
+    fullWidth?: boolean;
+    variant?: 'primary' | 'secondary';
+}
+
+const Button: React.FC<ButtonProps> = ({ children, onClick, type, disabled, fullWidth, variant }) => (
     <button
         type={type}
         onClick={onClick}
@@ -22,11 +31,9 @@ const Button: React.FC<any> = ({ children, onClick, type, disabled, fullWidth, v
 );
 
 const PASSWORD_REGEX = /^[A-Za-z0-9!@%=*_-]{8,16}$/;
-// 🚨 API 주소 업데이트: 지정해주신 Render 서버 주소를 반영했습니다.
 const API_REGISTER_ENDPOINT = 'https://cocal-server.onrender.com/api/users/';
 
 const Register: React.FC = () => {
-    // useRouter를 사용하여 페이지 이동을 처리합니다.
     const router = useRouter();
 
     // 폼 입력 상태
@@ -61,7 +68,6 @@ const Register: React.FC = () => {
 
         // Name 검사
         if (!formData.name.trim()) {
-            // 이름 검사 로직은 현재 생략
         }
 
         // Email 유효성 검사 (기본 형식 검사)
@@ -104,7 +110,6 @@ const Register: React.FC = () => {
             const response = await fetch(API_REGISTER_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // 비밀번호 확인 필드는 서버로 보내지 않습니다.
                 body: JSON.stringify({
                     name: formData.name,
                     email: formData.email,
@@ -131,7 +136,7 @@ const Register: React.FC = () => {
             // 회원가입 성공 (HTTP 200 또는 201)
             console.log('회원가입 성공:', data);
 
-            // 📢 성공 처리: Next.js Router를 사용하여 로그인 페이지로 리디렉션
+            // 로그인 페이지로 리디렉션
             router.push('/login');
 
         } catch (error) {
@@ -241,7 +246,7 @@ const Register: React.FC = () => {
                     {/* 로그인 페이지 링크 (Next.js Link 사용) */}
                     <p className="mt-4 text-center text-sm text-gray-600">
                         Already have an account?{' '}
-                        <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
+                        <Link href="../login/Login.tsx" className="font-medium text-blue-600 hover:text-blue-500">
                             Sign In
                         </Link>
                     </p>
