@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import Button from "../calendar/Button";
+//import Button from "../calendar/Button";
 import WeekView from "./Week";
 import DayView from "./Day";
 import TaskProgress from "./TaskProgress";
+import SidebarRight from "./SidebarRight";
 
 import { CalendarEvent } from "./types";
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
@@ -176,7 +177,6 @@ export default function CalendarUI() {
                                 <option value="week">Week</option>
                                 <option value="day">Day</option>
                             </select>
-                            <Button variant="outline">Today</Button>
                         </div>
                     </div>
 
@@ -232,6 +232,9 @@ export default function CalendarUI() {
                     {viewMode === "week" && <WeekView events={events} />}
                     {viewMode === "day" && <DayView events={events} />}
                 </main>
+
+                {/*sidebarright컴포넌트*/}
+                <SidebarRight />
             </div>
 
             {/* 이벤트 모달 */}
