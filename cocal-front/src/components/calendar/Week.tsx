@@ -1,31 +1,16 @@
 "use client";
 
 import React from "react";
-
-export type CalendarEvent = {
-    id: number;
-    project_id: number | null;
-    title: string;
-    description: string | null;
-    start_date: string;
-    end_date: string | null;
-    location: string | null;
-    color: string | null;
-    project_name?: string;
-};
+import { CalendarEvent } from "./types"; // 공통 타입 import
 
 interface WeekViewProps {
     events: CalendarEvent[];
 }
 
 export default function WeekView({ events }: WeekViewProps) {
-    // 요일 헤더
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-    // 시간대 (8AM ~ 11PM 예시)
     const hours = Array.from({ length: 16 }, (_, i) => i + 8);
 
-    // 이벤트를 위치에 맞게 배치
     const renderEvents = (dayIdx: number) => {
         const dayEvents = events.filter((e) => {
             const start = new Date(e.start_date);
@@ -39,8 +24,7 @@ export default function WeekView({ events }: WeekViewProps) {
             const startHour = start.getHours() + start.getMinutes() / 60;
             const endHour = end.getHours() + end.getMinutes() / 60;
 
-            // 위치 계산
-            const top = (startHour - 8) * 64; // 64px per hour
+            const top = (startHour - 8) * 64;
             const height = (endHour - startHour) * 64;
 
             return (
@@ -50,7 +34,7 @@ export default function WeekView({ events }: WeekViewProps) {
                     style={{
                         top: `${top}px`,
                         height: `${height}px`,
-                        backgroundColor: event.color || "#6366f1", // fallback indigo
+                        backgroundColor: event.color || "#6366f1",
                     }}
                 >
                     <div className="font-medium">{event.title}</div>
@@ -64,7 +48,6 @@ export default function WeekView({ events }: WeekViewProps) {
 
     return (
         <div className="border rounded-lg overflow-hidden">
-            {/* 요일 헤더 */}
             <div className="grid grid-cols-8 border-b bg-slate-50 text-sm font-medium">
                 <div className="p-2 text-right text-slate-400">시간</div>
                 {days.map((day, idx) => (
@@ -75,7 +58,6 @@ export default function WeekView({ events }: WeekViewProps) {
             </div>
 
             <div className="flex">
-                {/* 시간 표시 */}
                 <div className="flex flex-col border-r text-xs text-slate-400">
                     {hours.map((h) => (
                         <div key={h} className="h-16 px-1 text-right">
@@ -84,16 +66,13 @@ export default function WeekView({ events }: WeekViewProps) {
                     ))}
                 </div>
 
-                {/* 요일별 칸 */}
                 <div className="grid grid-cols-7 flex-1 relative">
                     {days.map((_, dayIdx) => (
                         <div key={dayIdx} className="relative border-l">
-                            {/* 시간 칸 */}
                             {hours.map((_, h) => (
                                 <div key={h} className="h-16 border-b" />
                             ))}
 
-                            {/* 이벤트 배치 */}
                             {renderEvents(dayIdx)}
                         </div>
                     ))}

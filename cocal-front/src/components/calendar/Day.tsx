@@ -1,28 +1,16 @@
 "use client";
 
 import React from "react";
-
-export type CalendarEvent = {
-    id: number;
-    project_id: number | null;
-    title: string;
-    description: string | null;
-    start_date: string;
-    end_date: string | null;
-    location: string | null;
-    color: string | null;
-};
+import { CalendarEvent } from "./types"; // 공통 타입 import
 
 interface DayViewProps {
     events: CalendarEvent[];
-    date?: Date; // ✅ 선택적으로 변경 (없으면 오늘 날짜 사용)
+    date?: Date;
 }
 
 export default function DayView({ events, date = new Date() }: DayViewProps) {
-    // 시간대 (8AM ~ 11PM)
     const hours = Array.from({ length: 16 }, (_, i) => i + 8);
 
-    // 오늘 이벤트만 필터링
     const dayEvents = events.filter((e) => {
         const start = new Date(e.start_date);
         return (
@@ -32,7 +20,6 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
         );
     });
 
-    // 이벤트 UI 렌더링
     const renderEvents = () => {
         return dayEvents.map((event) => {
             const start = new Date(event.start_date);
@@ -41,7 +28,7 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
             const startHour = start.getHours() + start.getMinutes() / 60;
             const endHour = end.getHours() + end.getMinutes() / 60;
 
-            const top = (startHour - 8) * 64; // 64px per hour
+            const top = (startHour - 8) * 64;
             const height = (endHour - startHour) * 64;
 
             return (
@@ -51,7 +38,7 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
                     style={{
                         top: `${top}px`,
                         height: `${height}px`,
-                        backgroundColor: event.color || "#6366f1", // 기본 보라색
+                        backgroundColor: event.color || "#6366f1",
                     }}
                 >
                     <div className="font-medium">{event.title}</div>
@@ -65,7 +52,6 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
 
     return (
         <div className="border rounded-lg overflow-hidden">
-            {/* 헤더: 선택된 날짜 */}
             <div className="grid grid-cols-2 border-b bg-slate-50 text-sm font-medium">
                 <div className="p-2 text-right text-slate-400">시간</div>
                 <div className="p-2 text-center">
@@ -79,7 +65,6 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
             </div>
 
             <div className="flex">
-                {/* 시간 라벨 */}
                 <div className="flex flex-col border-r text-xs text-slate-400">
                     {hours.map((h) => (
                         <div key={h} className="h-16 px-1 text-right">
@@ -88,14 +73,11 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
                     ))}
                 </div>
 
-                {/* 이벤트 칸 */}
                 <div className="relative flex-1 border-l">
-                    {/* 시간칸 */}
                     {hours.map((_, h) => (
                         <div key={h} className="h-16 border-b" />
                     ))}
 
-                    {/* 이벤트 렌더 */}
                     {renderEvents()}
                 </div>
             </div>
