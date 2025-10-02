@@ -2,11 +2,33 @@
 "use client";
 
 import React, { useState } from 'react';
-import Button from '../ui/Button';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+const Button: React.FC<any> = ({ children, onClick, type, disabled, fullWidth, variant }) => (
+    <button
+        type={type}
+        onClick={onClick}
+        disabled={disabled}
+        className={`
+            ${fullWidth ? 'w-full' : 'w-auto'} 
+            py-3 px-6 rounded-md font-bold transition duration-200 
+            ${variant === 'primary' ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}
+            ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+        `}
+    >
+        {children}
+    </button>
+);
 
 const PASSWORD_REGEX = /^[A-Za-z0-9!@%=*_-]{8,16}$/;
+// 🚨 API 주소 업데이트: 지정해주신 Render 서버 주소를 반영했습니다.
+const API_REGISTER_ENDPOINT = 'https://cocal-server.onrender.com/api/users/';
 
 const Register: React.FC = () => {
+    // useRouter를 사용하여 페이지 이동을 처리합니다.
+    const router = useRouter();
+
     // 폼 입력 상태
     const [formData, setFormData] = useState({
         name: '',
@@ -14,6 +36,9 @@ const Register: React.FC = () => {
         password: '',
         confirmPassword: '',
     });
+
+    // 로딩 상태
+    const [isLoading, setIsLoading] = useState(false);
 
     // 에러 상태 (클라이언트 측에서 발생하는 에러)
     const [errors, setErrors] = useState({
@@ -34,12 +59,16 @@ const Register: React.FC = () => {
         const newErrors = { email: '', password: '', confirmPassword: '', apiError: '' };
         let isValid = true;
 
+        // Name 검사
+        if (!formData.name.trim()) {
+            // 이름 검사 로직은 현재 생략
+        }
+
         // Email 유효성 검사 (기본 형식 검사)
         if (!formData.email || !formData.email.includes('@') || !formData.email.includes('.')) {
             newErrors.email = '올바른 이메일 형식이 아닙니다.';
             isValid = false;
         }
-        // '이미 가입된 이메일' 경고는 서버 통신 후 API 오류로 처리 (handleSubmit에서 처리)
 
         // Password 유효성 검사 (정규식 검사)
         if (!formData.password || !PASSWORD_REGEX.test(formData.password)) {
@@ -48,11 +77,13 @@ const Register: React.FC = () => {
         }
 
         // Confirm Password 일치 검사
-        if (formData.confirmPassword && formData.password !== formData.confirmPassword) {
+        if (formData.password !== formData.confirmPassword) {
             newErrors.confirmPassword = '비밀번호가 일치하지 않습니다.';
             isValid = false;
         } else if (!formData.confirmPassword) {
-            // 단순히 비어있을 때도 유효성 검사에 실패하게 처리할 수 있으나, 여기서는 일치 여부에 초점을 둡니다.
+            // Confirm Password가 비어있을 경우에도 에러 처리
+            newErrors.confirmPassword = '비밀번호 확인을 입력해주세요.';
+            isValid = false;
         }
 
         setErrors(newErrors);
@@ -65,34 +96,49 @@ const Register: React.FC = () => {
             return; // 클라이언트 유효성 검사 실패 시
         }
 
-        // 서버 통신 (이미 가입된 이메일 체크 및 가입 처리)
+        setIsLoading(true); // 로딩 시작
+        setErrors(prev => ({ ...prev, apiError: '', email: '' })); // 에러 상태 초기화
+
         try {
-            // 실제 API 호출 로직을 여기에 구현 (fetch 또는 axios 사용)
-            const response = await fetch('/api/register', {
+            // API 호출
+            const response = await fetch(API_REGISTER_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                // 비밀번호 확인 필드는 서버로 보내지 않습니다.
+                body: JSON.stringify({
+                    name: formData.name,
+                    email: formData.email,
+                    password: formData.password
+                }),
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                // 서버에서 '이미 가입된 이메일' 오류가 반환될 경우
-                if (data.message === 'Email already exists') {
+                // HTTP 상태 코드가 200번대가 아닐 때
+
+                // 서버에서 '이미 가입된 이메일' 오류가 반환될 경우 (409 Conflict 또는 400 Bad Request 가정)
+                if (response.status === 409 || data.message === 'Email already exists') {
                     setErrors(prev => ({ ...prev, email: '이미 가입된 이메일입니다.' }));
                     return;
                 }
+
                 // 기타 서버 오류 처리
-                setErrors(prev => ({ ...prev, apiError: data.message || '회원가입 중 오류가 발생했습니다.' }));
+                setErrors(prev => ({ ...prev, apiError: data.message || '회원가입 중 알 수 없는 오류가 발생했습니다.' }));
                 return;
             }
 
-            // 회원가입 성공 시 로그인 페이지로 리디렉션 등 처리
+            // 회원가입 성공 (HTTP 200 또는 201)
             console.log('회원가입 성공:', data);
-            // router.push('/'); // Next.js router 사용 예시
 
-        } catch (_error) {
-            setErrors(prev => ({ ...prev, apiError: '네트워크 오류가 발생했습니다.' }));
+            // 📢 성공 처리: Next.js Router를 사용하여 로그인 페이지로 리디렉션
+            router.push('/login');
+
+        } catch (error) {
+            console.error("Network or Fetch Error:", error);
+            setErrors(prev => ({ ...prev, apiError: '네트워크 연결에 문제가 발생했습니다. 다시 시도해 주세요.' }));
+        } finally {
+            setIsLoading(false); // 로딩 종료
         }
     };
 
@@ -114,6 +160,7 @@ const Register: React.FC = () => {
                             onChange={handleChange}
                             className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             required
+                            disabled={isLoading}
                         />
                     </div>
 
@@ -129,6 +176,7 @@ const Register: React.FC = () => {
                                 errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
                             }`}
                             required
+                            disabled={isLoading}
                         />
                         {errors.email && (
                             <p className="text-sm text-red-500 mt-1">{errors.email}</p>
@@ -147,6 +195,7 @@ const Register: React.FC = () => {
                                 errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
                             }`}
                             required
+                            disabled={isLoading}
                         />
                         {errors.password && (
                             <p className="text-sm text-red-500 mt-1">{errors.password}</p>
@@ -165,6 +214,7 @@ const Register: React.FC = () => {
                                 errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
                             }`}
                             required
+                            disabled={isLoading}
                         />
                         {errors.confirmPassword && (
                             <p className="text-sm text-red-500 mt-1">{errors.confirmPassword}</p>
@@ -177,8 +227,9 @@ const Register: React.FC = () => {
                             type="submit"
                             variant="primary"
                             fullWidth={true}
+                            disabled={isLoading} // 로딩 중에는 버튼 비활성화
                         >
-                            SIGN UP
+                            {isLoading ? 'Processing...' : 'SIGN UP'}
                         </Button>
                     </div>
 
@@ -186,6 +237,14 @@ const Register: React.FC = () => {
                     {errors.apiError && (
                         <p className="text-sm text-center text-red-500 mt-3">{errors.apiError}</p>
                     )}
+
+                    {/* 로그인 페이지 링크 (Next.js Link 사용) */}
+                    <p className="mt-4 text-center text-sm text-gray-600">
+                        Already have an account?{' '}
+                        <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
+                            Sign In
+                        </Link>
+                    </p>
 
                 </form>
             </div>
