@@ -31,7 +31,7 @@ const Button: React.FC<ButtonProps> = ({ children, onClick, type, disabled, full
 );
 
 const PASSWORD_REGEX = /^[A-Za-z0-9!@%=*_-]{8,16}$/;
-const API_REGISTER_ENDPOINT = 'https://cocal-server.onrender.com/api/users/';
+const API_REGISTER_ENDPOINT = 'https://cocal-server.onrender.com/api/users';
 
 const Register: React.FC = () => {
     const router = useRouter();
