@@ -27,18 +27,14 @@ export default function CalendarUI() {
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
     const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month");
 
-    // [수정] currentProject의 초기값을 null로 설정하여 로딩 상태를 명확히 합니다.
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
 
-    // [추가] 컴포넌트가 처음 렌더링될 때 데이터를 불러옵니다.
     useEffect(() => {
-        // 실제로는 API를 호출하여 프로젝트 데이터를 가져옵니다.
-        // 여기서는 1초 뒤에 데이터를 가져온 것처럼 시뮬레이션합니다.
         setTimeout(() => {
             const fetchedProjectData = { name: "My Real Project" };
             setCurrentProject(fetchedProjectData);
         }, 1000);
-    }, []); // 빈 배열을 전달하여 이 effect가 한 번만 실행되도록 합니다.
+    }, []);
 
     const miniMatrix = getMonthMatrix(miniYear, miniMonth);
     const matrix = getMonthMatrix(viewYear, viewMonth);
@@ -84,7 +80,6 @@ export default function CalendarUI() {
                             />
                         </svg>
                     </button>
-                    {/* [수정] 데이터가 로딩 중일 때와 로딩 완료 후를 구분하여 표시합니다. */}
                     <h1 className="text-xl font-medium">
                         {currentProject ? currentProject.name : "Loading..."}
                     </h1>
@@ -106,8 +101,6 @@ export default function CalendarUI() {
                             To do
                         </div>
                     </div>
-
-                    {/* 미니 달력 */}
                     <div className="mb-6">
                         <div className="flex items-center justify-between">
                             <button onClick={prevMiniMonth} className="text-xs">&#x276E;</button>
@@ -144,8 +137,6 @@ export default function CalendarUI() {
                             )}
                         </div>
                     </div>
-
-                    {/* To do 리스트 (샘플) */}
                     <div className="mb-6">
                         <h3 className="text-sm font-medium mb-2">To do</h3>
                         <div className="space-y-3 text-sm">
@@ -164,10 +155,8 @@ export default function CalendarUI() {
                             </div>
                         </div>
                     </div>
-
                     <TaskProgress />
                 </aside>
-
                 {/* 메인 달력 영역 */}
                 <main className="flex-1 p-6 overflow-auto">
                     <div className="flex items-center justify-between mb-4">
@@ -193,8 +182,6 @@ export default function CalendarUI() {
                             </select>
                         </div>
                     </div>
-
-                    {/* 달력 뷰 */}
                     {viewMode === "month" && (
                         <>
                             <div className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2">
@@ -207,11 +194,9 @@ export default function CalendarUI() {
                                     <React.Fragment key={ri}>
                                         {week.map((day, ci) => {
                                             const dateKey = day ? formatYMD(viewYear, viewMonth, day) : "";
-
                                             const dayEvents = dateKey ? events.filter((e) => e.start_at.startsWith(dateKey)) : [];
                                             const isToday =
                                                 dateKey === formatYMD(today.getFullYear(), today.getMonth(), today.getDate());
-
                                             return (
                                                 <div
                                                     key={ci}
@@ -245,11 +230,8 @@ export default function CalendarUI() {
                     {viewMode === "week" && <WeekView events={events} />}
                     {viewMode === "day" && <DayView events={events} />}
                 </main>
-
                 <SidebarRight />
             </div>
-
-            {/* 이벤트 상세 정보 모달 */}
             {selectedEvent && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black/40">
                     <div className="bg-white rounded-lg p-6 w-[420px]">
