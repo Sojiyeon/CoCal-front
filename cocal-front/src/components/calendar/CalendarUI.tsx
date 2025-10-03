@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-//import Button from "../calendar/Button";
+import React, { useState, useEffect } from "react";
 import WeekView from "./Week";
 import DayView from "./Day";
 import TaskProgress from "./TaskProgress";
@@ -11,8 +10,14 @@ import { CalendarEvent } from "./types";
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
 import { sampleEvents } from "./sampleData";
 
+// 프로젝트 데이터의 타입을 정의합니다.
+interface Project {
+    name: string;
+    // 필요에 따라 다른 프로젝트 속성들을 추가할 수 있습니다.
+}
+
 export default function CalendarUI() {
-    const today = new Date("2025-09-23"); // 샘플
+    const today = new Date("2025-09-23");
 
     const [viewYear, setViewYear] = useState(today.getFullYear());
     const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -21,6 +26,19 @@ export default function CalendarUI() {
     const [events] = useState<CalendarEvent[]>(sampleEvents);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
     const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month");
+
+    // [수정] currentProject의 초기값을 null로 설정하여 로딩 상태를 명확히 합니다.
+    const [currentProject, setCurrentProject] = useState<Project | null>(null);
+
+    // [추가] 컴포넌트가 처음 렌더링될 때 데이터를 불러옵니다.
+    useEffect(() => {
+        // 실제로는 API를 호출하여 프로젝트 데이터를 가져옵니다.
+        // 여기서는 1초 뒤에 데이터를 가져온 것처럼 시뮬레이션합니다.
+        setTimeout(() => {
+            const fetchedProjectData = { name: "My Real Project" };
+            setCurrentProject(fetchedProjectData);
+        }, 1000);
+    }, []); // 빈 배열을 전달하여 이 effect가 한 번만 실행되도록 합니다.
 
     const miniMatrix = getMonthMatrix(miniYear, miniMonth);
     const matrix = getMonthMatrix(viewYear, viewMonth);
@@ -52,11 +70,11 @@ export default function CalendarUI() {
 
     return (
         <div className="h-screen w-screen flex flex-col bg-white">
-            {/* 상단 바 */}
+            {/* 상단 바 (Header) */}
             <div className="flex items-center justify-between px-6 py-3 bg-white border-b">
                 <div className="flex items-center gap-3">
                     <button className="p-1 rounded-full hover:bg-slate-100">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <svg width="18" height="18" viewBox="0 0 24" fill="none">
                             <path
                                 d="M15 18l-6-6 6-6"
                                 stroke="#0f172a"
@@ -66,7 +84,10 @@ export default function CalendarUI() {
                             />
                         </svg>
                     </button>
-                    <h1 className="text-xl font-medium">projects 1</h1>
+                    {/* [수정] 데이터가 로딩 중일 때와 로딩 완료 후를 구분하여 표시합니다. */}
+                    <h1 className="text-xl font-medium">
+                        {currentProject ? currentProject.name : "Loading..."}
+                    </h1>
                     <div className="w-2 h-2 rounded-full bg-emerald-400 ml-2" />
                 </div>
                 <div className="flex items-center gap-4">
@@ -98,13 +119,11 @@ export default function CalendarUI() {
                             </div>
                             <button onClick={nextMiniMonth} className="text-xs">&#x276F;</button>
                         </div>
-
                         <div className="mt-3 grid grid-cols-7 gap-1 text-[12px] text-slate-500">
                             {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
                                 <div key={i} className="text-center">{d}</div>
                             ))}
                         </div>
-
                         <div className="mt-2 grid grid-cols-7 gap-1 text-sm">
                             {miniMatrix.map((week, ri) =>
                                 week.map((day, ci) => {
@@ -149,24 +168,19 @@ export default function CalendarUI() {
                     <TaskProgress />
                 </aside>
 
-                {/* 메인 달력 */}
+                {/* 메인 달력 영역 */}
                 <main className="flex-1 p-6 overflow-auto">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-6">
-                            <button onClick={prevMonth} className="text-slate-800 hover:text-slate-600 text-xl">
-                                &#x276E;
-                            </button>
+                            <button onClick={prevMonth} className="text-slate-800 hover:text-slate-600 text-xl">&#x276E;</button>
                             <h2 className="text-lg font-semibold text-slate-800">
                                 {new Date(viewYear, viewMonth).toLocaleString("en-US", {
                                     month: "long",
                                     year: "numeric",
                                 })}
                             </h2>
-                            <button onClick={nextMonth} className="text-slate-800 hover:text-slate-600 text-xl">
-                                &#x276F;
-                            </button>
+                            <button onClick={nextMonth} className="text-slate-800 hover:text-slate-600 text-xl">&#x276F;</button>
                         </div>
-
                         <div className="flex items-center gap-3">
                             <select
                                 value={viewMode}
@@ -188,13 +202,13 @@ export default function CalendarUI() {
                                     <div key={w} className="text-center">{w}</div>
                                 ))}
                             </div>
-
                             <div className="grid grid-cols-7 gap-2 mt-3">
                                 {matrix.map((week, ri) => (
                                     <React.Fragment key={ri}>
                                         {week.map((day, ci) => {
                                             const dateKey = day ? formatYMD(viewYear, viewMonth, day) : "";
-                                            const dayEvents = events.filter((e) => e.start_date === dateKey);
+
+                                            const dayEvents = dateKey ? events.filter((e) => e.start_at.startsWith(dateKey)) : [];
                                             const isToday =
                                                 dateKey === formatYMD(today.getFullYear(), today.getMonth(), today.getDate());
 
@@ -228,16 +242,14 @@ export default function CalendarUI() {
                             </div>
                         </>
                     )}
-
                     {viewMode === "week" && <WeekView events={events} />}
                     {viewMode === "day" && <DayView events={events} />}
                 </main>
 
-                {/*sidebarright컴포넌트*/}
                 <SidebarRight />
             </div>
 
-            {/* 이벤트 모달 */}
+            {/* 이벤트 상세 정보 모달 */}
             {selectedEvent && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black/40">
                     <div className="bg-white rounded-lg p-6 w-[420px]">
