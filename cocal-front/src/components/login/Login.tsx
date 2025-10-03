@@ -36,7 +36,7 @@ const Login: React.FC = () => {
                 return;
             }
 
-            const { accessToken, refreshToken, name, userEmail } = data; // 서버 응답 구조가 이와 같다고 가정합니다.
+            const { accessToken, refreshToken, user } = data;
 
             if (accessToken) {
                 localStorage.setItem('accessToken', accessToken);
@@ -47,16 +47,13 @@ const Login: React.FC = () => {
                     console.warn('Refresh Token이 응답에 포함되어 있지 않습니다.');
                 }
 
-                if (name && userEmail) {
-                    const userProfile = { name, email: userEmail };
+                if (user && user.name && user.email) {
+                    const userProfile = { name: user.name, email: user.email };
                     localStorage.setItem('userProfile', JSON.stringify(userProfile));
                     console.log('User profile saved from login response:', userProfile);
                 } else {
-                    console.warn('사용자 프로필 정보(name, userEmail)가 응답에 없습니다.');
+                    console.warn('사용자 프로필 정보(user.name, user.email)가 응답에 없습니다.');
                 }
-            } else {
-                setError('로그인에 성공했으나 토큰이 발급되지 않았습니다.');
-                return;
             }
 
             // 로그인 후 대시보드로 리디렉션
