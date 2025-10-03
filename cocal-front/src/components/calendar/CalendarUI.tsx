@@ -17,7 +17,8 @@ interface Project {
 }
 
 export default function CalendarUI() {
-    const today = new Date("2025-09-23");
+    // [수정] "2025-09-23" 대신 new Date()를 사용하여 실제 오늘 날짜를 가져옵니다.
+    const today = new Date();
 
     const [viewYear, setViewYear] = useState(today.getFullYear());
     const [viewMonth, setViewMonth] = useState(today.getMonth());
