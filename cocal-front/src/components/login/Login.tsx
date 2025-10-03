@@ -2,53 +2,25 @@
 import React, { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import Button from '../ui/Button';
-import Link from 'next/link'; // next/link 임포트 필요
+import Link from 'next/link';
 
+// 서버 API 경로
 const API_LOGIN_ENDPOINT = 'https://cocal-server.onrender.com/api/auth/login';
-    //'https://cocal-server.onrender.com/api/auth/login';
-    //'http://localhost:3000/api/auth/login'
-const API_ME_ENDPOINT = 'https://cocal-server.onrender.com/api/users/me';
 
 const handleGoogleLogin = () => {
     window.location.href = 'https://cocal-server.onrender.com/oauth2/authorization/google';
 };
 
-const fetchUserProfile = async (accessToken: string) => {
-    try {
-        const response = await fetch(API_ME_ENDPOINT, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`
-            },
-        });
-
-        if (response.ok) {
-            const userData = await response.json();
-            const userProfile = {
-                name: userData.name,
-                email: userData.email
-            };
-            localStorage.setItem('userProfile', JSON.stringify(userProfile));
-            console.log('User profile saved:', userProfile);
-        } else {
-            console.error('Failed to fetch user profile:', response.status);
-        }
-    } catch (error) {
-        console.error('Network error while fetching profile:', error);
-    }
-};
-
 const Login: React.FC = () => {
-    // const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState(''); // 에러 메시지 상태
-    const [isLoading, setIsLoading] = useState(false); // 로딩 상태
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault(); // 폼의 기본 제출 동작(새로고침) 방지
+        e.preventDefault();
         setIsLoading(true);
-        setError(''); // 이전 에러 메시지 초기화
+        setError('');
 
         try {
             const response = await fetch(API_LOGIN_ENDPOINT, {
@@ -59,31 +31,40 @@ const Login: React.FC = () => {
 
             const data = await response.json();
 
-            if (!response.ok) { // 로그인 실패 시
+            if (!response.ok) {
                 setError(data.message || '이메일 또는 비밀번호가 올바르지 않습니다.');
                 return;
             }
-            // 로그인 성공 시
-            const accessToken = data.accessToken;
-            const refreshToken = data.refreshToken;
 
-            if (accessToken) { // 토큰을 브라우저의 로컬 저장소에 저장
+            const { accessToken, refreshToken, name, userEmail } = data; // 서버 응답 구조가 이와 같다고 가정합니다.
+
+            if (accessToken) {
                 localStorage.setItem('accessToken', accessToken);
 
                 if (refreshToken) {
                     localStorage.setItem('refreshToken', refreshToken);
-                    console.log('Access/Refresh Token 저장 완료.');
                 } else {
-                    console.warn('Refresh Token이 응답에 포함되어 있지 않습니다. 로그아웃이 정상 작동하지 않을 수 있습니다.');
+                    console.warn('Refresh Token이 응답에 포함되어 있지 않습니다.');
                 }
-                await fetchUserProfile(accessToken);
+
+                if (name && userEmail) {
+                    const userProfile = { name, email: userEmail };
+                    localStorage.setItem('userProfile', JSON.stringify(userProfile));
+                    console.log('User profile saved from login response:', userProfile);
+                } else {
+                    console.warn('사용자 프로필 정보(name, userEmail)가 응답에 없습니다.');
+                }
+            } else {
+                setError('로그인에 성공했으나 토큰이 발급되지 않았습니다.');
+                return;
             }
+
             // 로그인 후 대시보드로 리디렉션
             window.location.href = '/dashboard';
 
         } catch (err) {
-            // 네트워크 에러 등 fetch 자체의 실패
-            setError('로그인 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+            // 네트워크 에러나 JSON 파싱 실패 등
+            setError('로그인 중 네트워크 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
         } finally {
             setIsLoading(false);
         }
@@ -179,16 +160,16 @@ const Login: React.FC = () => {
                 </div>
 
                 {/* Google 버튼 */}
-                    <Button
-                        type="button"
-                        variant="google"
-                        fullWidth={true}
-                        icon={<FcGoogle className="w-5 h-5" />}
-                        onClick={handleGoogleLogin}
-                        disabled={isLoading}
-                    >
-                        Sign in with Google
-                    </Button>
+                <Button
+                    type="button"
+                    variant="google"
+                    fullWidth={true}
+                    icon={<FcGoogle className="w-5 h-5" />}
+                    onClick={handleGoogleLogin}
+                    disabled={isLoading}
+                >
+                    Sign in with Google
+                </Button>
             </div>
         </div>
     );
