@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, FC, useRef, useEffect, useMemo } from 'react';
-import { ChevronRight, Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
+import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '../../components/modals/CreateProjectModal';
 import ProfileSettingsModal from '../../components/modals/ProfileSettingModal';
 
@@ -13,6 +13,7 @@ const BASE_URL = isDevelopment
 const API_ENDPOINTS = {
     UPDATE_USER_NAME: `${BASE_URL}/users/edit-name`,
     UPDATE_USER_PASSWORD: `${BASE_URL}/users/edit-pwd`,
+    UPDATE_USER_PHOTO: `${BASE_URL}/users/edit-photo`,
 };
 
 // --- DUMMY DATA & TYPES ---
@@ -35,28 +36,19 @@ const DUMMY_USER = {
     imageUrl: 'https://placehold.co/96x96/50bda1/ffffff?text=COLA', // 임시 이미지
 };
 
+interface ExpectedApiEndpoints {
+    UPDATE_USER_NAME: string;
+    UPDATE_USER_PASSWORD: string;
+    UPDATE_USER_PHOTO: string;
+}
 interface ProfileSettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
     currentUser: typeof DUMMY_USER;
-    apiEndpoints: typeof API_ENDPOINTS;
+    apiEndpoints: ExpectedApiEndpoints;
 }
-const ProfileSettingsModalTyped = ProfileSettingsModal as FC<ProfileSettingsModalProps>;
 
-/*
-const InputField: FC<{ label: string; value: string; onClick?: () => void; editable?: boolean }> = ({ label, value, onClick, editable = false }) => (
-    <div className="flex items-center justify-between border-b border-gray-100 py-3 cursor-pointer" onClick={editable ? onClick : undefined}>
-        <div className="text-sm font-medium text-gray-500 w-1/4">{label}</div>
-        <div className="flex items-center space-x-2 w-3/4 justify-end">
-            <span className={`text-sm text-gray-900 ${editable ? 'font-semibold' : ''}`}>
-                {value}
-            </span>
-            {editable && <ChevronRight className="w-4 h-4 text-gray-400" />}
-        </div>
-    </div>
-);
-*/
-
+const ProfileSettingsModalTyped: FC<ProfileSettingsModalProps> = ProfileSettingsModal;
 
 // 초기 더미 프로젝트 데이터
 const INITIAL_PROJECTS: Project[] = [
