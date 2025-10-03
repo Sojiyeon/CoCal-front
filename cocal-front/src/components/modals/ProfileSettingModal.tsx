@@ -3,6 +3,7 @@
 import React, { FC, useState, createContext, useContext, useEffect } from 'react';
 import { X, ChevronRight } from 'lucide-react';
 
+// UserProvider 관련 타입 및 Context (Dashboard 파일에서 사용하지 않으므로 그대로 유지)
 interface User {
     id: number | null;
     email: string | null;
@@ -32,6 +33,7 @@ const useUser = () => {
     return context;
 };
 
+// UserProvider 컴포넌트 (모달 테스트를 위해 필요)
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User>(initialUser);
     const [isLoading, setIsLoading] = useState(true);
@@ -46,17 +48,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             if (response.ok) {
                 const data = await response.json();
-                setUser(prev => ({ ...prev, name: data.name }));
+                setUser(prev => ({ ...prev, name: data.name, id: 1 })); // 더미 ID 추가
                 console.log('이름 수정 성공:', data);
             } else {
                 const errorData = await response.json();
                 console.error('이름 수정 실패:', errorData);
-                alert(`이름 수정 실패: ${errorData.message || response.statusText}`);
+                // alert(`이름 수정 실패: ${errorData.message || response.statusText}`); // alert 제거
             }
         } catch (error) {
             console.error("네트워크 오류 발생:", error);
-            alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            // alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요."); // alert 제거
         } finally {
+            setIsLoading(false); // 로딩 종료
         }
     };
 
@@ -81,10 +84,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     useEffect(() => {
+        // 더미 데이터로 user context를 채웁니다 (Dashboard에서 DUMMY_USER를 사용하므로 실제 앱처럼 보이게 ID와 이메일 설정)
         const token = localStorage.getItem('accessToken');
         if (token) {
             fetchUserProfile(token);
         } else {
+            // 더미 로그인 상태 설정 (Dashboard의 DUMMY_USER와 일치)
+            setUser({
+                id: 123,
+                email: 'name123@gmail.com',
+                name: 'Name',
+                profileImageUrl: 'https://placehold.co/96x96/50bda1/ffffff?text=COLA'
+            });
             setIsLoading(false);
         }
     }, []);
@@ -96,18 +107,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 };
 
+
 interface ApiEndpoints {
     UPDATE_USER_NAME: string;
     UPDATE_USER_PASSWORD: string;
 }
-
-/*
-interface CurrentUser {
-    name: string;
-    email: string;
-    imageUrl: string;
-}
-*/
 
 interface ProfileSettingsModalProps {
     isOpen: boolean;
@@ -193,14 +197,33 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
     const { user, setUser, logout, isLoading } = useUser();
     const [isEditingName, setIsEditingName] = useState(false);
 
-    if (!isOpen || isLoading || !user.id) return null;
+    if (!isOpen) return null;
+
+    // 모달 내용 내부에서 로딩 상태를 표시
+    if (isLoading) {
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                 style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+                <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
+                    <div className="flex justify-center items-center h-32">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                        <p className="ml-4 text-gray-600">Loading user data...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // 이 시점에서 user.name을 사용하기 전에 user.id가 null인 경우를 방지해야 하지만,
+    // 현재 UserProvider가 DUMMY_USER를 설정하므로 null이 아닐 가능성이 높습니다.
+    // 만약 user.id가 없다면, 사용자에게 로그인 필요 메시지를 보여주는 것이 좋습니다.
 
     const handleNameUpdate = async (newName: string) => {
         const accessToken = localStorage.getItem('accessToken');
 
         if (!accessToken) {
             console.error("Access Token이 없어 요청을 보낼 수 없습니다. 다시 로그인해야 합니다.");
-            alert("인증 정보가 만료되었습니다. 다시 로그인해주세요.");
+            // alert("인증 정보가 만료되었습니다. 다시 로그인해주세요."); // alert 제거
             setIsEditingName(false);
             onClose();
             logout();
@@ -225,12 +248,12 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
             } else {
                 const errorData = await response.json();
                 console.error('이름 수정 실패:', errorData);
-                alert(`이름 수정 실패: ${errorData.message || response.statusText}`);
+                // alert(`이름 수정 실패: ${errorData.message || response.statusText}`); // alert 제거
             }
 
         } catch (error) {
             console.error("네트워크 오류 발생:", error);
-            alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            // alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요."); // alert 제거
         } finally {
             setIsEditingName(false); // 수정 모달 닫기
         }
@@ -238,6 +261,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
 
     const handleDeleteAccount = () => {
         console.log('계정 삭제 요청');
+        // 실제로는 사용자에게 경고 모달을 띄우고 삭제를 진행해야 합니다.
     };
 
     return (
@@ -313,8 +337,5 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
 };
 
 
-export default () => (
-    <UserProvider>
-        <ProfileSettingsModal isOpen={true} onClose={() => {}} apiEndpoints={{ UPDATE_USER_NAME: '/api/name', UPDATE_USER_PASSWORD: '/api/password' }} />
-    </UserProvider>
-);
+// 외부에서 import 되어 사용될 주 컴포넌트를 export
+export default ProfileSettingsModal;

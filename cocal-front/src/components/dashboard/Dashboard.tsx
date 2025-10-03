@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, FC, useRef, useEffect, useMemo } from 'react';
-import { ChevronRight, Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
+import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
+// 경로 수정: 프로젝트 폴더의 components/modals에서 불러오도록 변경
 import CreateProjectModal, { ProjectFormData } from '../../components/modals/CreateProjectModal';
-import ProfileSettingsModal from '../../components/modals/ProfileSettingModal';
+import ProfileSettingsModal, { UserProvider } from '../../components/modals/ProfileSettingModal'; // UserProvider도 가져옵니다.
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 const BASE_URL = isDevelopment
@@ -35,26 +36,15 @@ const DUMMY_USER = {
     imageUrl: 'https://placehold.co/96x96/50bda1/ffffff?text=COLA', // 임시 이미지
 };
 
+// ProfileSettingsModal Props 타입 정의
 interface ProfileSettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    currentUser: typeof DUMMY_USER;
     apiEndpoints: typeof API_ENDPOINTS;
 }
 const ProfileSettingsModalTyped = ProfileSettingsModal as FC<ProfileSettingsModalProps>;
 
-const InputField: FC<{ label: string; value: string; onClick?: () => void; editable?: boolean }> = ({ label, value, onClick, editable = false }) => (
-    <div className="flex items-center justify-between border-b border-gray-100 py-3 cursor-pointer" onClick={editable ? onClick : undefined}>
-        <div className="text-sm font-medium text-gray-500 w-1/4">{label}</div>
-        <div className="flex items-center space-x-2 w-3/4 justify-end">
-            <span className={`text-sm text-gray-900 ${editable ? 'font-semibold' : ''}`}>
-                {value}
-            </span>
-            {editable && <ChevronRight className="w-4 h-4 text-gray-400" />}
-        </div>
-    </div>
-);
-
+// 🚩 삭제됨: InputField 컴포넌트 정의는 ProfileSettingsModal 파일에만 있어야 합니다.
 
 // 초기 더미 프로젝트 데이터
 const INITIAL_PROJECTS: Project[] = [
@@ -346,56 +336,58 @@ const ProjectDashboardPage: React.FC = () => {
     const handleCloseSettingsModal = () => setIsSettingsModalOpen(false);
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans">
+        // ProfileSettingsModal이 useUser()를 사용하므로, 전체를 UserProvider로 감쌉니다.
+        <UserProvider>
+            <div className="min-h-screen bg-gray-50 font-sans">
 
-            {/* 상단 통합 헤더 영역 */}
-            <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 bg-white sticky top-0 z-10 shadow-sm">
-                <h1 className="text-2xl font-bold text-gray-800">My projects</h1>
+                {/* 상단 통합 헤더 영역 */}
+                <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 bg-white sticky top-0 z-10 shadow-sm">
+                    <h1 className="text-2xl font-bold text-gray-800">My projects</h1>
 
-                <div className="flex items-center space-x-4">
-                    {/* 유저 프로필 */}
-                    <ProfileDropdown
-                        user={DUMMY_USER}
-                        onOpenSettings={handleOpenSettingsModal}
+                    <div className="flex items-center space-x-4">
+                        {/* 유저 프로필 */}
+                        <ProfileDropdown
+                            user={DUMMY_USER}
+                            onOpenSettings={handleOpenSettingsModal}
+                        />
+                    </div>
+                </header>
+
+                {/* 메인 콘텐츠 영역 */}
+                <main className="p-8 md:p-10 max-w-7xl mx-auto">
+                    {/* 카테고리 필터링 컴포넌트 */}
+                    <ProjectCategoryFilter
+                        selectedCategory={selectedCategory}
+                        onSelectCategory={setSelectedCategory}
+                        onOpenCreateModal={() => setIsCreateModalOpen(true)}
                     />
-                </div>
-            </header>
 
-            {/* 메인 콘텐츠 영역 */}
-            <main className="p-8 md:p-10 max-w-7xl mx-auto">
-                {/* 카테고리 필터링 컴포넌트 */}
-                <ProjectCategoryFilter
-                    selectedCategory={selectedCategory}
-                    onSelectCategory={setSelectedCategory}
-                    onOpenCreateModal={() => setIsCreateModalOpen(true)}
+                    {/* 프로젝트 목록 표시 */}
+                    {projects.length === 0 ? (
+                        <EmptyState selectedCategory={selectedCategory} />
+                    ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            {filteredProjects.map(project => (
+                                <ProjectCard key={project.id} project={project} />
+                            ))}
+                        </div>
+                    )}
+                </main>
+
+                {/* 모달 렌더링 */}
+                <CreateProjectModal
+                    isOpen={isCreateModalOpen}
+                    onClose={() => setIsCreateModalOpen(false)}
+                    onCreateProject={handleCreateProject}
                 />
 
-                {/* 프로젝트 목록 표시 */}
-                {projects.length === 0 ? (
-                    <EmptyState selectedCategory={selectedCategory} />
-                ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {filteredProjects.map(project => (
-                            <ProjectCard key={project.id} project={project} />
-                        ))}
-                    </div>
-                )}
-            </main>
-
-            {/* 모달 렌더링 */}
-            <CreateProjectModal
-                isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-                onCreateProject={handleCreateProject}
-            />
-
-            <ProfileSettingsModalTyped
-                isOpen={isSettingsModalOpen}
-                onClose={handleCloseSettingsModal}
-                currentUser={DUMMY_USER}
-                apiEndpoints={API_ENDPOINTS}
-            />
-        </div>
+                <ProfileSettingsModalTyped
+                    isOpen={isSettingsModalOpen}
+                    onClose={handleCloseSettingsModal}
+                    apiEndpoints={API_ENDPOINTS}
+                />
+            </div>
+        </UserProvider>
     );
 };
 
