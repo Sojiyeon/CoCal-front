@@ -2,9 +2,7 @@
 "use client";
 
 import React, { FC, useState } from 'react';
-// BaseModal은 같은 modals 디렉토리에 있습니다.
 import Modal from '../ui/Modal';
-// Button은 상위 디렉토리(components)의 ui 폴더에 있습니다.
 import Button from '../ui/Button';
 
 // 프로젝트 생성 데이터 타입 정의
@@ -25,8 +23,8 @@ const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, onCr
     const [formData, setFormData] = useState<ProjectFormData>({
         name: '',
         client: '',
-        startDate: '',
-        endDate: '',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0],
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,19 +1,45 @@
-// components/Login.tsx
 "use client";
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { FcGoogle } from 'react-icons/fc';
 import Button from '../ui/Button';
 import Link from 'next/link'; // next/link 임포트 필요
 
 const API_LOGIN_ENDPOINT = 'https://cocal-server.onrender.com/api/auth/login';
+    //'https://cocal-server.onrender.com/api/auth/login';
+    //'http://localhost:3000/api/auth/login'
+const API_ME_ENDPOINT = 'https://cocal-server.onrender.com/api/users/me';
 
 const handleGoogleLogin = () => {
     window.location.href = 'https://cocal-server.onrender.com/oauth2/authorization/google';
 };
 
+const fetchUserProfile = async (accessToken: string) => {
+    try {
+        const response = await fetch(API_ME_ENDPOINT, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            },
+        });
+
+        if (response.ok) {
+            const userData = await response.json();
+            const userProfile = {
+                name: userData.name,
+                email: userData.email
+            };
+            localStorage.setItem('userProfile', JSON.stringify(userProfile));
+            console.log('User profile saved:', userProfile);
+        } else {
+            console.error('Failed to fetch user profile:', response.status);
+        }
+    } catch (error) {
+        console.error('Network error while fetching profile:', error);
+    }
+};
+
 const Login: React.FC = () => {
-    const router = useRouter();
+    // const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(''); // 에러 메시지 상태
@@ -35,20 +61,30 @@ const Login: React.FC = () => {
 
             if (!response.ok) { // 로그인 실패 시
                 setError(data.message || '이메일 또는 비밀번호가 올바르지 않습니다.');
-                setIsLoading(false);
                 return;
             }
             // 로그인 성공 시
-            console.log('로그인 성공:', data);
+            const accessToken = data.accessToken;
+            const refreshToken = data.refreshToken;
 
+            if (accessToken) { // 토큰을 브라우저의 로컬 저장소에 저장
+                localStorage.setItem('accessToken', accessToken);
+
+                if (refreshToken) {
+                    localStorage.setItem('refreshToken', refreshToken);
+                    console.log('Access/Refresh Token 저장 완료.');
+                } else {
+                    console.warn('Refresh Token이 응답에 포함되어 있지 않습니다. 로그아웃이 정상 작동하지 않을 수 있습니다.');
+                }
+                await fetchUserProfile(accessToken);
+            }
             // 로그인 후 대시보드로 리디렉션
-            router.push('/dashboard');
+            window.location.href = '/dashboard';
 
         } catch (err) {
             // 네트워크 에러 등 fetch 자체의 실패
             setError('로그인 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
         } finally {
-            // 성공/실패 여부와 관계없이 로딩 상태 해제
             setIsLoading(false);
         }
     };
