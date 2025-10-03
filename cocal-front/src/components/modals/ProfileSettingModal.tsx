@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FC, useState, createContext, useContext, useEffect } from 'react';
+import React, { FC, useState, createContext, useContext, useEffect, useRef } from 'react';
 import { X, ChevronRight } from 'lucide-react';
 
 // UserProvider 관련 타입 및 Context (Dashboard 파일에서 사용하지 않으므로 그대로 유지)
@@ -104,6 +104,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 interface ApiEndpoints {
     UPDATE_USER_NAME: string;
     UPDATE_USER_PASSWORD: string;
+    UPDATE_USER_PHOTO: string;
 }
 
 interface ProfileSettingsModalProps {
@@ -238,6 +239,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
     const { user, setUser, logout, isLoading } = useUser();
     const [isEditingName, setIsEditingName] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     if (!isOpen) return null;
 
@@ -255,6 +257,64 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
             </div>
         );
     }
+
+    const handlePhotoClick = () => {
+        fileInputRef.current?.click();
+    };
+    const uploadProfilePhoto = async (file: File) => {
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+            alert("인증 정보가 만료되었습니다. 다시 로그인해주세요.");
+            logout();
+            return;
+        }
+        const formData = new FormData();
+        formData.append('profileImageUrl', file);
+
+        try {
+            console.log(`API 호출: ${apiEndpoints.UPDATE_USER_PHOTO}로 파일 [${file.name}] 전송`);
+
+            const response = await fetch(apiEndpoints.UPDATE_USER_PHOTO, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+                body: formData,
+            });
+            if (response.ok) {
+                const data = await response.json();
+
+                setUser(prev => ({
+                    ...prev,
+                    profileImageUrl: data.profileImageUrl || data.imageUrl
+                }));
+                console.log('프로필 사진 업데이트 성공:', data);
+                alert('프로필 사진이 성공적으로 변경되었습니다.');
+
+            } else {
+                const responseText = await response.text();
+                let message = response.statusText;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    message = errorData.message || response.statusText;
+                } catch (e) {
+                    console.error("비정상적인 응답:", responseText);
+                }
+                alert(`사진 업데이트 실패: ${message}`);
+            }
+        } catch (error) {
+            console.error("사진 업로드 네트워크 오류:", error);
+            alert("사진 업로드 중 네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+        }
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            uploadProfilePhoto(file);
+        }
+        event.target.value = '';
+    };
 
     const handleNameUpdate = async (newName: string) => {
         const accessToken = localStorage.getItem('accessToken');
@@ -368,8 +428,17 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                             alt="Profile"
                             className="w-24 h-24 rounded-full object-cover mb-6 border-4 border-gray-100 shadow-md"
                         />
-                        <button className="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium transition">
-                            Change Photo
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            accept="image/*" // 이미지 파일만 허용
+                            style={{ display: 'none' }} // 화면에서 숨김
+                        />
+                        <button
+                            onClick={handlePhotoClick}
+                            className="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium transition"
+                        > Change Photo
                         </button>
                         <div className="w-full space-y-2">
                             {/* 이름 수정 필드 */}
