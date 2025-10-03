@@ -13,13 +13,15 @@ export default function WeekView({ events }: WeekViewProps) {
 
     const renderEvents = (dayIdx: number) => {
         const dayEvents = events.filter((e) => {
-            const start = new Date(e.start_date);
+            // [수정] e.start_date를 e.start_at으로 변경
+            const start = new Date(e.start_at);
             return start.getDay() === (dayIdx + 1) % 7; // Monday=0 기준
         });
 
         return dayEvents.map((event) => {
-            const start = new Date(event.start_date);
-            const end = new Date(event.end_date || event.start_date);
+            // [수정] event.start_date와 event.end_date를 event.start_at과 event.end_at으로 변경
+            const start = new Date(event.start_at);
+            const end = new Date(event.end_at || event.start_at);
 
             const startHour = start.getHours() + start.getMinutes() / 60;
             const endHour = end.getHours() + end.getMinutes() / 60;
