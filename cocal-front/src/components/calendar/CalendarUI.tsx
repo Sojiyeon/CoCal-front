@@ -5,30 +5,54 @@ import WeekView from "./Week";
 import DayView from "./Day";
 import TaskProgress from "./TaskProgress";
 import SidebarRight from "./SidebarRight";
+import { EventDetailModal } from "./modals/EventDetailModal";
 
-import { CalendarEvent } from "./types";
+// EventTodo 타입을 import합니다.
+import { CalendarEvent, EventTodo } from "./types";
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
 import { sampleEvents } from "./sampleData";
 
-// 프로젝트 데이터의 타입을 정의합니다.
+// 프로젝트 데이터 타입을 정의합니다.
 interface Project {
     name: string;
-    // 필요에 따라 다른 프로젝트 속성들을 추가할 수 있습니다.
 }
 
-export default function CalendarUI() {
-    // [수정] "2025-09-23" 대신 new Date()를 사용하여 실제 오늘 날짜를 가져옵니다.
-    const today = new Date();
+// 사이드바에서 사용할 할 일 데이터의 타입을 확장합니다.
+interface SidebarTodo extends EventTodo {
+    parentEventTitle: string;
+    parentEventColor: string;
+}
 
+const today = new Date();
+
+export default function CalendarUI() {
     const [viewYear, setViewYear] = useState(today.getFullYear());
     const [viewMonth, setViewMonth] = useState(today.getMonth());
     const [miniYear, setMiniYear] = useState(today.getFullYear());
     const [miniMonth, setMiniMonth] = useState(today.getMonth());
-    const [events] = useState<CalendarEvent[]>(sampleEvents);
+
+    const [events, setEvents] = useState<CalendarEvent[]>(sampleEvents);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
     const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month");
-
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
+
+    const [sidebarTodos, setSidebarTodos] = useState<SidebarTodo[]>([]);
+    const [selectedSidebarDate, setSelectedSidebarDate] = useState(today);
+
+    useEffect(() => {
+        const selectedDateKey = formatYMD(selectedSidebarDate.getFullYear(), selectedSidebarDate.getMonth(), selectedSidebarDate.getDate());
+        const selectedDaysEvents = events.filter(e => e.start_at.startsWith(selectedDateKey));
+
+        const allTodos: SidebarTodo[] = selectedDaysEvents.flatMap(event =>
+            (event.todos || []).map(todo => ({
+                ...todo,
+                parentEventTitle: event.title,
+                parentEventColor: event.color,
+            }))
+        );
+        setSidebarTodos(allTodos);
+    }, [events, selectedSidebarDate]);
+
 
     useEffect(() => {
         setTimeout(() => {
@@ -39,6 +63,24 @@ export default function CalendarUI() {
 
     const miniMatrix = getMonthMatrix(miniYear, miniMonth);
     const matrix = getMonthMatrix(viewYear, viewMonth);
+
+    const handleToggleTodoStatus = (todoId: number) => {
+        setEvents(prevEvents =>
+            prevEvents.map(event => {
+                if (!event.todos) return event;
+                const isTodoInEvent = event.todos.some(t => t.id === todoId);
+                if (!isTodoInEvent) return event;
+                return {
+                    ...event,
+                    todos: event.todos.map(todo =>
+                        todo.id === todoId
+                            ? { ...todo, status: todo.status === 'DONE' ? 'IN_PROGRESS' : 'DONE' }
+                            : todo
+                    )
+                };
+            })
+        );
+    };
 
     function prevMiniMonth() {
         if (miniMonth === 0) {
@@ -53,16 +95,20 @@ export default function CalendarUI() {
         } else setMiniMonth((m) => m + 1);
     }
     function prevMonth() {
-        if (viewMonth === 0) {
-            setViewMonth(11);
-            setViewYear((y) => y - 1);
-        } else setViewMonth((m) => m - 1);
+        const newMonth = viewMonth === 0 ? 11 : viewMonth - 1;
+        const newYear = viewMonth === 0 ? viewYear - 1 : viewYear;
+        setViewMonth(newMonth);
+        setViewYear(newYear);
+        setMiniMonth(newMonth);
+        setMiniYear(newYear);
     }
     function nextMonth() {
-        if (viewMonth === 11) {
-            setViewMonth(0);
-            setViewYear((y) => y + 1);
-        } else setViewMonth((m) => m + 1);
+        const newMonth = viewMonth === 11 ? 0 : viewMonth + 1;
+        const newYear = viewMonth === 11 ? viewYear + 1 : viewYear;
+        setViewMonth(newMonth);
+        setViewYear(newYear);
+        setMiniMonth(newMonth);
+        setMiniYear(newYear);
     }
 
     return (
@@ -126,10 +172,24 @@ export default function CalendarUI() {
                                         miniYear === today.getFullYear() &&
                                         miniMonth === today.getMonth() &&
                                         day === today.getDate();
+
+                                    const isSelected =
+                                        day &&
+                                        miniYear === selectedSidebarDate.getFullYear() &&
+                                        miniMonth === selectedSidebarDate.getMonth() &&
+                                        day === selectedSidebarDate.getDate();
+
                                     return (
                                         <div
                                             key={`${ri}-${ci}`}
-                                            className={`h-7 flex items-center justify-center rounded ${isToday ? "bg-slate-800 text-white" : "text-slate-500"}`}
+                                            onClick={() => day && setSelectedSidebarDate(new Date(miniYear, miniMonth, day))}
+                                            className={`h-7 flex items-center justify-center rounded cursor-pointer ${
+                                                isToday
+                                                    ? "bg-slate-800 text-white"
+                                                    : isSelected
+                                                        ? "bg-slate-200 text-slate-800"
+                                                        : "text-slate-500 hover:bg-slate-100"
+                                            }`}
                                         >
                                             {day ?? ""}
                                         </div>
@@ -138,22 +198,29 @@ export default function CalendarUI() {
                             )}
                         </div>
                     </div>
+                    {/* [수정] 왼쪽 사이드바 할일 표시 부분을 동적으로 렌더링합니다. */}
                     <div className="mb-6">
                         <h3 className="text-sm font-medium mb-2">To do</h3>
                         <div className="space-y-3 text-sm">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-7 bg-pink-400 rounded" />
-                                <div className="flex-1">
-                                    <div className="font-medium">Review calendar</div>
-                                    <div className="text-xs text-slate-400">Yoga</div>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 opacity-50">
-                                <div className="w-2 h-7 bg-pink-400 rounded" />
-                                <div className="flex-1 line-through text-slate-400">
-                                    Reply to messages
-                                </div>
-                            </div>
+                            {sidebarTodos.length > 0 ? (
+                                sidebarTodos.map(todo => (
+                                    <div key={todo.id} className={`flex items-center gap-3 ${todo.status === 'DONE' ? 'opacity-50' : ''}`}>
+                                        <div
+                                            className={`w-2 h-7 rounded ${todo.parentEventColor.startsWith('bg-') ? todo.parentEventColor : ''}`}
+                                            style={{ backgroundColor: !todo.parentEventColor.startsWith('bg-') ? todo.parentEventColor : undefined }}
+                                        ></div>
+                                        <div className="flex-1">
+                                            <div className={`font-medium ${todo.status === 'DONE' ? 'line-through text-slate-400' : ''}`}>{todo.title}</div>
+                                            <div className="text-xs text-slate-400">{todo.parentEventTitle}</div>
+                                        </div>
+                                        <button onClick={() => handleToggleTodoStatus(todo.id)} className="w-5 h-5 border-2 rounded-full flex items-center justify-center cursor-pointer">
+                                            {todo.status === 'DONE' && <div className="w-2.5 h-2.5 bg-slate-400 rounded-full"></div>}
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-xs text-slate-400 text-center py-4">No to-dos for the selected date.</p>
+                            )}
                         </div>
                     </div>
                     <TaskProgress />
@@ -233,26 +300,14 @@ export default function CalendarUI() {
                 </main>
                 <SidebarRight />
             </div>
+
+            {/* [수정] EventDetailModal에 onToggleTodo prop을 전달합니다. */}
             {selectedEvent && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black/40">
-                    <div className="bg-white rounded-lg p-6 w-[420px]">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">{selectedEvent.title}</h3>
-                            <button onClick={() => setSelectedEvent(null)} className="text-slate-400">✕</button>
-                        </div>
-                        <div className="text-sm text-slate-600">
-                            {selectedEvent.description ?? "이벤트 설명이 없습니다."}
-                        </div>
-                        <div className="mt-4 flex justify-end">
-                            <button
-                                onClick={() => setSelectedEvent(null)}
-                                className="px-4 py-2 border rounded"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <EventDetailModal
+                    event={selectedEvent}
+                    onClose={() => setSelectedEvent(null)}
+                    onToggleTodo={handleToggleTodoStatus}
+                />
             )}
         </div>
     );

@@ -14,8 +14,16 @@ export type CalendarEvent = {
     location: string | null;
     color: string;
     project_name?: string;
+    todos?: EventTodo[];
 };
-
+// 이벤트 종속 할 일 타입 (event_todos 테이블)
+export type EventTodo = {
+    id: number;
+    event_id: number;
+    title: string;
+    description: string | null;
+    status: 'IN_PROGRESS' | 'DONE';
+};
 // 개인 할 일 타입 (private_todos 테이블)
 export type PrivateTodo = {
     id: number;

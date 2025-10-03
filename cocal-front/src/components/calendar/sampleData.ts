@@ -5,17 +5,23 @@ export const sampleEvents: CalendarEvent[] = [
     {
         id: 1,
         project_id: 101,
-        title: "프로젝트 1 기획 회의",
+        title: "Yoga", // 제목 수정
         description: "DB 구조 및 API 명세서 확정 논의",
         start_at: "2025-09-24T10:00:00",
         end_at: "2025-09-24T11:30:00",
         all_day: false,
         visibility: 'PUBLIC',
         author_id: 1,
-        location: "회의실 A",
+        location: "서울특별시 영등포구 63로 50",
         color: "bg-blue-500 text-white",
         project_name: "프로젝트 1",
+        // [추가] 이 이벤트에 종속된 할 일 목록
+        todos: [
+            { id: 101, event_id: 1, title: "Shower", description: "After yoga", status: 'IN_PROGRESS' },
+            { id: 102, event_id: 1, title: "Protein Shake", description: null, status: 'IN_PROGRESS' }
+        ]
     },
+    // ... (다른 이벤트 데이터는 그대로 유지) ...
     {
         id: 2,
         project_id: 102,
@@ -28,18 +34,5 @@ export const sampleEvents: CalendarEvent[] = [
         author_id: 2,
         location: null,
         color: "bg-green-500 text-white",
-    },
-    {
-        id: 3,
-        project_id: 102,
-        title: "여기 누르면 카드 모달로 보여",
-        description: "모달 내용 확인용 개인 일정입니다.",
-        start_at: "2025-09-16T16:00:00",
-        end_at: "2025-09-16T16:30:00",
-        all_day: false,
-        visibility: 'PRIVATE',
-        author_id: 1,
-        location: "개인 좌석",
-        color: "bg-yellow-400",
     },
 ];
