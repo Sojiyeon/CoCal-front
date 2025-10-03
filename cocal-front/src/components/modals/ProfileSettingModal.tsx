@@ -19,6 +19,7 @@ interface UserContextType {
 }
 const API_ME_ENDPOINT = '/api/users/me';
 const API_LOGOUT_ENDPOINT = '/api/auth/logout';
+
 const initialUser: User = { id: null, email: null, name: null, password: null, profileImageUrl: null };
 const UserContext = createContext<UserContextType | undefined>(undefined);
 export const useUser = () => {
@@ -132,19 +133,40 @@ const NameEditModal: FC<NameEditModalProps> = ({ currentName, onSave, onCancel }
     return (
         <div className="flex flex-col items-center">
             <h2 className="text-2xl font-bold text-gray-800 mb-8">Edit Name</h2>
+
             <form onSubmit={handleSubmit} className="w-full space-y-6">
                 <div>
                     <label htmlFor="newName" className="block text-sm font-medium text-gray-700 mb-1">New Name</label>
-                    <input type="text" id="newName" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150" required />
+                    <input
+                        type="text"
+                        id="newName"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
+                        required
+                    />
                 </div>
+
                 <div className="flex flex-col space-y-3 pt-2">
-                    <button type="submit" className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-md">Save</button>
-                    <button type="button" onClick={onCancel} className="w-full py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                    <button
+                        type="submit"
+                        className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-md"
+                    >
+                        Save
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="w-full py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
+                    >
+                        Cancel
+                    </button>
                 </div>
             </form>
         </div>
     );
 };
+
 
 interface PasswordEditModalProps {
     onSave: (currentPassword: string, newPassword: string) => void;
@@ -221,12 +243,13 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
 
         if (!accessToken) {
             console.error("Access Token이 없어 요청을 보낼 수 없습니다. 다시 로그인해야 합니다.");
-            // alert("인증 정보가 만료되었습니다. 다시 로그인해주세요."); // alert 제거
+            alert("인증 정보가 만료되었습니다. 다시 로그인해주세요.");
             setIsEditingName(false);
             onClose();
             logout();
             return;
         }
+
     };
 
     const handlePasswordUpdate = async (currentPassword: string, newPassword: string) => {
