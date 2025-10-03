@@ -207,9 +207,10 @@ const EmptyState: FC<{ selectedCategory: ProjectCategory }> = ({ selectedCategor
 interface ProfileDropdownProps {
     user: typeof DUMMY_USER;
     onOpenSettings: () => void;
+    onLogout: () => void;
 }
 
-const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings }) => {
+const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLogout }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -246,10 +247,10 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings }) => 
         {
             label: 'Logout',
             icon: LogOut,
-            action: () => { console.log('Logout action'); },
+            action: onLogout,
             isDestructive: true
         },
-    ], [onOpenSettings]);
+    ], [onOpenSettings, onLogout]);
 
     return (
         <div className="relative z-50" ref={dropdownRef}>
@@ -309,7 +310,9 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings }) => 
     );
 };
 
+
 // --- Main Dashboard Page ---
+const API_LOGOUT_ENDPOINT = `${BASE_URL}/auth/logout`;
 const ProjectDashboardPage: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
     const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('All');
@@ -339,7 +342,29 @@ const ProjectDashboardPage: React.FC = () => {
     const handleOpenSettingsModal = () => setIsSettingsModalOpen(true);
     const handleCloseSettingsModal = () => setIsSettingsModalOpen(false);
 
-    return (
+    const handleLogout = async () => {
+        const refreshToken = localStorage.getItem('refreshToken');
+
+        try {
+            if (refreshToken) {
+                console.log('서버에 로그아웃 요청 중...');
+                await fetch(API_LOGOUT_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refreshToken }),
+                });
+            }
+        } catch (error) {
+            console.error("로그아웃 API 호출 실패 (클라이언트 정리 진행):", error);
+        } finally {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            alert("로그아웃되었습니다.");
+            window.location.href = '/';
+        }
+    };
+
+        return (
         <div className="min-h-screen bg-gray-50 font-sans">
 
             {/* 상단 통합 헤더 영역 */}
@@ -351,6 +376,7 @@ const ProjectDashboardPage: React.FC = () => {
                     <ProfileDropdown
                         user={DUMMY_USER}
                         onOpenSettings={handleOpenSettingsModal}
+                        onLogout={handleLogout}
                     />
                 </div>
             </header>
