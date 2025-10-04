@@ -1,6 +1,6 @@
 "use client";
 
-// [수정] 사용하지 않는 FC를 import 목록에서 제거합니다.
+
 import React, { useState, useEffect } from "react";
 import WeekView from "./Week";
 import DayView from "./Day";
