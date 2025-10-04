@@ -4,6 +4,7 @@
 export type CalendarEvent = {
     id: number;
     project_id: number;
+    url_id: number; // [추가]
     title: string;
     description: string | null;
     start_at: string; // DATETIME 값 (e.g., "2025-09-23T10:00:00")
@@ -12,28 +13,37 @@ export type CalendarEvent = {
     visibility: 'PRIVATE' | 'PUBLIC';
     author_id: number;
     location: string | null;
+    offset_minutes: number; // [추가]
     color: string;
     project_name?: string;
     todos?: EventTodo[];
 };
+
 // 이벤트 종속 할 일 타입 (event_todos 테이블)
 export type EventTodo = {
     id: number;
     event_id: number;
+    url_id: number; // [추가]
     title: string;
     description: string | null;
     status: 'IN_PROGRESS' | 'DONE';
+    offset_minutes: number; // [추가]
+    author_id: number | null; // [추가]
+    order_no: number; // [추가]
 };
+
 // 개인 할 일 타입 (private_todos 테이블)
 export type PrivateTodo = {
     id: number;
     project_id: number;
     owner_id: number;
+    url_id: number; // [추가]
     title: string;
     description: string | null;
     date: string | null; // DATETIME 값
     status: 'IN_PROGRESS' | 'DONE';
-
+    offset_minutes: number; // [추가]
+    order_no: number; // [추가]
 };
 
 // 날짜 메모 타입 (date_memos 테이블)
@@ -61,3 +71,4 @@ export type ProjectMember = {
     profileImageUrl: string | null;
     role: 'OWNER' | 'ADMIN' | 'MEMBER';
 };
+

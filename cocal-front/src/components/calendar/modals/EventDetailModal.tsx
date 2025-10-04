@@ -55,7 +55,8 @@ export function EventDetailModal({ event, onClose, onToggleTodo }: Props) {
             <div className="flex items-center"><span className="w-24 text-slate-500">Repeat</span><span>-</span></div>
             <div className="flex items-center"><span className="w-24 text-slate-500">Reminder</span><span>-</span></div>
             <div className="flex items-start"><span className="w-24 text-slate-500 pt-1">Memo</span><div className="flex-1 text-slate-800 bg-slate-50 p-2 rounded-md text-xs">메모 예시입니다. 이벤트와 관련된 상세 내용을 여기에 적을 수 있습니다.</div></div>
-            <div className="flex items-center"><span className="w-24 text-slate-500">URL</span><a href="#" className="text-blue-600 truncate">naver.com</a></div>
+            {/*<div className="flex items-center"><span className="w-24 text-slate-500">URL</span><a href="#" className="text-blue-600 truncate">naver.com</a></div>*/}
+
         </div>
     );
 
