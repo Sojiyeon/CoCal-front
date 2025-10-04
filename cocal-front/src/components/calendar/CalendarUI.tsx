@@ -1,6 +1,5 @@
 "use client";
 
-
 import React, { useState, useEffect } from "react";
 import WeekView from "./Week";
 import DayView from "./Day";
