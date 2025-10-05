@@ -42,19 +42,20 @@ const Login: React.FC = () => {
                 return;
             }
 
-            const { accessToken, refreshToken, user } = data;
+            const authData = data.data || data;
+            const { accessToken, refreshToken, user } = authData;
 
-            if (accessToken) {
+            if (typeof accessToken === 'string' && accessToken) {
                 localStorage.setItem('accessToken', accessToken);
 
-                if (refreshToken) {
-                    localStorage.setItem('refreshToken', refreshToken);
-                } else {
-                    console.warn('Refresh Token이 응답에 포함되어 있지 않습니다.');
-                }
+                    if (refreshToken) {
+                        localStorage.setItem('refreshToken', refreshToken);
+                    } else {
+                        console.warn('Refresh Token이 응답에 포함되어 있지 않습니다.');
+                    }
 
                 if (user && user.name && user.email) {
-                    const userProfile = { name: user.name, email: user.email };
+                    const userProfile = { profileImageUrl: user.profileImageUrl, name: user.name, email: user.email, password: user.password };
                     localStorage.setItem('userProfile', JSON.stringify(userProfile));
                     console.log('User profile saved from login response:', userProfile);
                 } else {
