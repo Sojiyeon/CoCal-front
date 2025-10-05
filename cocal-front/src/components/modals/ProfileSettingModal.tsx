@@ -47,7 +47,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             if (response.ok) {
                 const data = await response.json();
-                setUser(prev => ({ ...prev, name: data.name, id: data.id })); // 더미 ID 추가
+                setUser(prev => ({ ...prev, name: data.name, email: data.email, profileImageUrl: data.profileImageUrl, id: data.id }));
                 console.log('이름 수정 성공:', data);
             } else {
                 const errorData = await response.json();
