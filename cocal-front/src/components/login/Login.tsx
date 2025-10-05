@@ -19,6 +19,12 @@ const Login: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log("1. handleSubmit 함수 호출됨.");
+        if (!email || !password) {
+            console.log("2. 유효성 검사 실패로 중단됨.");
+            return;
+        }
+        console.log("3. API 요청 직전!");
         setIsLoading(true);
         setError('');
 
