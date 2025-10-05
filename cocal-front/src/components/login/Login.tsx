@@ -1,17 +1,19 @@
 "use client";
 import React, { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
+import { useRouter } from 'next/navigation';
 import Button from '../ui/Button';
 import Link from 'next/link';
 
 // 서버 API 경로
-const API_LOGIN_ENDPOINT = 'https://cocal-server.onrender.com/api/auth/login';
+const API_LOGIN_ENDPOINT = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`;
 
 const handleGoogleLogin = () => {
-    window.location.href = 'https://cocal-server.onrender.com/oauth2/authorization/google';
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/oauth2/authorization/google`;
 };
 
 const Login: React.FC = () => {
+    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -55,17 +57,14 @@ const Login: React.FC = () => {
                     }
 
                 if (user && user.name && user.email) {
-                    const userProfile = { profileImageUrl: user.profileImageUrl, name: user.name, email: user.email, password: user.password };
+                    const userProfile = { profileImageUrl: user.profileImageUrl, name: user.name, email: user.email };
                     localStorage.setItem('userProfile', JSON.stringify(userProfile));
                     console.log('User profile saved from login response:', userProfile);
                 } else {
                     console.warn('사용자 프로필 정보(user.name, user.email)가 응답에 없습니다.');
                 }
             }
-
-            // 로그인 후 대시보드로 리디렉션
-            window.location.href = '/dashboard';
-
+            router.push('/dashboard');
         } catch (err) {
             // 네트워크 에러나 JSON 파싱 실패 등
             setError('로그인 중 네트워크 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
