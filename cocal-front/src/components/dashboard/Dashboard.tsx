@@ -326,11 +326,14 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
 const API_LOGOUT_ENDPOINT = `${BASE_URL}/auth/logout`;
 const ProjectDashboardPage: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<CurrentUser>(DEFAULT_USER);
+    const [isLoadingUser, setIsLoadingUser] = useState(true);
     const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
     const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('All');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
     const fetchUserProfile = async (token: string) => {
+        setIsLoadingUser(true);
         try {
             console.log(`API 호출: ${API_ME_ENDPOINT}로 사용자 정보 요청`);
             const response = await fetch(API_ME_ENDPOINT, {
@@ -345,14 +348,13 @@ const ProjectDashboardPage: React.FC = () => {
                     email: data.email || DEFAULT_USER.email,
                     imageUrl: data.profileImageUrl || DEFAULT_USER.imageUrl // profileImageUrl 또는 imageUrl
                 };
+                setCurrentUser(userProfile);
                 console.log('서버에서 사용자 프로필 로드 성공:', userProfile);
                 localStorage.setItem('userProfile', JSON.stringify(userProfile));
             } else {
                 console.error('사용자 정보 로드 실패:', response.status);
-                // 401 Unauthorized 등 토큰 만료 시 로그인 페이지로 리디렉션
                 if (response.status === 401) {
                     console.log("토큰 만료/유효하지 않음. 자동 로그아웃 처리.");
-                    // 토큰 제거 후 로그인 페이지로
                     localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
                     window.location.href = '/';
@@ -360,35 +362,32 @@ const ProjectDashboardPage: React.FC = () => {
             }
         } catch (error) {
             console.error("사용자 정보 로드 네트워크 오류:", error);
+        } finally {
+            setIsLoadingUser(false);
         }
     };
-                useEffect(() => {
-        const profileString = localStorage.getItem('userProfile');
+
+    useEffect(() => {
         const accessToken = localStorage.getItem('accessToken');
         if (accessToken) {
             fetchUserProfile(accessToken);
         } else {
-            // 토큰이 없으면 리디렉션
-            console.log("Access Token이 없습니다. 로그인 페이지로 리디렉션합니다.");
-            // window.location.href = '/'; // 실제 앱에서는 이 코드를 활성화
-        }
-    if (profileString) {
-            try {
-                const profile = JSON.parse(profileString);
-
-                // 로드된 정보를 상태에 설정
-                setCurrentUser({
-                    id: profile.id || null,
-                    name: profile.name || 'User',
-                    email: profile.email || 'No Email',
-                    imageUrl: profile.imageUrl || DEFAULT_USER.imageUrl
-                });
-                console.log("로컬 저장소에서 사용자 프로필 로드 성공:", profile);
-            } catch (e) {
-                console.error("사용자 프로필 JSON 파싱 오류:", e);
-                // 파싱 오류 시 기본값 사용
-                setCurrentUser(DEFAULT_USER);
+            const profileString = localStorage.getItem('userProfile');
+            if (profileString) {
+                try {
+                    const profile = JSON.parse(profileString);
+                    // 로드된 정보를 상태에 설정
+                    setCurrentUser({
+                        id: profile.id || null,
+                        name: profile.name || 'User',
+                        email: profile.email || 'No Email',
+                        imageUrl: profile.imageUrl || DEFAULT_USER.imageUrl
+                    });
+                } catch (e) {
+                    console.error("사용자 프로필 JSON 파싱 오류:", e);
+                }
             }
+            setIsLoadingUser(false);
         }
     }, []);
 
@@ -440,15 +439,23 @@ const ProjectDashboardPage: React.FC = () => {
         }
     };
 
+    if (isLoadingUser) {
         return (
+            <div className="min-h-screen bg-gray-50 font-sans flex items-center justify-center">
+                <div className="flex flex-col items-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800"></div>
+                    <p className="mt-4 text-gray-700 font-medium">Loading user profile...</p>
+                </div>
+            </div>
+        );
+    }
+    return (
         <div className="min-h-screen bg-gray-50 font-sans">
-
             {/* 상단 통합 헤더 영역 */}
             <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 bg-white sticky top-0 z-10 shadow-sm">
                 <h1 className="text-2xl font-bold text-gray-800">My projects</h1>
 
-                <div className="flex items-center space-x-4">
-                    {/* 유저 프로필 */}
+                <div className="flex items-center space-x-4"> {/* 유저 프로필 */}
                     <ProfileDropdown
                         user={currentUser}
                         onOpenSettings={handleOpenSettingsModal}
