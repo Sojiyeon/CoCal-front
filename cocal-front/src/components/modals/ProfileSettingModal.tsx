@@ -84,15 +84,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (token) {
             fetchUserProfile(token);
         } else {
-            const DUMMY_ACCESS_TOKEN = 'your_dummy_valid_jwt_token_for_testing';
-            localStorage.setItem('accessToken', DUMMY_ACCESS_TOKEN); // 토큰 저장
-
-            setUser({
-                id: 123,
-                email: 'name123@gmail.com',
-                name: 'Name',
-                profileImageUrl: 'https://placehold.co/96x96/50bda1/ffffff?text=COLA'
-            });
             setIsLoading(false);
         }
     }, []);
