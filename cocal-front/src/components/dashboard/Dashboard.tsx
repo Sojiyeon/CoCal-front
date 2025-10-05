@@ -2,14 +2,16 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo } from 'react';
 import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
-import CreateProjectModal, { ProjectFormData } from '../../components/modals/CreateProjectModal';
-import ProfileSettingsModal from '../../components/modals/ProfileSettingModal';
+import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
+import ProfileSettingsModal from '@/components/modals/ProfileSettingModal';
 
-const API_ME_ENDPOINT= `${process.env.NEXT_PUBLIC_API_URL}/api/users/me`;
-    const API_ENDPOINTS = {
-    UPDATE_USER_NAME: `${process.env.NEXT_PUBLIC_API_URL}/api/users/edit-name`,
-    UPDATE_USER_PASSWORD: `${process.env.NEXT_PUBLIC_API_URL}/api/users/edit-pwd`,
-    UPDATE_USER_PHOTO: `${process.env.NEXT_PUBLIC_API_URL}/api/users/profile-image`,
+const API_BASE_URL = 'https://cocal-server.onrender.com';
+
+const API_ME_ENDPOINT= `${API_BASE_URL}/api/users/me`;
+const API_ENDPOINTS = {
+    UPDATE_USER_NAME: `${API_BASE_URL}/api/users/edit-name`,
+    UPDATE_USER_PASSWORD: `${API_BASE_URL}/api/users/edit-pwd`,
+    UPDATE_USER_PHOTO: `${API_BASE_URL}/api/users/profile-image`,
 };
 
 // --- DUMMY DATA & TYPES ---
@@ -25,13 +27,7 @@ interface Project {
     colorTags: string[]; // 색상 태그
 }
 
-// 임시 유저 정보
-const DUMMY_USER = {
-    name: 'Name',
-    email: 'name123@gmail.com',
-    imageUrl: 'https://placehold.co/96x96/50bda1/ffffff?text=COLA', // 임시 이미지
-};
-
+// 사용자 정보의 기본값
 const DEFAULT_USER: CurrentUser = {
     id: null,
     name: 'Guest',
@@ -54,10 +50,11 @@ interface ExpectedApiEndpoints {
 interface ProfileSettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    currentUser: typeof DUMMY_USER;
+    currentUser: CurrentUser;
     apiEndpoints: ExpectedApiEndpoints;
 }
 
+// ProfileSettingsModal의 prop 타입 오류 방지를 위해 임시 타입 정의 사용
 const ProfileSettingsModalTyped: FC<ProfileSettingsModalProps> = ProfileSettingsModal;
 
 // 초기 더미 프로젝트 데이터
@@ -82,7 +79,7 @@ const categories: ProjectCategory[] = ['All', 'In Progress', 'Completed'];
 const ProjectCategoryFilter: FC<ProjectCategoryFilterProps> = ({
                                                                    selectedCategory,
                                                                    onSelectCategory,
-                                                                   onOpenCreateModal // 추가된 prop
+                                                                   onOpenCreateModal
                                                                }) => {
     return (
         <div className="flex justify-between items-center mb-8">
@@ -215,7 +212,7 @@ const EmptyState: FC<{ selectedCategory: ProjectCategory }> = ({ selectedCategor
 );
 
 interface ProfileDropdownProps {
-    user: typeof DUMMY_USER;
+    user: CurrentUser;
     onOpenSettings: () => void;
     onLogout: () => void;
 }
@@ -269,12 +266,11 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
                 className="flex items-center space-x-2 cursor-pointer p-1"
                 onClick={() => setIsOpen(!isOpen)}
             >
-                {/* ... (이미지 및 이름/이메일 구조 유지) ... */}
                 <img
                     src={user.imageUrl.replace('96x96', '40x40')}
                     alt={user.name}
                     className="w-10 h-10 rounded-full object-cover shadow-inner ring-1 ring-gray-200"
-                    onError={(e) => { e.currentTarget.src = 'https://placehold.co/40x40/cccccc/ffffff?text=COLA' }}
+                    onError={(e) => { e.currentTarget.src = 'https://placehold.co/40x40/50bda1/ffffff?text=COLA' }}
                 />
                 <div className="flex flex-col text-xs hidden sm:block">
                     <span className="font-semibold text-gray-900 block">
@@ -322,7 +318,7 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
 
 
 // --- Main Dashboard Page ---
-const API_LOGOUT_ENDPOINT = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`;
+const API_LOGOUT_ENDPOINT = `${API_BASE_URL}/api/auth/logout`;
 const ProjectDashboardPage: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<CurrentUser>(DEFAULT_USER);
     const [isLoadingUser, setIsLoadingUser] = useState(true);
@@ -340,12 +336,14 @@ const ProjectDashboardPage: React.FC = () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
-                const data = await response.json();
+                const result = await response.json();
+                const userData = result.data;
+
                 const userProfile: CurrentUser = {
-                    id: data.id || null,
-                    name: data.name || DEFAULT_USER.name,
-                    email: data.email || DEFAULT_USER.email,
-                    imageUrl: data.profileImageUrl || DEFAULT_USER.imageUrl // profileImageUrl 또는 imageUrl
+                    id: userData.id || null,
+                    name: userData.name || DEFAULT_USER.name,
+                    email: userData.email || DEFAULT_USER.email,
+                    imageUrl: userData.profileImageUrl || DEFAULT_USER.imageUrl
                 };
                 setCurrentUser(userProfile);
                 console.log('서버에서 사용자 프로필 로드 성공:', userProfile);
@@ -356,7 +354,7 @@ const ProjectDashboardPage: React.FC = () => {
                     console.log("토큰 만료/유효하지 않음. 자동 로그아웃 처리.");
                     localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
-                    window.location.href = '/';
+                    // window.location.href = '/'; // 실제 앱에서는 리디렉션
                 }
             }
         } catch (error) {
@@ -433,8 +431,9 @@ const ProjectDashboardPage: React.FC = () => {
             localStorage.removeItem('userProfile');
 
             setCurrentUser(DEFAULT_USER);
-            alert("로그아웃되었습니다.");
-            window.location.href = '/';
+            // alert("로그아웃되었습니다."); // alert 대신 console.log 사용
+            console.log("로그아웃되었습니다.");
+            // window.location.href = '/';
         }
     };
 
