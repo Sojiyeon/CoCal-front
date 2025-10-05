@@ -3,7 +3,7 @@
 import React, { FC, useState, createContext, useContext, useEffect, useRef } from 'react';
 import { X, ChevronRight } from 'lucide-react';
 
-// UserProvider 관련 타입 및 Context (Dashboard 파일에서 사용하지 않으므로 그대로 유지)
+// --- Global Type Definitions ---
 interface User {
     id: number | null;
     email: string | null;
@@ -18,12 +18,13 @@ interface UserContextType {
     fetchUserProfile: (token: string) => Promise<void>;
     logout: () => void;
 }
-
-const API_ME_ENDPOINT = '/api/users/me';
-const API_LOGOUT_ENDPOINT = '/api/auth/logout';
+const API = 'https://cocal-server.onrender.com';
+const API_ME_ENDPOINT = `${API}/api/users/me`;
+const API_LOGOUT_ENDPOINT = `${API}/api/auth/logout`;
 const initialUser: User = { id: null, email: null, name: null, profileImageUrl: null };
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+// --- User Context Hooks & Provider ---
 const useUser = () => {
     const context = useContext(UserContext);
     if (context === undefined) {
@@ -46,15 +47,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
 
             if (response.ok) {
-                const data = await response.json();
-                setUser(prev => ({ ...prev, name: data.name, email: data.email, profileImageUrl: data.profileImageUrl, id: data.id }));
-                console.log('이름 수정 성공:', data);
+                const result = await response.json();
+                const data = result.data;
+                setUser({
+                    id: data.id || null,
+                    email: data.email || null,
+                    name: data.name || null,
+                    profileImageUrl: data.profileImageUrl || null
+                });
+                console.log('프로필 정보 불러오기 성공:', data);
             } else {
                 const errorData = await response.json();
-                alert(`이름 수정 실패: ${errorData.message || response.statusText}`); // alert 제거
+                console.error(`프로필 로드 실패: ${errorData.message || response.statusText}`);
             }
         } catch (error) {
-            alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요."); // alert 제거
+            console.error("네트워크 오류가 발생했습니다:", error);
         } finally {
             setIsLoading(false); // 로딩 종료
         }
@@ -94,6 +101,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         </UserContext.Provider>
     );
 };
+// --- END User Context ---
+
 
 interface ApiEndpoints {
     UPDATE_USER_NAME: string;
@@ -119,7 +128,7 @@ const InputField: FC<InputFieldProps> = ({ label, value, onClick, editable = fal
         <div className="text-sm font-medium text-gray-500 w-1/4">{label}</div>
         <div className="flex items-center space-x-2 w-3/4 justify-end" onClick={onClick}>
             <span className={`text-sm text-gray-900 ${editable ? 'font-semibold' : ''}`}>
-                {value}
+                {value || '정보 없음'}
             </span>
             {editable && <ChevronRight className="w-4 h-4 text-gray-400" />}
         </div>
@@ -152,9 +161,9 @@ const NameEditModal: FC<NameEditModalProps> = ({ currentName, onSave, onCancel }
                 <div>
                     <label htmlFor="newName" className="block text-sm font-medium text-gray-700 mb-1">New Name</label>
                     <input type="text" id="newName" value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
-                        required
+                           onChange={(e) => setNewName(e.target.value)}
+                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
+                           required
                     />
                 </div>
 
@@ -229,6 +238,7 @@ const PasswordEditModal: FC<PasswordEditModalProps> = ({ onSave, onCancel }) => 
     );
 };
 
+// --- Main Modal Component ---
 const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, apiEndpoints }) => {
     const { user, setUser, logout, isLoading } = useUser();
     const [isEditingName, setIsEditingName] = useState(false);
@@ -263,7 +273,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
             return;
         }
         const formData = new FormData();
-        formData.append('profileImageUrl', file);
+        formData.append('profileImage', file);
 
         try {
             console.log(`API 호출: ${apiEndpoints.UPDATE_USER_PHOTO}로 파일 [${file.name}] 전송`);
@@ -272,15 +282,17 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
+                    // FormData를 사용할 때는 Content-Type을 설정하지 않음
                 },
                 body: formData,
             });
             if (response.ok) {
-                const data = await response.json();
+                const result = await response.json();
+                const data = result.data || result;
 
                 setUser(prev => ({
                     ...prev,
-                    profileImageUrl: data.profileImageUrl || data.imageUrl
+                    profileImageUrl: data.profileImageUrl || data.imageUrl || prev.profileImageUrl
                 }));
                 console.log('프로필 사진 업데이트 성공:', data);
                 alert('프로필 사진이 성공적으로 변경되었습니다.');
@@ -313,7 +325,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
     const handleNameUpdate = async (newName: string) => {
         const accessToken = localStorage.getItem('accessToken');
         if (!accessToken) {
-            alert("인증 정보가 만료되었습니다. 다시 로그인해주세요."); // alert 제거
+            alert("인증 정보가 만료되었습니다. 다시 로그인해주세요.");
             setIsEditingName(false);
             onClose();
             logout();
@@ -331,17 +343,19 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
             });
 
             if (response.ok) {
-                const data = await response.json(); // 서버에서 업데이트된 정보를 받을 수 있음
+                const result = await response.json();
+                const data = result.data;
                 setUser(prev => ({ ...prev, name: data.name }));
                 console.log('이름 수정 성공:', data);
+                alert("이름이 성공적으로 변경되었습니다.");
             } else {
                 const errorData = await response.json();
-                alert(`이름 수정 실패: ${errorData.message || response.statusText}`); // alert 제거
+                alert(`이름 수정 실패: ${errorData.message || response.statusText}`);
             }
 
         } catch (error) {
             console.error("네트워크 오류 발생:", error);
-            // alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요."); // alert 제거
+            alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
         } finally {
             setIsEditingName(false); // 수정 모달 닫기
         }
@@ -385,8 +399,8 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
     };
 
     const handleDeleteAccount = () => {
-        console.log('계정 삭제 요청');
         // 실제로는 사용자에게 경고 모달을 띄우고 삭제를 진행해야 합니다.
+        alert('계정 삭제 기능은 현재 구현되지 않았습니다.');
     };
 
     return (
@@ -438,7 +452,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                             {/* 이름 수정 필드 */}
                             <InputField
                                 label="Name"
-                                value={user.name || '정보 없음'}
+                                value={user.name || ''}
                                 editable={true}
                                 onClick={() => setIsEditingName(true)}
                             />
@@ -446,7 +460,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                             {/* 이메일 (읽기 전용) */}
                             <InputField
                                 label="Email"
-                                value={user.email || '정보 없음'}
+                                value={user.email || ''}
                             />
 
                             {/* 비밀번호 수정 필드 */}
