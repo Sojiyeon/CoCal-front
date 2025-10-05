@@ -21,6 +21,7 @@ interface UserContextType {
 const API = 'https://cocal-server.onrender.com';
 const API_ME_ENDPOINT = `${API}/api/users/me`;
 const API_LOGOUT_ENDPOINT = `${API}/api/auth/logout`;
+const API_DELETE_ENDPOINTS = `${API}/api/users/delete`;
 const initialUser: User = { id: null, email: null, name: null, profileImageUrl: null };
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
@@ -398,9 +399,35 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
         }
     };
 
-    const handleDeleteAccount = () => {
-        // 실제로는 사용자에게 경고 모달을 띄우고 삭제를 진행해야 합니다.
-        alert('계정 삭제 기능은 현재 구현되지 않았습니다.');
+    const handleDeleteAccount = async () => {
+        const confirmDelete = window.confirm("정말 계정을 삭제하시겠습니까?");
+        if (!confirmDelete) {
+            console.log("계정 삭제가 취소되었습니다.");
+            return;
+        }
+
+        console.log(`계정 삭제 API 호출: ${API_DELETE_ENDPOINTS}`);
+        const accessToken = localStorage.getItem('accessToken');
+
+        if (!accessToken) {
+            console.error("AccessToken이 없어 계정 삭제를 진행할 수 없습니다.");
+            return;
+        }
+        try {
+            const response = await fetch(API_DELETE_ENDPOINTS, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            if (response.ok) {
+                console.log("계정이 성공적으로 삭제되었습니다.");
+            } else {
+                const errorData = await response.json().catch(() => ({ message: '삭제 실패' }));
+                console.error('계정 삭제 실패:', response.status, errorData.message);
+            }
+        } catch (error) {
+            console.error("계정 삭제 네트워크 오류:", error);
+        } finally {
+            window.location.href = '/'; }
     };
 
     return (
