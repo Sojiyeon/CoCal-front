@@ -5,15 +5,12 @@ import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '../../components/modals/CreateProjectModal';
 import ProfileSettingsModal from '../../components/modals/ProfileSettingModal';
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-const BASE_URL = isDevelopment
-    ? 'http://localhost:3000/api'
-    : 'https://cocal-server.onrender.com/api';
-
-const API_ENDPOINTS = {
+const BASE_URL = 'https://cocal-server.onrender.com/api';
+const API_ME_ENDPOINT= `${BASE_URL}/users/me`;
+    const API_ENDPOINTS = {
     UPDATE_USER_NAME: `${BASE_URL}/users/edit-name`,
     UPDATE_USER_PASSWORD: `${BASE_URL}/users/edit-pwd`,
-    UPDATE_USER_PHOTO: `${BASE_URL}/users/edit-photo`,
+    UPDATE_USER_PHOTO: `${BASE_URL}/users/profile-image`,
 };
 
 // --- DUMMY DATA & TYPES ---
@@ -35,6 +32,20 @@ const DUMMY_USER = {
     email: 'name123@gmail.com',
     imageUrl: 'https://placehold.co/96x96/50bda1/ffffff?text=COLA', // 임시 이미지
 };
+
+const DEFAULT_USER: CurrentUser = {
+    id: null,
+    name: 'Guest',
+    email: 'guest@example.com',
+    imageUrl: 'https://placehold.co/96x96/50bda1/ffffff?text=COLA', // 임시 이미지
+};
+
+interface CurrentUser {
+    id: number | null;
+    name: string;
+    email: string;
+    imageUrl: string; // 프로필 이미지 URL
+}
 
 interface ExpectedApiEndpoints {
     UPDATE_USER_NAME: string;
@@ -314,10 +325,72 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
 // --- Main Dashboard Page ---
 const API_LOGOUT_ENDPOINT = `${BASE_URL}/auth/logout`;
 const ProjectDashboardPage: React.FC = () => {
+    const [currentUser, setCurrentUser] = useState<CurrentUser>(DEFAULT_USER);
     const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
     const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('All');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    const fetchUserProfile = async (token: string) => {
+        try {
+            console.log(`API 호출: ${API_ME_ENDPOINT}로 사용자 정보 요청`);
+            const response = await fetch(API_ME_ENDPOINT, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                const userProfile: CurrentUser = {
+                    id: data.id || null,
+                    name: data.name || DEFAULT_USER.name,
+                    email: data.email || DEFAULT_USER.email,
+                    imageUrl: data.profileImageUrl || DEFAULT_USER.imageUrl // profileImageUrl 또는 imageUrl
+                };
+                console.log('서버에서 사용자 프로필 로드 성공:', userProfile);
+                localStorage.setItem('userProfile', JSON.stringify(userProfile));
+            } else {
+                console.error('사용자 정보 로드 실패:', response.status);
+                // 401 Unauthorized 등 토큰 만료 시 로그인 페이지로 리디렉션
+                if (response.status === 401) {
+                    console.log("토큰 만료/유효하지 않음. 자동 로그아웃 처리.");
+                    // 토큰 제거 후 로그인 페이지로
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                    window.location.href = '/';
+                }
+            }
+        } catch (error) {
+            console.error("사용자 정보 로드 네트워크 오류:", error);
+        }
+    };
+                useEffect(() => {
+        const profileString = localStorage.getItem('userProfile');
+        const accessToken = localStorage.getItem('accessToken');
+        if (accessToken) {
+            fetchUserProfile(accessToken);
+        } else {
+            // 토큰이 없으면 리디렉션
+            console.log("Access Token이 없습니다. 로그인 페이지로 리디렉션합니다.");
+            // window.location.href = '/'; // 실제 앱에서는 이 코드를 활성화
+        }
+    if (profileString) {
+            try {
+                const profile = JSON.parse(profileString);
+
+                // 로드된 정보를 상태에 설정
+                setCurrentUser({
+                    id: profile.id || null,
+                    name: profile.name || 'User',
+                    email: profile.email || 'No Email',
+                    imageUrl: profile.imageUrl || DEFAULT_USER.imageUrl
+                });
+                console.log("로컬 저장소에서 사용자 프로필 로드 성공:", profile);
+            } catch (e) {
+                console.error("사용자 프로필 JSON 파싱 오류:", e);
+                // 파싱 오류 시 기본값 사용
+                setCurrentUser(DEFAULT_USER);
+            }
+        }
+    }, []);
 
     // 프로젝트 생성 핸들러
     const handleCreateProject = (data: ProjectFormData) => {
@@ -359,6 +432,9 @@ const ProjectDashboardPage: React.FC = () => {
         } finally {
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
+            localStorage.removeItem('userProfile');
+
+            setCurrentUser(DEFAULT_USER);
             alert("로그아웃되었습니다.");
             window.location.href = '/';
         }
@@ -374,7 +450,7 @@ const ProjectDashboardPage: React.FC = () => {
                 <div className="flex items-center space-x-4">
                     {/* 유저 프로필 */}
                     <ProfileDropdown
-                        user={DUMMY_USER}
+                        user={currentUser}
                         onOpenSettings={handleOpenSettingsModal}
                         onLogout={handleLogout}
                     />
@@ -412,7 +488,7 @@ const ProjectDashboardPage: React.FC = () => {
             <ProfileSettingsModalTyped
                 isOpen={isSettingsModalOpen}
                 onClose={handleCloseSettingsModal}
-                currentUser={DUMMY_USER}
+                currentUser={currentUser}
                 apiEndpoints={API_ENDPOINTS}
             />
         </div>
