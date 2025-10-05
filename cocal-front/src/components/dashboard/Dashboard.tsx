@@ -32,7 +32,7 @@ const DEFAULT_USER: CurrentUser = {
     id: null,
     name: 'Guest',
     email: 'guest@example.com',
-    imageUrl: 'https://placehold.co/96x96/50bda1/ffffff?text=COLA', // 임시 이미지
+    imageUrl: 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=U', // 임시 이미지
 };
 
 interface CurrentUser {
@@ -270,7 +270,7 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
                     src={user.imageUrl.replace('96x96', '40x40')}
                     alt={user.name}
                     className="w-10 h-10 rounded-full object-cover shadow-inner ring-1 ring-gray-200"
-                    onError={(e) => { e.currentTarget.src = 'https://placehold.co/40x40/50bda1/ffffff?text=COLA' }}
+                    onError={(e) => { e.currentTarget.src = 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User' }}
                 />
                 <div className="flex flex-col text-xs hidden sm:block">
                     <span className="font-semibold text-gray-900 block">
@@ -433,7 +433,7 @@ const ProjectDashboardPage: React.FC = () => {
             setCurrentUser(DEFAULT_USER);
             // alert("로그아웃되었습니다."); // alert 대신 console.log 사용
             console.log("로그아웃되었습니다.");
-            // window.location.href = '/';
+            window.location.href = '/';
         }
     };
 
