@@ -7,7 +7,6 @@ import Link from 'next/link';
 
 // 서버 API 경로
 const API_LOGIN_ENDPOINT = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`;
-
 const handleGoogleLogin = () => {
     window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/oauth2/authorization/google`;
 };

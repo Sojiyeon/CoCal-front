@@ -5,12 +5,11 @@ import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '../../components/modals/CreateProjectModal';
 import ProfileSettingsModal from '../../components/modals/ProfileSettingModal';
 
-const BASE_URL = 'https://cocal-server.onrender.com/api';
-const API_ME_ENDPOINT= `${BASE_URL}/users/me`;
+const API_ME_ENDPOINT= `${process.env.NEXT_PUBLIC_API_URL}/api/users/me`;
     const API_ENDPOINTS = {
-    UPDATE_USER_NAME: `${BASE_URL}/users/edit-name`,
-    UPDATE_USER_PASSWORD: `${BASE_URL}/users/edit-pwd`,
-    UPDATE_USER_PHOTO: `${BASE_URL}/users/profile-image`,
+    UPDATE_USER_NAME: `${process.env.NEXT_PUBLIC_API_URL}/api/users/edit-name`,
+    UPDATE_USER_PASSWORD: `${process.env.NEXT_PUBLIC_API_URL}/api/users/edit-pwd`,
+    UPDATE_USER_PHOTO: `${process.env.NEXT_PUBLIC_API_URL}/api/users/profile-image`,
 };
 
 // --- DUMMY DATA & TYPES ---
@@ -323,7 +322,7 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
 
 
 // --- Main Dashboard Page ---
-const API_LOGOUT_ENDPOINT = `${BASE_URL}/auth/logout`;
+const API_LOGOUT_ENDPOINT = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`;
 const ProjectDashboardPage: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<CurrentUser>(DEFAULT_USER);
     const [isLoadingUser, setIsLoadingUser] = useState(true);
