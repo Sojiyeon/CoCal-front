@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import Button from '../ui/Button';
 import Link from 'next/link';
 
+const API = 'https://cocal-server.onrender.com';
 // 서버 API 경로
-const API_LOGIN_ENDPOINT = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`;
+const API_LOGIN_ENDPOINT = `${API}/api/auth/login`;
 const handleGoogleLogin = () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/oauth2/authorization/google`;
+    window.location.href = `${API}/oauth2/authorization/google`;
 };
 
 const Login: React.FC = () => {
