@@ -9,6 +9,7 @@ import { EventDetailModal } from "./modals/EventDetailModal";
 import ProfileDropdown from "./ProfileDropdown";
 import ProfileSettingsModal from "./modals/ProfileSettingModal";
 
+import { useUser } from "@/contexts/UserContext";
 import { CalendarEvent, EventTodo } from "./types";
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
 import { sampleEvents } from "./sampleData";
@@ -24,23 +25,17 @@ interface SidebarTodo extends EventTodo {
 
 const today = new Date();
 
-const DUMMY_USER = {
-    name: 'Name',
-    email: 'name123@gmail.com',
-    imageUrl: 'https://placehold.co/96x96/50bda1/ffffff?text=COLA',
-};
-
-const isDevelopment = process.env.NODE_ENV === 'development';
-const BASE_URL = isDevelopment ? 'http://localhost:3000/api' : 'https://cocal-server.onrender.com/api';
+// [수정] isDevelopment 상수를 제거하고 BASE_URL을 직접 할당합니다.
+const BASE_URL = 'https://cocal-server.onrender.com/api';
 const API_ENDPOINTS = {
     UPDATE_USER_NAME: `${BASE_URL}/users/edit-name`,
     UPDATE_USER_PASSWORD: `${BASE_URL}/users/edit-pwd`,
-    UPDATE_USER_PHOTO: `${BASE_URL}/users/edit-photo`,
+    UPDATE_USER_PHOTO: `${BASE_URL}/users/profile-image`,
 };
-const API_LOGOUT_ENDPOINT = `${BASE_URL}/auth/logout`;
-
 
 export default function CalendarUI() {
+    const { user, logout, isLoading: isUserLoading } = useUser();
+
     const [viewYear, setViewYear] = useState(today.getFullYear());
     const [viewMonth, setViewMonth] = useState(today.getMonth());
     const [miniYear, setMiniYear] = useState(today.getFullYear());
@@ -93,44 +88,11 @@ export default function CalendarUI() {
     const handleOpenSettingsModal = () => setIsSettingsModalOpen(true);
     const handleCloseSettingsModal = () => setIsSettingsModalOpen(false);
 
-    const handleLogout = async () => {
-        const refreshToken = localStorage.getItem('refreshToken');
-        try {
-            if (refreshToken) {
-                console.log('Requesting logout from server...');
-                await fetch(API_LOGOUT_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ refreshToken }),
-                });
-            }
-        } catch (error) {
-            console.error("Logout API call failed, proceeding with client cleanup:", error);
-        } finally {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            alert("You have been logged out.");
-            window.location.href = '/';
-        }
-    };
-
-    // [추가] 프로필 정보를 다시 불러오는 함수입니다.
-    const refetchProfile = () => {
-        console.log("Refetching user profile...");
-        // 실제 앱에서는 이 곳에서 사용자 정보를 API로 다시 요청하여 상태를 업데이트합니다.
-        // 예: fetchUserProfile().then(userData => setCurrentUser(userData));
-        alert("Profile would be refetched here.");
-    };
-
     function prevMiniMonth() {
-        if (miniMonth === 0) {
-            setMiniMonth(11); setMiniYear(y => y - 1);
-        } else setMiniMonth(m => m - 1);
+        if (miniMonth === 0) { setMiniMonth(11); setMiniYear(y => y - 1); } else setMiniMonth(m => m - 1);
     }
     function nextMiniMonth() {
-        if (miniMonth === 11) {
-            setMiniMonth(0); setMiniYear(y => y + 1);
-        } else setMiniMonth(m => m + 1);
+        if (miniMonth === 11) { setMiniMonth(0); setMiniYear(y => y + 1); } else setMiniMonth(m => m + 1);
     }
     function prevMonth() {
         const newMonth = viewMonth === 0 ? 11 : viewMonth - 1;
@@ -157,11 +119,21 @@ export default function CalendarUI() {
                     </h1>
                     <div className="w-2 h-2 rounded-full bg-emerald-400 ml-2" />
                 </div>
-                <ProfileDropdown
-                    user={DUMMY_USER}
-                    onOpenSettings={handleOpenSettingsModal}
-                    onLogout={handleLogout}
-                />
+                {isUserLoading ? (
+                    <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
+                ) : user && user.id ? (
+                    <ProfileDropdown
+                        user={{
+                            name: user.name || 'User',
+                            email: user.email || 'No email',
+                            imageUrl: user.profileImageUrl || 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User'
+                        }}
+                        onOpenSettings={handleOpenSettingsModal}
+                        onLogout={logout}
+                    />
+                ) : (
+                    <div>Login Required</div>
+                )}
             </div>
 
             <div className="flex flex-1 overflow-hidden">
@@ -206,10 +178,7 @@ export default function CalendarUI() {
             <ProfileSettingsModal
                 isOpen={isSettingsModalOpen}
                 onClose={handleCloseSettingsModal}
-                currentUser={DUMMY_USER}
                 apiEndpoints={API_ENDPOINTS}
-                // [수정] 정의된 refetchProfile 함수를 prop으로 전달합니다.
-                refetchProfile={refetchProfile}
             />
         </div>
     );
