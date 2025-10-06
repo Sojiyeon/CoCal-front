@@ -1,14 +1,24 @@
 "use client";
-import React, { useState } from "react";
-import { TaskStats } from "./types";
 
-export default function TaskProgress() {
-    const [stats] = useState<TaskStats>({
-        completed: 0,
-        todo: 0,
-        all: 0,
-        percent: 0,
-    });
+import React, { useMemo } from "react";
+// `EventTodo` 타입을 사용하여 props의 형태를 정의합니다.
+import { EventTodo } from "./types";
+
+// 컴포넌트가 받을 props의 타입을 정의합니다.
+interface TaskProgressProps {
+    todos: EventTodo[];
+}
+
+export default function TaskProgress({ todos }: TaskProgressProps) {
+    // todos prop이 변경될 때만 통계를 다시 계산하도록 useMemo를 사용합니다.
+    const stats = useMemo(() => {
+        const all = todos.length;
+        const completed = todos.filter(t => t.status === 'DONE').length;
+        const todo = all - completed;
+        const percent = all > 0 ? Math.round((completed / all) * 100) : 0;
+
+        return { completed, todo, all, percent };
+    }, [todos]); // todos 배열이 바뀔 때만 이 함수가 다시 실행됩니다.
 
     return (
         <div className="p-6 max-w-md mx-auto">

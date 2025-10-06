@@ -95,7 +95,6 @@ export default function CalendarUI() {
 
     const handleLogout = async () => {
         const refreshToken = localStorage.getItem('refreshToken');
-
         try {
             if (refreshToken) {
                 console.log('Requesting logout from server...');
@@ -113,6 +112,14 @@ export default function CalendarUI() {
             alert("You have been logged out.");
             window.location.href = '/';
         }
+    };
+
+    // [추가] 프로필 정보를 다시 불러오는 함수입니다.
+    const refetchProfile = () => {
+        console.log("Refetching user profile...");
+        // 실제 앱에서는 이 곳에서 사용자 정보를 API로 다시 요청하여 상태를 업데이트합니다.
+        // 예: fetchUserProfile().then(userData => setCurrentUser(userData));
+        alert("Profile would be refetched here.");
     };
 
     function prevMiniMonth() {
@@ -170,7 +177,7 @@ export default function CalendarUI() {
                         }))}</div>
                     </div>
                     <div className="mb-6"><h3 className="text-sm font-medium mb-2">To do</h3><div className="space-y-3 text-sm">{sidebarTodos.length > 0 ? (sidebarTodos.map(todo => (<div key={todo.id} className={`flex items-center gap-3 ${todo.status === 'DONE' ? 'opacity-50' : ''}`}><div className={`w-2 h-7 rounded ${todo.parentEventColor.startsWith('bg-') ? todo.parentEventColor : ''}`} style={{ backgroundColor: !todo.parentEventColor.startsWith('bg-') ? todo.parentEventColor : undefined }}></div><div className="flex-1"><div className={`font-medium ${todo.status === 'DONE' ? 'line-through text-slate-400' : ''}`}>{todo.title}</div><div className="text-xs text-slate-400">{todo.parentEventTitle}</div></div><button onClick={() => handleToggleTodoStatus(todo.id)} className="w-5 h-5 border-2 rounded-full flex items-center justify-center cursor-pointer">{todo.status === 'DONE' && <div className="w-2.5 h-2.5 bg-slate-400 rounded-full"></div>}</button></div>))) : (<p className="text-xs text-slate-400 text-center py-4">No to-dos for the selected date.</p>)}</div></div>
-                    <TaskProgress />
+                    <TaskProgress todos={sidebarTodos} />
                 </aside>
 
                 <main className="flex-1 p-6 overflow-auto">
@@ -201,6 +208,8 @@ export default function CalendarUI() {
                 onClose={handleCloseSettingsModal}
                 currentUser={DUMMY_USER}
                 apiEndpoints={API_ENDPOINTS}
+                // [수정] 정의된 refetchProfile 함수를 prop으로 전달합니다.
+                refetchProfile={refetchProfile}
             />
         </div>
     );
