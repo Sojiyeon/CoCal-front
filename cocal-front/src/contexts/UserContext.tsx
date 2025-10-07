@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FC, useState, createContext, useContext, useEffect, ReactNode } from 'react';
+import React, { FC, useState, createContext, useContext, useEffect, ReactNode, useCallback } from 'react';
 
 // --- 전역 타입 정의 ---
 interface User {
@@ -34,12 +34,12 @@ export const useUser = () => {
     return context;
 };
 
-// UserProvider 컴포넌트
 export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User>(initialUser);
     const [isLoading, setIsLoading] = useState(true);
 
-    const logout = async () => {
+    // [수정] logout 함수를 useCallback으로 감싸서 의존성 배열에 안전하게 사용합니다.
+    const logout = useCallback(async () => {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
             try {
@@ -48,7 +48,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ refreshToken }),
                 });
-            } catch (error) {
+            } catch (_error) { // 미사용 변수 경고 해결
                 // 에러 무시, 클라이언트 측 정리 계속 진행
             }
         }
@@ -57,9 +57,10 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
         localStorage.removeItem('userProfile');
         setUser(initialUser);
         window.location.href = '/'; // 로그인 페이지로 리디렉션
-    };
+    }, []);
 
-    const fetchUserProfile = async (token: string) => {
+    // [수정] fetchUserProfile 함수를 useCallback으로 감싸서 의존성 배열에 안전하게 사용합니다.
+    const fetchUserProfile = useCallback(async (token: string) => {
         setIsLoading(true);
         try {
             const response = await fetch(API_ME_ENDPOINT, {
@@ -77,30 +78,29 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
                     profileImageUrl: data.profileImageUrl || null
                 };
                 setUser(profile);
-                // localStorage에도 최신 정보 저장
                 localStorage.setItem('userProfile', JSON.stringify(profile));
-                console.log('프로필 정보 불러오기 성공:', data);
             } else {
-                const errorData = await response.json();
-                console.error(`프로필 로드 실패: ${errorData.message || response.statusText}`);
+                console.error(`프로필 로드 실패`);
                 await logout();
             }
-        } catch (error) {
-            console.error("네트워크 오류가 발생했습니다:", error);
+        } catch (_error) { // 미사용 변수 경고 해결
+            console.error("네트워크 오류가 발생했습니다:", _error);
             await logout();
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [logout]);
 
+    // [수정] useEffect 의존성 배열에 fetchUserProfile을 추가하여 경고를 해결합니다.
     useEffect(() => {
         const token = localStorage.getItem('accessToken');
         if (token) {
+            // "Promise returned from fetchUserProfile is ignored" 경고 해결
             void fetchUserProfile(token);
         } else {
-            setIsLoading(false); // 토큰이 없으면 로딩 종료
+            setIsLoading(false);
         }
-    }, []);
+    }, [fetchUserProfile]);
 
     return (
         <UserContext.Provider value={{ user, setUser, isLoading, fetchUserProfile, logout }}>

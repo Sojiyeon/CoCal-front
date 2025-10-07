@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+// [추가] Next.js의 Image 컴포넌트를 import 합니다.
+import Image from 'next/image';
 // api 유틸리티 import는 유지하되, 실제 호출은 주석 처리합니다.
-//import { api } from "../utils/api";
+// import { api } from "../../../utils/api";
 
 // --- 타입 정의 ---
 interface TeamMember {
@@ -71,8 +73,12 @@ export function TeamModal({ projectId, onClose }: Props) {
                     setIsLoading(false);
                 }, 500); // 0.5초 로딩 시뮬레이션
 
-            } catch (err: any) {
-                setError(err.message || "Failed to load team data.");
+            } catch (err: unknown) { // [수정] 'any' 대신 'unknown' 타입을 사용하고, 에러 타입을 확인합니다.
+                if (err instanceof Error) {
+                    setError(err.message);
+                } else {
+                    setError("Failed to load team data.");
+                }
                 console.error(err);
                 setIsLoading(false);
             }
@@ -116,8 +122,12 @@ export function TeamModal({ projectId, onClose }: Props) {
                 setIsLoading(false);
             }, 1000);
 
-        } catch (err: any) {
-            window.alert(`Invite failed: ${err.message}`);
+        } catch (err: unknown) { // [수정] 'any' 대신 'unknown' 타입을 사용하고, 에러 타입을 확인합니다.
+            if (err instanceof Error) {
+                window.alert(`Invite failed: ${err.message}`);
+            } else {
+                window.alert('An unknown error occurred during the invitation.');
+            }
             setIsLoading(false);
         }
     };
@@ -155,7 +165,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                     <h2 className="text-lg font-semibold">Share this calendar</h2>
                     <div className="flex items-center gap-4">
                         <button onClick={handleCopyLink} className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
+                            <svg width="16" height="16" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
                             Copy link
                         </button>
                         <button onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>
@@ -171,7 +181,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                         className="flex-1 border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                     <button
-                        onClick={handleInvite}
+                        onClick={() => void handleInvite()} // [수정] Promise 반환 무시 경고를 해결합니다.
                         disabled={isLoading}
                         className="px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold hover:bg-blue-700 disabled:bg-blue-300"
                     >
@@ -186,7 +196,8 @@ export function TeamModal({ projectId, onClose }: Props) {
                         {members.map((member) => (
                             <div key={`member-${member.userId}`} className="flex items-center justify-between text-sm">
                                 <div className="flex items-center gap-3">
-                                    <img src={member.avatarUrl || `https://placehold.co/32x32/E2E8F0/475569?text=${member.name.charAt(0)}`} alt={member.name} className="w-8 h-8 rounded-full" />
+                                    {/* [수정] <img>를 Next.js의 <Image>로 교체하여 성능 경고를 해결합니다. */}
+                                    <Image src={member.avatarUrl || `https://placehold.co/32x32/E2E8F0/475569?text=${member.name.charAt(0)}`} alt={member.name} width={32} height={32} className="w-8 h-8 rounded-full" />
                                     <div>
                                         <div className="font-semibold">{member.name} {member.me && '(me)'}</div>
                                         <div className="text-xs text-slate-400">{member.email}</div>
