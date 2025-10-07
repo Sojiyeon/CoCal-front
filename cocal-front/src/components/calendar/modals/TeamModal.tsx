@@ -1,18 +1,38 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ProjectMember } from "../types";
+// api 유틸리티 import는 유지하되, 실제 호출은 주석 처리합니다.
+//import { api } from "../utils/api";
 
-// 현재 로그인한 사용자의 ID (실제로는 인증 상태에서 가져와야 함)
-const CURRENT_USER_ID = 1;
+// --- 타입 정의 ---
+interface TeamMember {
+    memberId: number;
+    userId: number;
+    name: string;
+    email: string;
+    avatarUrl: string | null;
+    role: 'OWNER' | 'ADMIN' | 'MEMBER';
+    status: 'ACTIVE' | 'BLOCKED' | 'DELETED';
+    me: boolean;
+}
 
-// API 연동 전 사용할 샘플 멤버 데이터
-const sampleMembers: ProjectMember[] = [
-    { userId: 1, name: "test1 (me)", email: "sample1@example.com", profileImageUrl: null, role: 'OWNER' },
-    { userId: 2, name: "test2", email: "sample2@example.com", profileImageUrl: null, role: 'ADMIN' },
-    { userId: 3, name: "test3", email: "sample3@example.com", profileImageUrl: null, role: 'MEMBER' },
-    { userId: 4, name: "test4", email: "sample4@example.com", profileImageUrl: null, role: 'MEMBER' },
+interface ProjectInvite {
+    inviteId: number;
+    email: string;
+    status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED' | 'CANCEL';
+    createdAt: string;
+    expiresAt: string;
+}
+
+// [추가] API 연동 전 사용할 샘플 데이터
+const sampleMembers: TeamMember[] = [
+    { memberId: 1, userId: 1, name: "User 1 (me)", email: "user1@example.com", avatarUrl: null, role: 'OWNER', status: 'ACTIVE', me: true },
+    { memberId: 2, userId: 2, name: "User 2", email: "user2@example.com", avatarUrl: null, role: 'MEMBER', status: 'ACTIVE', me: false },
 ];
+const sampleInvites: ProjectInvite[] = [
+    { inviteId: 1, email: "pending@example.com", status: 'PENDING', createdAt: new Date().toISOString(), expiresAt: new Date().toISOString() }
+];
+
 
 interface Props {
     projectId: number;
@@ -21,41 +41,102 @@ interface Props {
 
 export function TeamModal({ projectId, onClose }: Props) {
     const [email, setEmail] = useState("");
-    const [members, setMembers] = useState<ProjectMember[]>([]);
+    const [members, setMembers] = useState<TeamMember[]>([]);
+    const [invites, setInvites] = useState<ProjectInvite[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    // 컴포넌트 마운트 시 멤버 목록을 불러옵니다.
+    // 컴포넌트가 마운트될 때 데이터를 불러오는 부분
     useEffect(() => {
-        // [API-연동] 실제 멤버 목록을 불러오는 API 호출 로직으로 교체 예정
-        // 예: fetch(`/api/projects/${projectId}/members`).then(...)
-        console.log(`Fetching members for project ${projectId}...`);
-        setMembers(sampleMembers);
+        const fetchTeamData = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                // ===============================================================
+                // ▼▼▼ API 호출 로직 주석 처리 ▼▼▼
+                // ===============================================================
+                /*
+                // GET /api/team/{projectId}/list API를 호출합니다.
+                const response = await api.get(`/team/${projectId}/list`);
+                setMembers(response.data.members || []);
+                setInvites(response.data.invites || []);
+                */
+                // ===============================================================
+
+                // [대체 코드] API 대신 임시 샘플 데이터를 사용합니다.
+                console.warn("개발 모드: TeamModal에서 API 호출을 건너뛰고 샘플 데이터를 사용합니다.");
+                setTimeout(() => {
+                    setMembers(sampleMembers);
+                    setInvites(sampleInvites);
+                    setIsLoading(false);
+                }, 500); // 0.5초 로딩 시뮬레이션
+
+            } catch (err: any) {
+                setError(err.message || "Failed to load team data.");
+                console.error(err);
+                setIsLoading(false);
+            }
+        };
+
+        void fetchTeamData();
     }, [projectId]);
 
-    // 팀원 초대 핸들러
-    const handleInvite = () => {
+    // 이메일로 팀원을 초대하는 핸들러
+    const handleInvite = async () => {
         if (!email) {
-            alert("Please enter an email address.");
+            window.alert("Please enter an email address.");
             return;
         }
         setIsLoading(true);
-        // [API-연동] 실제 멤버 목록을 불러오는 API 호출 로직으로 교체 예정
-        // `project_invites` 테이블에 데이터를 추가하는 요청
-        console.log(`Inviting ${email} to project ${projectId}`);
-        setTimeout(() => {
-            alert(`${email} has been invited.`);
-            setEmail("");
+        try {
+            // ===============================================================
+            // ▼▼▼ API 호출 로직 주석 처리 ▼▼▼
+            // ===============================================================
+            /*
+            // POST /api/team/{projectId}/invites-email API를 호출합니다.
+            const response = await api.post(`/team/${projectId}/invites-email`, { email });
+            // 성공 시, 반환된 초대 정보를 invites 상태에 추가하여 UI를 즉시 업데이트합니다.
+            setInvites(prev => [response.data, ...prev]);
+            */
+            // ===============================================================
+
+            // [대체 코드] API 대신 임시 로직을 사용합니다.
+            console.warn(`개발 모드: ${email} 초대를 시뮬레이션합니다.`);
+            setTimeout(() => {
+                const newInvite: ProjectInvite = {
+                    inviteId: Math.random(),
+                    email: email,
+                    status: 'PENDING',
+                    createdAt: new Date().toISOString(),
+                    expiresAt: new Date().toISOString(),
+                };
+                setInvites(prev => [newInvite, ...prev]);
+                setEmail("");
+                window.alert(`${email} has been invited (simulation).`);
+                setIsLoading(false);
+            }, 1000);
+
+        } catch (err: any) {
+            window.alert(`Invite failed: ${err.message}`);
             setIsLoading(false);
-        }, 1000);
+        }
     };
 
-    // 팀원 제거 핸들러
-    const handleRemove = (memberId: number) => {
-        if (confirm("Are you sure you want to remove this member?")) {
-            // [API-연동] 실제 멤버 목록을 불러오는 API 호출 로직으로 교체 예정
-            // `project_members` 테이블에서 데이터를 삭제하는 요청
+    // 팀원을 제거하는 핸들러
+    const handleRemoveMember = (memberId: number) => {
+        if (window.confirm("Are you sure you want to remove this member?")) {
+            // [API-연동] DELETE /api/team/{projectId}/members/{memberId} 와 같은 API를 호출해야 합니다.
             console.log(`Removing member ${memberId} from project ${projectId}`);
-            setMembers(prev => prev.filter(m => m.userId !== memberId));
+            setMembers(prev => prev.filter(m => m.memberId !== memberId));
+        }
+    };
+
+    // 초대를 취소하는 핸들러
+    const handleCancelInvite = (inviteId: number) => {
+        if (window.confirm("Are you sure you want to cancel this invitation?")) {
+            // [API-연동] DELETE /api/team/invites/{inviteId} 와 같은 API를 호출해야 합니다.
+            console.log(`Canceling invitation ${inviteId}`);
+            setInvites(prev => prev.filter(i => i.inviteId !== inviteId));
         }
     };
 
@@ -63,14 +144,13 @@ export function TeamModal({ projectId, onClose }: Props) {
     const handleCopyLink = () => {
         const inviteLink = `${window.location.origin}/project/${projectId}/join`;
         navigator.clipboard.writeText(inviteLink).then(() => {
-            alert("Invite link copied to clipboard!");
+            window.alert("Invite link copied to clipboard!");
         });
     };
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
             <div className="bg-white rounded-xl shadow-lg p-6 w-[480px] text-slate-800">
-                {/* 모달 헤더 */}
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-semibold">Share this calendar</h2>
                     <div className="flex items-center gap-4">
@@ -82,7 +162,6 @@ export function TeamModal({ projectId, onClose }: Props) {
                     </div>
                 </div>
 
-                {/* 이메일 초대 폼 */}
                 <div className="flex gap-2 mb-6">
                     <input
                         type="email"
@@ -100,24 +179,21 @@ export function TeamModal({ projectId, onClose }: Props) {
                     </button>
                 </div>
 
-                {/* 멤버 목록 */}
-                <div>
-                    <h3 className="text-sm font-medium text-slate-500 mb-3">Who has access</h3>
+                <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-slate-500">Who has access</h3>
+                    {error && <p className="text-xs text-red-500">{error}</p>}
                     <div className="space-y-3 max-h-60 overflow-y-auto">
                         {members.map((member) => (
-                            <div key={member.userId} className="flex items-center justify-between text-sm">
+                            <div key={`member-${member.userId}`} className="flex items-center justify-between text-sm">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500">
-                                        {member.name.charAt(0).toUpperCase()}
-                                    </div>
+                                    <img src={member.avatarUrl || `https://placehold.co/32x32/E2E8F0/475569?text=${member.name.charAt(0)}`} alt={member.name} className="w-8 h-8 rounded-full" />
                                     <div>
-                                        <div className="font-semibold">{member.name}</div>
+                                        <div className="font-semibold">{member.name} {member.me && '(me)'}</div>
                                         <div className="text-xs text-slate-400">{member.email}</div>
                                     </div>
                                 </div>
-                                {/* 현재 사용자가 아니면 'Remove' 버튼 표시 */}
-                                {member.userId !== CURRENT_USER_ID ? (
-                                    <button onClick={() => handleRemove(member.userId)} className="text-slate-500 hover:text-red-600 text-xs font-medium">
+                                {!member.me ? (
+                                    <button onClick={() => handleRemoveMember(member.memberId)} className="text-slate-500 hover:text-red-600 text-xs font-medium">
                                         Remove
                                     </button>
                                 ) : (
@@ -125,10 +201,24 @@ export function TeamModal({ projectId, onClose }: Props) {
                                 )}
                             </div>
                         ))}
+                        {invites.map((invite) => (
+                            <div key={`invite-${invite.inviteId}`} className="flex items-center justify-between text-sm opacity-70">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">?</div>
+                                    <div>
+                                        <div className="font-semibold italic">{invite.email}</div>
+                                        <div className="text-xs text-slate-400">{invite.status}...</div>
+                                    </div>
+                                </div>
+                                <button onClick={() => handleCancelInvite(invite.inviteId)} className="text-slate-500 hover:text-red-600 text-xs font-medium">
+                                    Cancel
+                                </button>
+                            </div>
+                        ))}
                     </div>
                 </div>
-
             </div>
         </div>
     );
 }
+

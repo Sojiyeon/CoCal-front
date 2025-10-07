@@ -54,7 +54,26 @@ export type DateMemo = {
     memo_date: string; // DATE 값 (e.g., "2025-09-23")
     content: string;
 };
+// [추가] 프로젝트 멤버의 상세 타입을 정의합니다. (API 응답 참고)
+export interface ProjectMemberDetail {
+    userId: number;
+    name: string;
+    email: string;
+    profileImageUrl: string | null;
+}
 
+// [추가 또는 수정] 프로젝트 데이터 타입을 API 응답에 맞춰 상세하게 정의합니다.
+export interface Project {
+    id: number;
+    name: string;
+    ownerId: number;
+    startDate: string;
+    endDate: string;
+    status: 'IN_PROGRESS' | 'COMPLETED'; // status 타입을 구체적으로 명시
+    description: string | null;
+    members: ProjectMemberDetail[];
+    // colorTags는 API 응답에 없으므로 제거하거나, 프론트에서 별도로 관리해야 합니다.
+}
 // 할 일 현황 대시보드 데이터 구조
 export interface TaskStats {
     completed: number;

@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, FC, useRef, useEffect, useMemo } from 'react';
+
+// [추가] Link 컴포넌트를 next/link에서 import 합니다.
+import Link from 'next/link';
 import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
 import ProfileSettingsModal from '@/components/modals/ProfileSettingModal';
@@ -477,8 +480,16 @@ const ProjectDashboardPage: React.FC = () => {
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {filteredProjects.map(project => (
-                            <ProjectCard key={project.id} project={project} />
+                            // [추가] 캘린더 연동
+                            <Link href={`/calendar/${project.id}`} key={project.id}>
+
+                                <ProjectCard project={project} />
+                            </Link>
                         ))}
+                        {/*이전 코드 주석처리*/}
+                        {/*{filteredProjects.map(project => (*/}
+                        {/*    <ProjectCard key={project.id} project={project} />*/}
+                        {/*))}*/}
                     </div>
                 )}
             </main>
