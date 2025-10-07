@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 // [추가] Next.js의 Image 컴포넌트를 import 합니다.
-import Image from 'next/image';
+
 // api 유틸리티 import는 유지하되, 실제 호출은 주석 처리합니다.
 // import { api } from "../../../utils/api";
 
@@ -197,7 +197,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                             <div key={`member-${member.userId}`} className="flex items-center justify-between text-sm">
                                 <div className="flex items-center gap-3">
                                     {/* [수정] <img>를 Next.js의 <Image>로 교체하여 성능 경고를 해결합니다. */}
-                                    <Image src={member.avatarUrl || `https://placehold.co/32x32/E2E8F0/475569?text=${member.name.charAt(0)}`} alt={member.name} width={32} height={32} className="w-8 h-8 rounded-full" />
+                                    <img src={member.avatarUrl || `https://placehold.co/32x32/E2E8F0/475569?text=${member.name.charAt(0)}`} alt={member.name} width={32} height={32} className="w-8 h-8 rounded-full" />
                                     <div>
                                         <div className="font-semibold">{member.name} {member.me && '(me)'}</div>
                                         <div className="text-xs text-slate-400">{member.email}</div>
