@@ -1,4 +1,4 @@
-// app/register/page.tsx
+// app/register/layout.tsx
 import Register from '@/components/register/Register';
 
 const RegisterPage = () => {

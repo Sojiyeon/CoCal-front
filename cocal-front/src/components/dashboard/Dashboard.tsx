@@ -1,12 +1,10 @@
 "use client";
 
 import React, { useState, FC, useRef, useEffect, useMemo } from 'react';
-
-// [추가] Link 컴포넌트를 next/link에서 import 합니다.
 import Link from 'next/link';
 import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
-import ProfileSettingsModal from '@/components/modals/ProfileSettingModal';
+import ProfileSettingsModal, { useUser } from '@/components/modals/ProfileSettingModal';
 
 const API_BASE_URL = 'https://cocal-server.onrender.com';
 
@@ -30,6 +28,13 @@ interface Project {
     colorTags: string[]; // 색상 태그
 }
 
+interface CurrentUser {
+    id: number | null;
+    name: string;
+    email: string;
+    imageUrl: string;
+}
+
 // 사용자 정보의 기본값
 const DEFAULT_USER: CurrentUser = {
     id: null,
@@ -37,13 +42,6 @@ const DEFAULT_USER: CurrentUser = {
     email: 'guest@example.com',
     imageUrl: 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=U', // 임시 이미지
 };
-
-interface CurrentUser {
-    id: number | null;
-    name: string;
-    email: string;
-    imageUrl: string; // 프로필 이미지 URL
-}
 
 interface ExpectedApiEndpoints {
     UPDATE_USER_NAME: string;
@@ -53,7 +51,7 @@ interface ExpectedApiEndpoints {
 interface ProfileSettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    currentUser: CurrentUser;
+    // currentUser: CurrentUser;
     apiEndpoints: ExpectedApiEndpoints;
 }
 
@@ -250,7 +248,7 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
             label: 'Profile Settings',
             icon: Settings,
             action: () => {
-                onOpenSettings(); // 모달 열기 함수 호출
+                onOpenSettings();
                 setIsOpen(false);
             }
         },
@@ -319,17 +317,18 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
     );
 };
 
-
 // --- Main Dashboard Page ---
 const API_LOGOUT_ENDPOINT = `${API_BASE_URL}/api/auth/logout`;
 const ProjectDashboardPage: React.FC = () => {
-    const [currentUser, setCurrentUser] = useState<CurrentUser>(DEFAULT_USER);
-    const [isLoadingUser, setIsLoadingUser] = useState(true);
+    const { user, isLoading: isLoadingUser, logout } = useUser();
+    // const [currentUser, setCurrentUser] = useState<CurrentUser>(DEFAULT_USER);
+    // const [isLoadingUser, setIsLoadingUser] = useState(true);
     const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
     const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('All');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
+/*
     const fetchUserProfile = async (token: string) => {
         setIsLoadingUser(true);
         try {
@@ -366,7 +365,9 @@ const ProjectDashboardPage: React.FC = () => {
             setIsLoadingUser(false);
         }
     };
+*/
 
+/*
     useEffect(() => {
         const accessToken = localStorage.getItem('accessToken');
         if (accessToken) {
@@ -390,11 +391,10 @@ const ProjectDashboardPage: React.FC = () => {
             setIsLoadingUser(false);
         }
     }, []);
+*/
 
     // 프로젝트 생성 핸들러
     const handleCreateProject = (data: ProjectFormData) => {
-        console.log("Creating project with data:", data);
-
         const newProject: Project = {
             id: Date.now(),
             name: data.name,
@@ -414,6 +414,7 @@ const ProjectDashboardPage: React.FC = () => {
     const handleOpenSettingsModal = () => setIsSettingsModalOpen(true);
     const handleCloseSettingsModal = () => setIsSettingsModalOpen(false);
 
+/*
     const handleLogout = async () => {
         const refreshToken = localStorage.getItem('refreshToken');
 
@@ -439,6 +440,7 @@ const ProjectDashboardPage: React.FC = () => {
             window.location.href = '/';
         }
     };
+*/
 
     if (isLoadingUser) {
         return (
@@ -450,6 +452,13 @@ const ProjectDashboardPage: React.FC = () => {
             </div>
         );
     }
+    const displayUser: CurrentUser = {
+        id: user.id,
+        name: user.name || DEFAULT_USER.name,
+        email: user.email || DEFAULT_USER.email,
+        imageUrl: user.profileImageUrl || DEFAULT_USER.imageUrl,
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
             {/* 상단 통합 헤더 영역 */}
@@ -458,9 +467,9 @@ const ProjectDashboardPage: React.FC = () => {
 
                 <div className="flex items-center space-x-4"> {/* 유저 프로필 */}
                     <ProfileDropdown
-                        user={currentUser}
+                        user={displayUser}
                         onOpenSettings={handleOpenSettingsModal}
-                        onLogout={handleLogout}
+                        onLogout={logout}
                     />
                 </div>
             </header>
@@ -504,7 +513,7 @@ const ProjectDashboardPage: React.FC = () => {
             <ProfileSettingsModalTyped
                 isOpen={isSettingsModalOpen}
                 onClose={handleCloseSettingsModal}
-                currentUser={currentUser}
+                // currentUser={currentUser}
                 apiEndpoints={API_ENDPOINTS}
             />
         </div>

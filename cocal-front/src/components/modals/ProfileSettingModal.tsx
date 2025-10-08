@@ -26,7 +26,7 @@ const initialUser: User = { id: null, email: null, name: null, profileImageUrl: 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 // --- User Context Hooks & Provider ---
-const useUser = () => {
+export const useUser = () => {
     const context = useContext(UserContext);
     if (context === undefined) {
         throw new Error('useUser must be used within a UserProvider');
