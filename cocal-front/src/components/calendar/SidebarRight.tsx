@@ -1,50 +1,42 @@
 "use client";
 
-import React, { useState } from "react";
-import { TeamModal } from "./modals/TeamModal";
-import { EventModal } from "./modals/EventModal";
-import { SettingsModal } from "./modals/SettingsModal";
+import React from "react";
 
-// 1. 나중에는 이 컴포넌트가 props로 실제 projectId와 userId를 받아와야 합니다.
-// 예시: interface SidebarRightProps { projectId: number; userId: number; }
-export default function SidebarRight(/* { projectId, userId }: SidebarRightProps */) {
-    const [openModal, setOpenModal] = useState<null | "team" | "event" | "settings">(null);
+// [추가] 부모 컴포넌트로부터 모달을 여는 함수들을 props로 받도록 인터페이스를 정의합니다.
+interface Props {
+    onOpenTeamModal: () => void;
+    onOpenEventModal: () => void;
+    onOpenSettingsModal: () => void;
+}
 
-    // 2. 실제 ID를 props로 받기 전까지 사용할 임시 ID들입니다.
-    const MOCK_PROJECT_ID = 1;
-    const MOCK_USER_ID = 1; // SettingsModal에 필요하므로 userId도 추가합니다.
-
+export default function SidebarRight({ onOpenTeamModal, onOpenEventModal, onOpenSettingsModal }: Props) {
+    // [설명] 이제 이 컴포넌트는 모달의 열림 상태를 직접 관리하지 않습니다.
     return (
         <div className="w-23 border-l border-slate-200 p-4 flex flex-col gap-4 bg-white">
             <h2 className="text-lg font-semibold text-slate-800 mb-2"></h2>
 
             <button
                 className="px-4 py-2 hover:bg-slate-200 text-slate-800 text-sm text-left"
-                onClick={() => setOpenModal("team")}
+                onClick={onOpenTeamModal} // [수정] props로 받은 함수를 호출합니다.
             >
                 ➕
             </button>
 
             <button
                 className="px-4 py-2 hover:bg-slate-200 text-slate-800 text-sm text-left"
-                onClick={() => setOpenModal("event")}
+                onClick={onOpenEventModal} // [수정] props로 받은 함수를 호출합니다.
             >
                 📅
             </button>
 
             <button
                 className="px-4 py-2 hover:bg-slate-200 text-slate-800 text-sm text-left"
-                onClick={() => setOpenModal("settings")}
+                onClick={onOpenSettingsModal} // [수정] props로 받은 함수를 호출합니다.
             >
                 ⚙️
             </button>
-
-            {/* 모달 */}
-            {openModal === "team" && <TeamModal projectId={MOCK_PROJECT_ID} onClose={() => setOpenModal(null)} />}
-            {openModal === "event" && <EventModal onClose={() => setOpenModal(null)} />}
-
-            {/* 3. SettingsModal을 호출할 때 projectId와 userId를 넘겨줍니다. */}
-            {openModal === "settings" && <SettingsModal projectId={MOCK_PROJECT_ID} userId={MOCK_USER_ID} onClose={() => setOpenModal(null)} />}
+            {/* [설명] 모달을 직접 렌더링하는 코드는 부모 컴포넌트(CalendarUI)로 이동했습니다. */}
         </div>
     );
 }
+
