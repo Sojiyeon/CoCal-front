@@ -84,7 +84,7 @@ export default function CalendarUI() {
         }, 500);
     }, [projectId]);
 
-    //const miniMatrix = getMonthMatrix(miniYear, miniMonth);
+     //const miniMatrix = getMonthMatrix(miniYear, miniMonth);
     const matrix = getMonthMatrix(viewYear, viewMonth);
 
     // --- 이벤트 핸들러 함수들 ---
