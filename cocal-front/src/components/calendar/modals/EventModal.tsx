@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ModalFormData } from "../types";
+import { CalendarEvent, ModalFormData } from "../types";
 
 type ActiveTab = "Event" | "Todo" | "Memo";
 
@@ -9,6 +9,7 @@ interface Props {
     onClose: () => void;
     onSave: (itemData: ModalFormData, type: ActiveTab) => void;
     initialDate?: string | null;
+    editEvent: CalendarEvent | null;
     projectId: number;
 }
 

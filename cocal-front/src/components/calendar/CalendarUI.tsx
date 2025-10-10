@@ -84,8 +84,10 @@ export default function CalendarUI() {
         }, 500);
     }, [projectId]);
 
-    const miniMatrix = getMonthMatrix(miniYear, miniMonth);
+     //const miniMatrix = getMonthMatrix(miniYear, miniMonth);
     const matrix = getMonthMatrix(viewYear, viewMonth);
+
+    // --- 이벤트 핸들러 함수들 ---
 
     const handleOpenEventModal = (dateStr?: string) => {
         setModalInitialDate(dateStr || null);
@@ -165,6 +167,7 @@ export default function CalendarUI() {
         setMiniMonth(newMonth); setMiniYear(newYear);
     }
 
+    // --- 렌더링 ---
     return (
         <div className="h-screen w-screen flex flex-col bg-white">
             <div className="flex items-center justify-between px-6 py-3 bg-white border-b">
@@ -193,8 +196,7 @@ export default function CalendarUI() {
                     <div className="mb-6">
                         <div className="flex items-center justify-between"><button onClick={prevMiniMonth} className="text-xs">&#x276E;</button><div className="text-sm font-medium">{new Date(miniYear, miniMonth).toLocaleString("en-US", { month: "long", year: "numeric" })}</div><button onClick={nextMiniMonth} className="text-xs">&#x276F;</button></div>
                         <div className="mt-3 grid grid-cols-7 gap-1 text-[12px] text-slate-500">{["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (<div key={i} className="text-center">{d}</div>))}</div>
-                        {/* [수정] miniMatrix를 사용하여 미니 캘린더 그리드를 렌더링합니다. */}
-                        <div className="mt-2 grid grid-cols-7 gap-1 text-sm">{miniMatrix.map((week, ri) => week.map((day, ci) => {
+                        <div className="mt-2 grid grid-cols-7 gap-1 text-sm">{matrix.map((week, ri) => week.map((day, ci) => {
                             const isTodayDate = day && miniYear === today.getFullYear() && miniMonth === today.getMonth() && day === today.getDate();
                             const isSelected = day && miniYear === selectedSidebarDate.getFullYear() && miniMonth === selectedSidebarDate.getMonth() && day === selectedSidebarDate.getDate();
                             return (<div key={`${ri}-${ci}`} onClick={() => day && setSelectedSidebarDate(new Date(miniYear, miniMonth, day))} className={`h-7 flex items-center justify-center rounded cursor-pointer ${isTodayDate ? "bg-slate-800 text-white" : isSelected ? "bg-slate-200 text-slate-800" : "text-slate-500 hover:bg-slate-100"}`}>{day ?? ""}</div>);
@@ -206,7 +208,6 @@ export default function CalendarUI() {
                 <main className="flex-1 p-6 overflow-auto">
                     <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-6"><button onClick={prevMonth} className="text-slate-800 hover:text-slate-600 text-xl">&#x276E;</button><h2 className="text-lg font-semibold text-slate-800">{new Date(viewYear, viewMonth).toLocaleString("en-US", { month: "long", year: "numeric" })}</h2><button onClick={nextMonth} className="text-slate-800 hover:text-slate-600 text-xl">&#x276F;</button></div><div className="flex items-center gap-3"><select value={viewMode} onChange={(e) => setViewMode(e.target.value as "day" | "week" | "month")} className="border rounded px-3 py-1 text-sm"><option value="month">Month</option><option value="week">Week</option><option value="day">Day</option></select></div></div>
                     {viewMode === "month" && (<><div className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2">{weekdays.map((w) => (<div key={w} className="text-center">{w}</div>))}</div>
-                        {/* [수정] matrix를 사용하여 메인 캘린더 그리드를 렌더링합니다. */}
                         <div className="grid grid-cols-7 gap-2 mt-3">{matrix.map((week, ri) => (<React.Fragment key={ri}>{week.map((day, ci) => {
                             const dateKey = day ? formatYMD(viewYear, viewMonth, day) : "";
                             const dayEvents = dateKey ? events.filter((e) => e.start_at.startsWith(dateKey)) : [];
@@ -231,8 +232,8 @@ export default function CalendarUI() {
                     onClose={handleCloseEventModal}
                     onSave={handleSaveItem}
                     initialDate={modalInitialDate}
-                    // [수정] 'editEvent' prop을 EventModal이 기대하는 'event' prop으로 이름을 변경합니다.
-                    event={eventToEdit}
+                    // [수정] TS2322 에러 해결을 위해 prop 이름을 'eventToEdit'으로 변경합니다.
+                    editEvent={eventToEdit}
                     projectId={projectId}
                 />
             )}
