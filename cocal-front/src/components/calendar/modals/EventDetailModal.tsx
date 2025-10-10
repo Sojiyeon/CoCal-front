@@ -37,7 +37,7 @@ export function EventDetailModal({ event, onClose, onToggleTodo, onEdit }: Props
         <div className="space-y-4 text-sm">
             <div className="flex items-center">
                 <span className="w-24 text-slate-500">Time</span>
-                <span className="text-slate-800 font-medium">{`${formatTime(event.start_at)} - ${formatTime(event.end_at)}`}</span>
+                <span className="text-slate-800 font-medium">{`${formatTime(event.startAt)} - ${formatTime(event.endAt)}`}</span>
             </div>
             <div className="flex items-center">
                 <span className="w-24 text-slate-500">Team</span>
@@ -75,7 +75,8 @@ export function EventDetailModal({ event, onClose, onToggleTodo, onEdit }: Props
                         </div>
                         <div className="text-xs text-slate-400 mt-2 space-y-1">
                             <div><span className="font-medium">Memo:</span> {todo.description || '-'}</div>
-                            <div><span className="font-medium">Category:</span> {event.project_name || '-'}</div>
+                            {/*<div><span className="font-medium">Category:</span> {projectName || '-'}</div>*/}
+                            <div><span className="font-medium">Category:</span> {event.title || '-'}</div>
                         </div>
                     </div>
                 ))}

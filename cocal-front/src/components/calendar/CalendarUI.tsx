@@ -64,7 +64,7 @@ export default function CalendarUI() {
 
     useEffect(() => {
         const selectedDateKey = formatYMD(selectedSidebarDate.getFullYear(), selectedSidebarDate.getMonth(), selectedSidebarDate.getDate());
-        const selectedDaysEvents = events.filter(e => e.start_at.startsWith(selectedDateKey));
+        const selectedDaysEvents = events.filter(e => e.startAt.startsWith(selectedDateKey));
         const allTodos: SidebarTodo[] = selectedDaysEvents.flatMap(event => (event.todos || []).map(todo => ({ ...todo, parentEventTitle: event.title, parentEventColor: event.color })));
         setSidebarTodos(allTodos);
     }, [events, selectedSidebarDate]);
@@ -73,11 +73,11 @@ export default function CalendarUI() {
         setTimeout(() => {
             const fetchedProjectData: Project = {
                 id: projectId,
-                name: `Sample Project ${projectId}`,
+                name: '${name}',
                 ownerId: 1,
                 startDate: "2025-01-01",
                 endDate: "2025-12-31",
-                status: 'IN_PROGRESS',
+                status: 'In Progress',
                 members: []
             };
             setCurrentProject(fetchedProjectData);
@@ -120,14 +120,14 @@ export default function CalendarUI() {
         } else {
             const newCalendarItem: CalendarEvent = {
                 id: Date.now(),
-                project_id: projectId,
+                projectId: projectId,
                 title: itemData.title || itemData.content || "New Item",
-                start_at: type === 'Memo' ? `${itemData.memo_date}T09:00:00` : itemData.start_at,
-                end_at: type === 'Memo' ? `${itemData.memo_date}T10:00:00` : itemData.end_at,
+                startAt: type === 'Memo' ? `${itemData.memoDate}T09:00:00` : itemData.startAt,
+                endAt: type === 'Memo' ? `${itemData.memoDate}T10:00:00` : itemData.endAt,
                 description: itemData.description || (type === 'Memo' ? itemData.content : null),
                 location: itemData.location || null,
                 color: type === 'Event' ? 'bg-blue-500 text-white' : type === 'Todo' ? 'bg-red-500 text-white' : 'bg-yellow-500 text-black',
-                url_id: 0, offset_minutes: 0, all_day: false, visibility: 'PUBLIC', author_id: user?.id || 0, todos: []
+                urlId: 0, offsetMinutes: 0, allDay: false, visibility: 'PUBLIC', authorId: user?.id || 0, todos: []
             };
             setEvents(prevEvents => [...prevEvents, newCalendarItem]);
         }
@@ -210,7 +210,7 @@ export default function CalendarUI() {
                     {viewMode === "month" && (<><div className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2">{weekdays.map((w) => (<div key={w} className="text-center">{w}</div>))}</div>
                         <div className="grid grid-cols-7 gap-2 mt-3">{matrix.map((week, ri) => (<React.Fragment key={ri}>{week.map((day, ci) => {
                             const dateKey = day ? formatYMD(viewYear, viewMonth, day) : "";
-                            const dayEvents = dateKey ? events.filter((e) => e.start_at.startsWith(dateKey)) : [];
+                            const dayEvents = dateKey ? events.filter((e) => e.startAt.startsWith(dateKey)) : [];
                             const isTodayDate = dateKey === formatYMD(today.getFullYear(), today.getMonth(), today.getDate());
                             return (<div key={ci} className={`min-h-[92px] border rounded p-2 bg-white relative ${isTodayDate ? "ring-2 ring-slate-300" : ""}`}><div className="text-sm font-medium">{day ?? ""}</div>{day && (<button onClick={() => handleOpenEventModal(dateKey)} className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-full text-lg">+</button>)}<div className="mt-2 space-y-2">{dayEvents.slice(0, 2).map((ev) => (<div key={ev.id} className={`px-2 py-1 rounded text-xs ${ev.color ?? "bg-slate-200"} cursor-pointer`} onClick={() => setSelectedEvent(ev)}><div className="truncate">{ev.title}</div></div>))}{dayEvents.length > 2 && (<div className="text-[12px] text-slate-400">+{dayEvents.length - 2} more</div>)}</div></div>);
                         })}</React.Fragment>))}</div></>)}

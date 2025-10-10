@@ -4,39 +4,24 @@ import { CalendarEvent } from "./types";
 export const sampleEvents: CalendarEvent[] = [
     {
         id: 1,
-        project_id: 101,
-        url_id: 1,
-        offset_minutes: 15,
+        projectId: 101,
+        urlId: 1,
+        offsetMinutes: 15,
         title: "Yoga", // 제목 수정
         description: "DB 구조 및 API 명세서 확정 논의",
-        start_at: "2025-09-24T10:00:00",
-        end_at: "2025-09-24T11:30:00",
-        all_day: false,
+        startAt: "2025-09-24T10:00:00",
+        endAt: "2025-09-24T11:30:00",
+        allDay: false,
         visibility: 'PUBLIC',
-        author_id: 1,
+        authorId: 1,
         location: "서울특별시 영등포구 63로 50",
         color: "bg-blue-500 text-white",
-        project_name: "프로젝트 1",
+        //name: "프로젝트 1",
         // [수정] EventTodo 타입에 맞게 누락된 속성을 추가합니다.
         todos: [
-            { id: 101, event_id: 1, title: "Shower", description: "After yoga", status: 'IN_PROGRESS', url_id: 1, offset_minutes: 0, author_id: 1, order_no: 1 },
-            { id: 102, event_id: 1, title: "Protein Shake", description: null, status: 'IN_PROGRESS', url_id: 2, offset_minutes: 0, author_id: 1, order_no: 2 }
+            { id: 101, eventId: 1, title: "Shower", description: "After yoga", status: 'IN_PROGRESS', urlId: 1, offsetMinutes: 0, authorId: 1, orderNo: 1 },
+            { id: 102, eventId: 1, title: "Protein Shake", description: null, status: 'IN_PROGRESS', urlId: 2, offsetMinutes: 0, authorId: 1, orderNo: 2 }
         ]
     },
-    {
-        id: 2,
-        project_id: 102,
-        url_id: 2,
-        offset_minutes: 0,
-        title: "여기 누르면 이벤트 내용이 나온다",
-        description: "이벤트 상세 내용이 여기에 표시됩니다.",
-        start_at: "2025-09-16T14:00:00",
-        end_at: "2025-09-16T15:00:00",
-        all_day: false,
-        visibility: 'PUBLIC',
-        author_id: 2,
-        location: null,
-        color: "bg-green-500 text-white",
-        // 이 이벤트에는 종속된 할 일이 없으므로 todos 배열이 없습니다.
-    },
+
 ];
