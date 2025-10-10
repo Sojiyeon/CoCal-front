@@ -36,6 +36,7 @@ export type CalendarEvent = {
     color: string;
 //    name: string;
     todos?: EventTodo[];
+    memo?: DateMemo[];
 };
 
 // 개인 할 일 타입 (private_todos 테이블)
@@ -52,13 +53,14 @@ export type PrivateTodo = {
     orderNo: number;
 };
 
-// 날짜 메모 타입 (memos 테이블)
+// [수정] 날짜 메모 타입 (memos 테이블)
 export type DateMemo = {
-    id: number;
+    id: string; // [수정] number -> string
     projectId: number;
-    authorId: number;
-    memoDate: string; // DATE 값 (e.g., "2025-09-23")
+    memoDate: string;
     content: string;
+    author: UserSummary[]; // [수정] authorId: number -> author: UserSummary[]
+    createdAt: string; // [추가] 생성 시각 필드 추가
 };
 
 // 프로젝트 멤버 타입

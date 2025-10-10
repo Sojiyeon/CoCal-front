@@ -223,7 +223,7 @@ export default function CalendarUI() {
                 <EventDetailModal
                     event={selectedEvent}
                     onClose={() => setSelectedEvent(null)}
-                    onToggleTodo={handleToggleTodoStatus}
+
                     onEdit={handleEditEvent}
                 />
             )}
