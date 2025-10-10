@@ -2,6 +2,7 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
 import ProfileSettingsModal, { useUser } from '@/components/modals/ProfileSettingModal';
@@ -320,6 +321,7 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
 // --- Main Dashboard Page ---
 const API_LOGOUT_ENDPOINT = `${API_BASE_URL}/api/auth/logout`;
 const ProjectDashboardPage: React.FC = () => {
+    const router = useRouter();
     const { user, isLoading: isLoadingUser, logout } = useUser();
     // const [currentUser, setCurrentUser] = useState<CurrentUser>(DEFAULT_USER);
     // const [isLoadingUser, setIsLoadingUser] = useState(true);
@@ -414,6 +416,10 @@ const ProjectDashboardPage: React.FC = () => {
     const handleOpenSettingsModal = () => setIsSettingsModalOpen(true);
     const handleCloseSettingsModal = () => setIsSettingsModalOpen(false);
 
+    const handleLogout = async () => {
+        await logout();
+        router.push('/');
+    };
 /*
     const handleLogout = async () => {
         const refreshToken = localStorage.getItem('refreshToken');
@@ -469,7 +475,7 @@ const ProjectDashboardPage: React.FC = () => {
                     <ProfileDropdown
                         user={displayUser}
                         onOpenSettings={handleOpenSettingsModal}
-                        onLogout={logout}
+                        onLogout={handleLogout}
                     />
                 </div>
             </header>
