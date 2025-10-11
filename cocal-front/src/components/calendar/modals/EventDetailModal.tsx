@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { CalendarEvent } from "../types";
-
-type ActiveTab = 'Event' | 'Memo';
 
 interface Props {
     event: CalendarEvent;
@@ -12,20 +10,7 @@ interface Props {
 }
 
 export function EventDetailModal({ event, onClose, onEdit }: Props) {
-    const [activeTab, setActiveTab] = useState<ActiveTab>('Event');
-
-    const TabButton = ({ tabName }: { tabName: ActiveTab }) => (
-        <button
-            onClick={() => setActiveTab(tabName)}
-            className={`px-4 py-1.5 text-sm font-semibold rounded-full ${
-                activeTab === tabName
-                    ? "bg-slate-100 text-slate-800"
-                    : "text-slate-500 hover:bg-slate-50"
-            }`}
-        >
-            {tabName}
-        </button>
-    );
+    // Tab 관련 state와 컴포넌트들 제거
 
     const formatTime = (dateString: string) => {
         return new Date(dateString).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -56,20 +41,7 @@ export function EventDetailModal({ event, onClose, onEdit }: Props) {
         </div>
     );
 
-    const MemoContent = () => (
-        !event.memo || event.memo.length === 0
-            ? <div className="text-sm text-slate-400 text-center py-8">작성된 메모가 없습니다.</div>
-            : <div className="space-y-3">
-                {event.memo.map(memo => (
-                    <div key={memo.id} className="bg-slate-50 p-3 rounded-lg">
-                        {/*<div className="font-semibold text-sm text-slate-800">{memo.title}</div>*/}
-                        <div className="text-xs text-slate-600 mt-2">
-                            {memo.content || '-'}
-                        </div>
-                    </div>
-                ))}
-            </div>
-    );
+    // MemoContent 컴포넌트 제거
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
@@ -85,13 +57,11 @@ export function EventDetailModal({ event, onClose, onEdit }: Props) {
                             <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl">×</button>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-3">
-                        <TabButton tabName="Event" />
-                        <TabButton tabName="Memo" />
-                    </div>
+                    {/* Tab 버튼 UI 제거 */}
                 </div>
                 <div className="p-4">
-                    {activeTab === 'Event' ? <EventContent /> : <MemoContent />}
+                    {/* EventContent만 직접 렌더링 */}
+                    <EventContent />
                 </div>
             </div>
         </div>

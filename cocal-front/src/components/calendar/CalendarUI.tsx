@@ -12,11 +12,11 @@ import ProfileSettingsModal from "./modals/ProfileSettingModal";
 // [추가] 생성/수정 모달과 팀 모달을 import
 import { EventModal } from "./modals/EventModal";
 import { TeamModal } from "./modals/TeamModal";
-
+import { MemoDetailModal } from "./modals/MemoDetailModal";
 import { useUser } from "@/contexts/UserContext";
-import { CalendarEvent, EventTodo, Project, ModalFormData } from "./types";
+import { CalendarEvent, EventTodo, Project, ModalFormData, DateMemo } from "./types";
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
-import { sampleEvents } from "./sampleData";
+import { sampleEvents,sampleMemos  } from "./sampleData";
 
 interface SidebarTodo extends EventTodo {
     parentEventTitle: string;
@@ -49,7 +49,11 @@ export default function CalendarUI() {
     const [miniMonth, setMiniMonth] = useState(today.getMonth());
 
     const [events, setEvents] = useState<CalendarEvent[]>(sampleEvents);
+    // [추가] 메모 데이터를 관리하기 위한 상태입니다. 실제로는 API로 fetch 해야 합니다.
+    const [memos, setMemos] = useState<DateMemo[]>(sampleMemos);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+    // [추가] 클릭된 메모 정보를 저장하고, 모달을 띄우는 역할을 하는 상태입니다.
+    const [selectedMemo, setSelectedMemo] = useState<DateMemo | null>(null);
     const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month");
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
 
@@ -211,9 +215,44 @@ export default function CalendarUI() {
                         <div className="grid grid-cols-7 gap-2 mt-3">{matrix.map((week, ri) => (<React.Fragment key={ri}>{week.map((day, ci) => {
                             const dateKey = day ? formatYMD(viewYear, viewMonth, day) : "";
                             const dayEvents = dateKey ? events.filter((e) => e.startAt.startsWith(dateKey)) : [];
+                            // [추가] 해당 날짜에 속한 메모들을 필터링합니다.
+                            const dayMemos = dateKey ? memos.filter((m) => m.memoDate === dateKey) : [];
                             const isTodayDate = dateKey === formatYMD(today.getFullYear(), today.getMonth(), today.getDate());
-                            return (<div key={ci} className={`min-h-[92px] border rounded p-2 bg-white relative ${isTodayDate ? "ring-2 ring-slate-300" : ""}`}><div className="text-sm font-medium">{day ?? ""}</div>{day && (<button onClick={() => handleOpenEventModal(dateKey)} className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-full text-lg">+</button>)}<div className="mt-2 space-y-2">{dayEvents.slice(0, 2).map((ev) => (<div key={ev.id} className={`px-2 py-1 rounded text-xs ${ev.color ?? "bg-slate-200"} cursor-pointer`} onClick={() => setSelectedEvent(ev)}><div className="truncate">{ev.title}</div></div>))}{dayEvents.length > 2 && (<div className="text-[12px] text-slate-400">+{dayEvents.length - 2} more</div>)}</div></div>);
-                        })}</React.Fragment>))}</div></>)}
+                                return (
+                                    <div key={ci} className={`min-h-[92px] border rounded p-2 bg-white relative ${isTodayDate ? "ring-2 ring-slate-300" : ""}`}>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-1">
+                                                <div className="text-sm font-medium">{day ?? ""}</div>
+                                                <div className="flex items-center space-x-1">
+                                                    {dayMemos.map(memo => (
+                                                        <div
+                                                            key={memo.id}
+                                                            onClick={() => setSelectedMemo(memo)}
+                                                            className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
+                                                            title={memo.content}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            {day && (
+                                                <button onClick={() => handleOpenEventModal(dateKey)} className="w-5 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-full text-lg">+</button>
+                                            )}
+                                        </div>
+                                        <div className="mt-2 space-y-2">
+                                            {dayEvents.slice(0, 2).map((ev) => (
+                                                <div key={ev.id} className={`px-2 py-1 rounded text-xs ${ev.color ?? "bg-slate-200"} cursor-pointer`} onClick={() => setSelectedEvent(ev)}>
+                                                    <div className="truncate">{ev.title}</div>
+                                                </div>
+                                            ))}
+                                            {dayEvents.length > 2 && (<div className="text-[12px] text-slate-400">+{dayEvents.length - 2} more</div>)}
+                                        </div>
+                                    </div>
+                                );
+                                // [수정] 이 위치에 잘못 포함되어 있던 WeekView와 DayView 렌더링 코드를 삭제했습니다.
+                            })}</React.Fragment>
+                        ))}</div>
+                        </>
+                    )}
                     {viewMode === "week" && <WeekView events={events} />}
                     {viewMode === "day" && <DayView events={events} />}
                 </main>
@@ -225,6 +264,13 @@ export default function CalendarUI() {
                     onClose={() => setSelectedEvent(null)}
 
                     onEdit={handleEditEvent}
+                />
+            )}
+            {/* [추가] selectedMemo 상태에 값이 있을 때만 MemoDetailModal을 렌더링합니다. */}
+            {selectedMemo && (
+                <MemoDetailModal
+                    memo={selectedMemo}
+                    onClose={() => setSelectedMemo(null)}
                 />
             )}
             {isEventModalOpen && (

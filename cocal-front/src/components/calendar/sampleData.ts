@@ -1,4 +1,4 @@
-import { CalendarEvent } from "./types";
+import {CalendarEvent, DateMemo} from "./types";
 
 // ===================== 샘플 이벤트 =====================
 export const sampleEvents: CalendarEvent[] = [
@@ -24,4 +24,18 @@ export const sampleEvents: CalendarEvent[] = [
         ]
     },
 
+];
+// [수정] 날짜 메모 타입 (memos 테이블)
+export const sampleMemos: DateMemo[] = [
+    {
+    id: 1,
+    projectId: 101,
+    memoDate: "2025-09-28",
+    content: "test 임",
+    createdAt: "2025-10-11T11:11:11.6262716",
+    title: "메모 제목임",
+    author: [
+    {userId: 2, name: "새 이름", email: "test@example.com", profileImageUrl: null}
+        ]
+    },
 ];

@@ -55,12 +55,13 @@ export type PrivateTodo = {
 
 // [수정] 날짜 메모 타입 (memos 테이블)
 export type DateMemo = {
-    id: string; // [수정] number -> string
+    id: number; // [수정] number -> string
     projectId: number;
     memoDate: string;
     content: string;
     author: UserSummary[]; // [수정] authorId: number -> author: UserSummary[]
     createdAt: string; // [추가] 생성 시각 필드 추가
+    title: string;
 };
 
 // 프로젝트 멤버 타입
