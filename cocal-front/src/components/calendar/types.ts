@@ -132,5 +132,6 @@ export interface ModalFormData {
     memoDate: string;
     content: string;
     category: string;
+    color: string;
 }
 

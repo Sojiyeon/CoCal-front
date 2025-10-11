@@ -14,7 +14,7 @@ import { EventModal } from "./modals/EventModal";
 import { TeamModal } from "./modals/TeamModal";
 import { MemoDetailModal } from "./modals/MemoDetailModal";
 import { useUser } from "@/contexts/UserContext";
-import { CalendarEvent, EventTodo, Project, ModalFormData, DateMemo } from "./types";
+import { CalendarEvent, EventTodo, Project, ModalFormData, DateMemo, UserSummary  } from "./types";
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
 import { sampleEvents,sampleMemos  } from "./sampleData";
 
@@ -114,29 +114,92 @@ export default function CalendarUI() {
         setSelectedEvent(null);
     };
 
+
     const handleSaveItem = (itemData: ModalFormData, type: 'Event' | 'Todo' | 'Memo', id?: number) => {
+        // '수정' 로직 (현재는 Event만 해당)
         if (id) {
             setEvents(prevEvents => prevEvents.map(event =>
                 event.id === id
                     ? { ...event, ...itemData, title: itemData.title || "Untitled" } as CalendarEvent
                     : event
             ));
-        } else {
-            const newCalendarItem: CalendarEvent = {
+            return;
+        }
+
+        // '생성' 로직: type에 따라 명확하게 분기 처리
+        if (type === 'Event') {
+            const newEvent: CalendarEvent = {
                 id: Date.now(),
                 projectId: projectId,
-                title: itemData.title || itemData.content || "New Item",
-                startAt: type === 'Memo' ? `${itemData.memoDate}T09:00:00` : itemData.startAt,
-                endAt: type === 'Memo' ? `${itemData.memoDate}T10:00:00` : itemData.endAt,
-                description: itemData.description || (type === 'Memo' ? itemData.content : null),
-                location: itemData.location || null,
-                color: type === 'Event' ? 'bg-blue-500 text-white' : type === 'Todo' ? 'bg-red-500 text-white' : 'bg-yellow-500 text-black',
-                urlId: 0, offsetMinutes: 0, allDay: false, visibility: 'PUBLIC', authorId: user?.id || 0, todos: []
+                title: itemData.title,
+                startAt: itemData.startAt,
+                endAt: itemData.endAt,
+                color: itemData.color || '#3b82f6', // 기본 색상
+                description: itemData.description,
+                location: itemData.location,
+                visibility: itemData.visibility,
+                urlId: 0,
+                offsetMinutes: 0,
+                allDay: false,
+                authorId: user?.id || 0,
+                todos: [],
             };
-            setEvents(prevEvents => [...prevEvents, newCalendarItem]);
+            setEvents(prevEvents => [...prevEvents, newEvent]);
+
+        } else if (type === 'Memo') {
+            const authorInfo: UserSummary[] = [];
+            if (user && user.id) { // user와 user.id가 null이나 undefined가 아닐 때만 실행
+                authorInfo.push({
+                    userId: user.id, // 이제 이 값은 항상 number입니다.
+                    name: user.name ?? '', // [수정] user.name이 null이면 빈 문자열 ''을 사용
+                    email: user.email ?? '', // [수정] user.email이 null이면 빈 문자열 ''을 사용
+                    profileImageUrl: user.profileImageUrl
+                });
+            }
+            const newMemo: DateMemo = {
+                id: Date.now(),
+                projectId: projectId,
+                title: itemData.title,
+                memoDate: itemData.memoDate,
+                content: itemData.content,
+                author: authorInfo, // 위에서 만든 authorInfo 배열을 할당
+                createdAt: new Date().toISOString(),
+            };
+            setMemos(prevMemos => [...prevMemos, newMemo]);
+
+        } else if (type === 'Todo') {
+            // 할일을 담기 위한 보이지 않는 Event(Wrapper) 생성
+            const newTodoItem: EventTodo = {
+                id: Date.now() + 1,
+                eventId: Date.now(),
+                title: itemData.title,
+                description: itemData.description,
+                status: 'IN_PROGRESS',
+                urlId: 0,
+                offsetMinutes: 0,
+                authorId: user?.id || 0,
+                orderNo: 0,
+            };
+
+            const newTodoWrapperEvent: CalendarEvent = {
+                id: newTodoItem.eventId,
+                projectId: projectId,
+                title: `Todo: ${itemData.title}`,
+                startAt: `${itemData.memoDate}T00:00:00`,
+                endAt: `${itemData.memoDate}T23:59:59`,
+                color: 'transparent', // 캘린더에 보이지 않게 처리
+                todos: [newTodoItem],
+                description: null,
+                location: null,
+                visibility: 'PRIVATE',
+                urlId: 0,
+                offsetMinutes: 0,
+                allDay: true,
+                authorId: user?.id || 0,
+            };
+            setEvents(prevEvents => [...prevEvents, newTodoWrapperEvent]);
         }
     };
-
 
     const handleToggleTodoStatus = (todoId: number) => {
         setEvents(prevEvents =>
