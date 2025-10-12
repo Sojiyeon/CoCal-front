@@ -9,7 +9,7 @@ import SidebarRight from "./SidebarRight";
 import { EventDetailModal } from "./modals/EventDetailModal";
 import ProfileDropdown from "./ProfileDropdown";
 import ProfileSettingsModal from "./modals/ProfileSettingModal";
-// [추가] 생성/수정 모달과 팀 모달을 import
+import {SettingsModal} from "./modals/SettingsModal";
 import { EventModal } from "./modals/EventModal";
 import { TeamModal } from "./modals/TeamModal";
 import { MemoDetailModal } from "./modals/MemoDetailModal";
@@ -49,10 +49,10 @@ export default function CalendarUI() {
     const [miniMonth, setMiniMonth] = useState(today.getMonth());
 
     const [events, setEvents] = useState<CalendarEvent[]>(sampleEvents);
-    // [추가] 메모 데이터를 관리하기 위한 상태입니다. 실제로는 API로 fetch 해야 합니다.
+    // [메모 데이터를 관리
     const [memos, setMemos] = useState<DateMemo[]>(sampleMemos);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-    // [추가] 클릭된 메모 정보를 저장하고, 모달을 띄우는 역할을 하는 상태입니다.
+    //  클릭된 메모 정보를 저장, 모달을 띄우는 역할
     const [selectedMemo, setSelectedMemo] = useState<DateMemo | null>(null);
     const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month");
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
@@ -63,6 +63,8 @@ export default function CalendarUI() {
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
     const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    // 일반 SettingsModal
+    const [isProjectSettingsModalOpen, setIsProjectSettingsModalOpen] = useState(false);
     const [modalInitialDate, setModalInitialDate] = useState<string | null>(null);
     const [eventToEdit, setEventToEdit] = useState<CalendarEvent | null>(null);
 
@@ -105,9 +107,12 @@ export default function CalendarUI() {
 
     const handleOpenTeamModal = () => setIsTeamModalOpen(true);
     const handleCloseTeamModal = () => setIsTeamModalOpen(false);
+   //ProfileSettingModal핸들러
     const handleOpenSettingsModal = () => setIsSettingsModalOpen(true);
     const handleCloseSettingsModal = () => setIsSettingsModalOpen(false);
-
+    // 일반 SettingsModal 핸들러
+    const handleOpenProjectSettingsModal = () => setIsProjectSettingsModalOpen(true);
+    const handleCloseProjectSettingsModal = () => setIsProjectSettingsModalOpen(false);
     const handleEditEvent = (event: CalendarEvent) => {
         setEventToEdit(event);
         setIsEventModalOpen(true);
@@ -126,7 +131,6 @@ export default function CalendarUI() {
             return;
         }
 
-        // '생성' 로직: type에 따라 명확하게 분기 처리
         if (type === 'Event') {
             const newEvent: CalendarEvent = {
                 id: Date.now(),
@@ -148,11 +152,11 @@ export default function CalendarUI() {
 
         } else if (type === 'Memo') {
             const authorInfo: UserSummary[] = [];
-            if (user && user.id) { // user와 user.id가 null이나 undefined가 아닐 때만 실행
+            if (user && user.id) {
                 authorInfo.push({
-                    userId: user.id, // 이제 이 값은 항상 number입니다.
-                    name: user.name ?? '', // [수정] user.name이 null이면 빈 문자열 ''을 사용
-                    email: user.email ?? '', // [수정] user.email이 null이면 빈 문자열 ''을 사용
+                    userId: user.id,
+                    name: user.name ?? '',
+                    email: user.email ?? '',
                     profileImageUrl: user.profileImageUrl
                 });
             }
@@ -278,7 +282,7 @@ export default function CalendarUI() {
                         <div className="grid grid-cols-7 gap-2 mt-3">{matrix.map((week, ri) => (<React.Fragment key={ri}>{week.map((day, ci) => {
                             const dateKey = day ? formatYMD(viewYear, viewMonth, day) : "";
                             const dayEvents = dateKey ? events.filter((e) => e.startAt.startsWith(dateKey)) : [];
-                            // [추가] 해당 날짜에 속한 메모들을 필터링합니다.
+                            // 해당 날짜에 속한 메모들을 필터링
                             const dayMemos = dateKey ? memos.filter((m) => m.memoDate === dateKey) : [];
                             const isTodayDate = dateKey === formatYMD(today.getFullYear(), today.getMonth(), today.getDate());
                                 return (
@@ -303,7 +307,13 @@ export default function CalendarUI() {
                                         </div>
                                         <div className="mt-2 space-y-2">
                                             {dayEvents.slice(0, 2).map((ev) => (
-                                                <div key={ev.id} className={`px-2 py-1 rounded text-xs ${ev.color ?? "bg-slate-200"} cursor-pointer`} onClick={() => setSelectedEvent(ev)}>
+                                                <div
+                                                    key={ev.id}
+                                                    className="px-2 py-1 rounded text-xs text-white cursor-pointer"
+                                                    onClick={() => setSelectedEvent(ev)}
+                                                    // style 속성을 사용하여 배경색 동적 할당
+                                                    style={{ backgroundColor: ev.color }}
+                                                >
                                                     <div className="truncate">{ev.title}</div>
                                                 </div>
                                             ))}
@@ -311,7 +321,6 @@ export default function CalendarUI() {
                                         </div>
                                     </div>
                                 );
-                                // [수정] 이 위치에 잘못 포함되어 있던 WeekView와 DayView 렌더링 코드를 삭제했습니다.
                             })}</React.Fragment>
                         ))}</div>
                         </>
@@ -319,7 +328,7 @@ export default function CalendarUI() {
                     {viewMode === "week" && <WeekView events={events} />}
                     {viewMode === "day" && <DayView events={events} />}
                 </main>
-                <SidebarRight onOpenTeamModal={handleOpenTeamModal} onOpenEventModal={() => handleOpenEventModal()} onOpenSettingsModal={handleOpenSettingsModal} />
+                <SidebarRight onOpenTeamModal={handleOpenTeamModal} onOpenEventModal={() => handleOpenEventModal()} onOpenSettingsModal={handleOpenProjectSettingsModal} />
             </div>
             {selectedEvent && (
                 <EventDetailModal
@@ -329,7 +338,7 @@ export default function CalendarUI() {
                     onEdit={handleEditEvent}
                 />
             )}
-            {/* [추가] selectedMemo 상태에 값이 있을 때만 MemoDetailModal을 렌더링합니다. */}
+            {/* selectedMemo 상태에 값이 있을 때만 MemoDetailModal 렌더링 */}
             {selectedMemo && (
                 <MemoDetailModal
                     memo={selectedMemo}
@@ -341,13 +350,20 @@ export default function CalendarUI() {
                     onClose={handleCloseEventModal}
                     onSave={handleSaveItem}
                     initialDate={modalInitialDate}
-                    // [수정] TS2322 에러 해결을 위해 prop 이름을 'eventToEdit'으로 변경합니다.
                     editEvent={eventToEdit}
                     projectId={projectId}
                 />
             )}
             {isTeamModalOpen && (<TeamModal projectId={projectId} onClose={handleCloseTeamModal} />)}
             <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} apiEndpoints={API_ENDPOINTS} />
+            {/* SettingsModal */}
+            {isProjectSettingsModalOpen && (
+                <SettingsModal
+                    onClose={handleCloseProjectSettingsModal}
+                    projectId={projectId}
+                    userId={user?.id || 0} // user 객체가 있을 경우 id를, 없으면 기본값(0)을 전달
+                />
+            )}
         </div>
     );
 }
