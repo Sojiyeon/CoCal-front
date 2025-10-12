@@ -41,7 +41,9 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
                 <span>Color</span>
             </button>
             {isPaletteOpen && (
-                <div className="absolute top-full mt-2 w-full bg-white border rounded-md shadow-lg p-3 z-10">
+                <div
+                    className="absolute top-0 left-full ml-2 w-auto bg-white border rounded-md shadow-lg p-3 z-10"
+                >
                     <div className="space-y-3">
                         {palettes.map((palette, paletteIndex) => (
                             <div key={paletteIndex} className="flex items-center gap-2">
@@ -63,7 +65,6 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
         </div>
     );
 }
-
 interface Props {
     onClose: () => void;
     onSave: (itemData: ModalFormData, type: ActiveTab) => void;
