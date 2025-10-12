@@ -49,7 +49,7 @@ export default function CalendarUI() {
     const [miniMonth, setMiniMonth] = useState(today.getMonth());
 
     const [events, setEvents] = useState<CalendarEvent[]>(sampleEvents);
-    // [메모 데이터를 관리
+    // 메모 데이터를 관리
     const [memos, setMemos] = useState<DateMemo[]>(sampleMemos);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
     //  클릭된 메모 정보를 저장, 모달을 띄우는 역할
@@ -59,7 +59,8 @@ export default function CalendarUI() {
 
     const [sidebarTodos, setSidebarTodos] = useState<SidebarTodo[]>([]);
     const [selectedSidebarDate, setSelectedSidebarDate] = useState(today);
-
+    // Day 뷰에 표시할 특정 날짜를 관리
+    const [selectedDate, setSelectedDate] = useState(today);
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
     const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -94,7 +95,18 @@ export default function CalendarUI() {
     const matrix = getMonthMatrix(viewYear, viewMonth);
 
     // --- 이벤트 핸들러 함수들 ---
+// 1. 미니 캘린더 날짜 클릭 핸들러: 사이드바의 할일 목록만 업데이트합니다.
+    const handleSidebarDateSelect = (day: number) => {
+        const newDate = new Date(miniYear, miniMonth, day);
+        setSelectedSidebarDate(newDate);
+    };
 
+    // 2. 메인 캘린더 날짜 클릭 핸들러: Day 뷰로 전환합니다.
+    const handleMainDateClick = (day: number) => {
+        const newDate = new Date(viewYear, viewMonth, day);
+        setSelectedDate(newDate);
+        setViewMode("day");
+    };
     const handleOpenEventModal = (dateStr?: string) => {
         setModalInitialDate(dateStr || null);
         setEventToEdit(null);
@@ -270,63 +282,112 @@ export default function CalendarUI() {
                         <div className="mt-2 grid grid-cols-7 gap-1 text-sm">{matrix.map((week, ri) => week.map((day, ci) => {
                             const isTodayDate = day && miniYear === today.getFullYear() && miniMonth === today.getMonth() && day === today.getDate();
                             const isSelected = day && miniYear === selectedSidebarDate.getFullYear() && miniMonth === selectedSidebarDate.getMonth() && day === selectedSidebarDate.getDate();
-                            return (<div key={`${ri}-${ci}`} onClick={() => day && setSelectedSidebarDate(new Date(miniYear, miniMonth, day))} className={`h-7 flex items-center justify-center rounded cursor-pointer ${isTodayDate ? "bg-slate-800 text-white" : isSelected ? "bg-slate-200 text-slate-800" : "text-slate-500 hover:bg-slate-100"}`}>{day ?? ""}</div>);
+                            return (
+                                <div
+                                    key={`${ri}-${ci}`}
+                                    // [수정] 미니 캘린더 전용 핸들러 (사이드바 할일 업데이트용)를 연결합니다.
+                                    onClick={() => day && handleSidebarDateSelect(day)}
+                                    className={`h-7 flex items-center justify-center rounded cursor-pointer ${isTodayDate ? "bg-slate-800 text-white" : isSelected ? "bg-slate-200 text-slate-800" : "text-slate-500 hover:bg-slate-100"}`}
+                                >
+                                    {day ?? ""}
+                                </div>
+                            );
                         }))}</div>
                     </div>
                     <div className="mb-6"><h3 className="text-sm font-medium mb-2">To do</h3><div className="space-y-3 text-sm">{sidebarTodos.length > 0 ? (sidebarTodos.map((todo) => (<div key={todo.id} className={`flex items-center gap-3 ${todo.status === "DONE" ? "opacity-50" : ""}`}><div className={`w-2 h-7 rounded ${todo.parentEventColor.startsWith("bg-") ? todo.parentEventColor : ""}`} style={{ backgroundColor: !todo.parentEventColor.startsWith("bg-") ? todo.parentEventColor : undefined }}></div><div className="flex-1"><div className={`font-medium ${todo.status === "DONE" ? "line-through text-slate-400" : ""}`}>{todo.title}</div><div className="text-xs text-slate-400">{todo.parentEventTitle}</div></div><button onClick={() => handleToggleTodoStatus(todo.id)} className="w-5 h-5 border-2 rounded-full flex items-center justify-center cursor-pointer">{todo.status === "DONE" && (<div className="w-2.5 h-2.5 bg-slate-400 rounded-full"></div>)}</button></div>))) : (<p className="text-xs text-slate-400 text-center py-4">No to-dos for the selected date.</p>)}</div></div>
                     <TaskProgress todos={sidebarTodos} />
                 </aside>
                 <main className="flex-1 p-6 overflow-auto">
-                    <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-6"><button onClick={prevMonth} className="text-slate-800 hover:text-slate-600 text-xl">&#x276E;</button><h2 className="text-lg font-semibold text-slate-800">{new Date(viewYear, viewMonth).toLocaleString("en-US", { month: "long", year: "numeric" })}</h2><button onClick={nextMonth} className="text-slate-800 hover:text-slate-600 text-xl">&#x276F;</button></div><div className="flex items-center gap-3"><select value={viewMode} onChange={(e) => setViewMode(e.target.value as "day" | "week" | "month")} className="border rounded px-3 py-1 text-sm"><option value="month">Month</option><option value="week">Week</option><option value="day">Day</option></select></div></div>
-                    {viewMode === "month" && (<><div className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2">{weekdays.map((w) => (<div key={w} className="text-center">{w}</div>))}</div>
-                        <div className="grid grid-cols-7 gap-2 mt-3">{matrix.map((week, ri) => (<React.Fragment key={ri}>{week.map((day, ci) => {
-                            const dateKey = day ? formatYMD(viewYear, viewMonth, day) : "";
-                            const dayEvents = dateKey ? events.filter((e) => e.startAt.startsWith(dateKey)) : [];
-                            // 해당 날짜에 속한 메모들을 필터링
-                            const dayMemos = dateKey ? memos.filter((m) => m.memoDate === dateKey) : [];
-                            const isTodayDate = dateKey === formatYMD(today.getFullYear(), today.getMonth(), today.getDate());
-                                return (
-                                    <div key={ci} className={`min-h-[92px] border rounded p-2 bg-white relative ${isTodayDate ? "ring-2 ring-slate-300" : ""}`}>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-1">
-                                                <div className="text-sm font-medium">{day ?? ""}</div>
-                                                <div className="flex items-center space-x-1">
-                                                    {dayMemos.map(memo => (
-                                                        <div
-                                                            key={memo.id}
-                                                            onClick={() => setSelectedMemo(memo)}
-                                                            className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
-                                                            title={memo.content}
-                                                        />
-                                                    ))}
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-6">
+                            <button onClick={prevMonth}
+                                    className="text-slate-800 hover:text-slate-600 text-xl">&#x276E;</button>
+                            {/* [수정] Day 뷰일 때는 선택된 날짜를, 아닐 때는 기존 월/년을 표시 */}
+                            <h2 className="text-lg font-semibold text-slate-800">
+                                {viewMode === 'day'
+                                    ? selectedDate.toLocaleDateString('en-US', {
+                                        month: 'long',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                    })
+                                    : new Date(viewYear, viewMonth).toLocaleString("en-US", {
+                                        month: "long",
+                                        year: "numeric"
+                                    })
+                                }
+                            </h2>
+                            <button onClick={nextMonth} className="text-slate-800 hover:text-slate-600 text-xl">&#x276F;</button>
+
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <select value={viewMode} onChange={(e) => setViewMode(e.target.value as "day" | "week" | "month")} className="border rounded px-3 py-1 text-sm">
+                                    <option value="month">Month</option>
+                                    <option value="week">Week</option>
+                                    <option value="day">Day</option>
+                                </select>
+                            </div>
+                    </div>
+                    {viewMode === "month" && (<>
+                                    <div
+                                        className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2">{weekdays.map((w) => (
+                                        <div key={w} className="text-center">{w}</div>))}</div>
+                                    <div className="grid grid-cols-7 gap-2 mt-3">{matrix.map((week, ri) => (
+                                        <React.Fragment key={ri}>{week.map((day, ci) => {
+                                            const dateKey = day ? formatYMD(viewYear, viewMonth, day) : "";
+                                            const dayEvents = dateKey ? events.filter((e) => e.startAt.startsWith(dateKey)) : [];
+                                            // 해당 날짜에 속한 메모들을 필터링
+                                            const dayMemos = dateKey ? memos.filter((m) => m.memoDate === dateKey) : [];
+                                            const isTodayDate = dateKey === formatYMD(today.getFullYear(), today.getMonth(), today.getDate());
+                                            return (
+                                                <div key={ci}
+                                                     className={`min-h-[92px] border rounded p-2 bg-white relative ${isTodayDate ? "ring-2 ring-slate-300" : ""}`}>
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-1">
+                                                            <div
+                                                                className="text-sm font-medium cursor-pointer hover:text-blue-600"
+                                                                onClick={() => day && handleMainDateClick(day)}
+                                                            >
+                                                                {day ?? ""}
+                                                            </div>
+                                                            <div className="flex items-center space-x-1">
+                                                                {dayMemos.map(memo => (
+                                                                    <div
+                                                                        key={memo.id}
+                                                                        onClick={() => setSelectedMemo(memo)}
+                                                                        className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
+                                                                        title={memo.content}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        {day && (
+                                                            <button onClick={() => handleOpenEventModal(dateKey)}
+                                                                    className="w-5 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-full text-lg">+</button>
+                                                        )}
+                                                    </div>
+                                                    <div className="mt-2 space-y-2">
+                                                        {dayEvents.slice(0, 2).map((ev) => (
+                                                            <div
+                                                                key={ev.id}
+                                                                className="px-2 py-1 rounded text-xs text-white cursor-pointer"
+                                                                onClick={() => setSelectedEvent(ev)}
+                                                                // style 속성을 사용하여 배경색 동적 할당
+                                                                style={{backgroundColor: ev.color}}
+                                                            >
+                                                                <div className="truncate">{ev.title}</div>
+                                                            </div>
+                                                        ))}
+                                                        {dayEvents.length > 2 && (<div
+                                                            className="text-[12px] text-slate-400">+{dayEvents.length - 2} more</div>)}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            {day && (
-                                                <button onClick={() => handleOpenEventModal(dateKey)} className="w-5 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-full text-lg">+</button>
-                                            )}
-                                        </div>
-                                        <div className="mt-2 space-y-2">
-                                            {dayEvents.slice(0, 2).map((ev) => (
-                                                <div
-                                                    key={ev.id}
-                                                    className="px-2 py-1 rounded text-xs text-white cursor-pointer"
-                                                    onClick={() => setSelectedEvent(ev)}
-                                                    // style 속성을 사용하여 배경색 동적 할당
-                                                    style={{ backgroundColor: ev.color }}
-                                                >
-                                                    <div className="truncate">{ev.title}</div>
-                                                </div>
-                                            ))}
-                                            {dayEvents.length > 2 && (<div className="text-[12px] text-slate-400">+{dayEvents.length - 2} more</div>)}
-                                        </div>
-                                    </div>
-                                );
-                            })}</React.Fragment>
-                        ))}</div>
-                        </>
-                    )}
-                    {viewMode === "week" && <WeekView events={events} />}
-                    {viewMode === "day" && <DayView events={events} />}
+                                            );
+                                        })}</React.Fragment>
+                                    ))}</div>
+                                </>
+                            )}
+                            {viewMode === "week" && <WeekView events={events}/>}
+                    {viewMode === "day" && <DayView events={events} date={selectedDate} />}
                 </main>
                 <SidebarRight onOpenTeamModal={handleOpenTeamModal} onOpenEventModal={() => handleOpenEventModal()} onOpenSettingsModal={handleOpenProjectSettingsModal} />
             </div>
