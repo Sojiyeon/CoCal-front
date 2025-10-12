@@ -8,7 +8,7 @@ import Button from '../ui/Button';
 // 프로젝트 생성 데이터 타입 정의
 export interface ProjectFormData {
     name: string;
-    client: string;
+    description: string;
     startDate: string;
     endDate: string;
 }
@@ -16,31 +16,33 @@ export interface ProjectFormData {
 interface CreateProjectModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onCreateProject: (data: ProjectFormData) => void;
+    userName: string;
+    onCreateProject: (data: ProjectFormData) => Promise<void>;
 }
 
-const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, onCreateProject }) => {
+const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, userName, onCreateProject }) => {
     const [formData, setFormData] = useState<ProjectFormData>({
         name: '',
-        client: '',
+        description: '',
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date().toISOString().split('T')[0],
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.name || !formData.client || !formData.startDate || !formData.endDate) {
+        if (!formData.name || !formData.startDate || !formData.endDate) {
             console.error('All fields are required.');
             return;
         }
-        onCreateProject(formData);
+        await onCreateProject(formData);
         onClose();
-        setFormData({ name: '', client: '', startDate: '', endDate: '' }); // 폼 초기화
+        setFormData({ name: '', description: '', startDate: new Date().toISOString().split('T')[0],
+            endDate: new Date().toISOString().split('T')[0] }); // 폼 초기화
     };
 
     return (
@@ -62,19 +64,32 @@ const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, onCr
                     />
                 </div>
 
+                {/* Project Description */}
+                <div>
+                    <label htmlFor="projectDescription" className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                    <textarea
+                        id="projectDescription"
+                        name="description"
+                        placeholder="프로젝트의 목표, 주요 요구사항 등을 간략하게 설명해 주세요."
+                        value={formData.description}
+                        onChange={handleChange}
+                        rows={3}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150 resize-y"
+                    />
+                </div>
+
                 {/* Client Name */}
                 <div>
-                    <label htmlFor="clientName" className="block text-sm font-medium text-gray-700 mb-1">Client Name</label>
+                    <label htmlFor="clientName" className="block text-sm font-medium text-gray-700 mb-1">Project Creator</label>
                     <input
                         type="text"
                         id="clientName"
                         name="client"
-                        placeholder="Client Name"
-                        value={formData.client}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
-                        required
+                        value={userName} // 상위 컴포넌트에서 받은 사용자 이름 사용
+                        readOnly
+                        className="w-full px-4 py-3 border border-gray-300 bg-gray-50 rounded-lg text-gray-500 cursor-not-allowed"
                     />
+                    <p className="text-xs text-gray-500 mt-1">This project will be created under your name.</p>
                 </div>
 
                 {/* Start Date / End Date */}

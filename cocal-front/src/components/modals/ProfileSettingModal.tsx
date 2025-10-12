@@ -2,6 +2,7 @@
 
 import React, { FC, useState, createContext, useContext, useEffect, useRef } from 'react';
 import { X, ChevronRight } from 'lucide-react';
+import { fetchWithAuth } from '@/utils/authService';
 
 // --- Global Type Definitions ---
 interface User {
@@ -42,7 +43,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetchUserProfile = async (token: string) => {
         setIsLoading(true);
         try {
-            const response = await fetch(API_ME_ENDPOINT, {
+            const response = await fetchWithAuth(API_ME_ENDPOINT, {
                 method: 'GET',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -72,7 +73,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
             try {
-                await fetch(API_LOGOUT_ENDPOINT, {
+                await fetchWithAuth(API_LOGOUT_ENDPOINT, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ refreshToken }),
@@ -109,6 +110,7 @@ interface ApiEndpoints {
     UPDATE_USER_NAME: string;
     UPDATE_USER_PASSWORD: string;
     UPDATE_USER_PHOTO: string;
+    DELETE_USER_PHOTO: string;
 }
 
 interface ProfileSettingsModalProps {
@@ -274,12 +276,12 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
             return;
         }
         const formData = new FormData();
-        formData.append('profileImage', file);
+        formData.append('image', file);
 
         try {
             console.log(`API 호출: ${apiEndpoints.UPDATE_USER_PHOTO}로 파일 [${file.name}] 전송`);
 
-            const response = await fetch(apiEndpoints.UPDATE_USER_PHOTO, {
+            const response = await fetchWithAuth(apiEndpoints.UPDATE_USER_PHOTO, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -290,7 +292,6 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
             if (response.ok) {
                 const result = await response.json();
                 const data = result.data || result;
-
                 setUser(prev => ({
                     ...prev,
                     profileImageUrl: data.profileImageUrl || data.imageUrl || prev.profileImageUrl
@@ -322,6 +323,36 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
         }
         event.target.value = '';
     };
+    const handleDeletePhoto = async () => {
+        if (!window.confirm("프로필 이미지를 삭제하시겠습니까?")) return;
+
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) { /* ... 인증 만료 처리 ... */
+            return;
+        }
+
+        try {
+            const response = await fetchWithAuth(apiEndpoints.DELETE_USER_PHOTO, {
+                method: 'DELETE', // DELETE 메서드 사용
+                headers: {
+                    // 이 요청은 본문(body)이 없으므로 Content-Type이 필요 없습니다.
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            if (response.ok) {
+                // 성공 시, user 상태에서 프로필 이미지 URL을 null로 업데이트
+                setUser(prev => ({...prev, profileImageUrl: null}));
+                alert('프로필 이미지가 삭제되었습니다.');
+            } else {
+                const errorData = await response.json();
+                alert(`이미지 삭제 실패: ${errorData.message || '서버 오류'}`);
+            }
+        } catch (error) {
+            console.error("이미지 삭제 네트워크 오류:", error);
+            alert("이미지 삭제 중 네트워크 오류가 발생했습니다.");
+        }
+    };
 
     const handleNameUpdate = async (newName: string) => {
         const accessToken = localStorage.getItem('accessToken');
@@ -335,7 +366,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
 
         try {
             console.log(`API 호출: ${apiEndpoints.UPDATE_USER_NAME}로 새 이름 [${newName}] 전송`);
-            const response = await fetch(apiEndpoints.UPDATE_USER_NAME, {
+            const response = await fetchWithAuth(apiEndpoints.UPDATE_USER_NAME, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -373,7 +404,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
         }
 
         try {
-            const response = await fetch(apiEndpoints.UPDATE_USER_PASSWORD, {
+            const response = await fetchWithAuth(apiEndpoints.UPDATE_USER_PASSWORD, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -414,7 +445,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
             return;
         }
         try {
-            const response = await fetch(API_DELETE_ENDPOINTS, {
+            const response = await fetchWithAuth(API_DELETE_ENDPOINTS, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             });
@@ -470,11 +501,22 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                             accept="image/*" // 이미지 파일만 허용
                             style={{ display: 'none' }} // 화면에서 숨김
                         />
-                        <button
-                            onClick={handlePhotoClick}
-                            className="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium transition"
-                        > Change Photo
-                        </button>
+                        <div className="flex items-center space-x-4 mt-3">
+                            <button
+                                onClick={handlePhotoClick}
+                                className="text-sm text-blue-600 hover:text-blue-700 font-medium transition"
+                            >
+                                Change Photo
+                            </button>
+                            {user.profileImageUrl && (
+                                <button
+                                    onClick={handleDeletePhoto}
+                                    className="text-sm text-red-500 hover:text-red-700 font-medium transition"
+                                >
+                                    Delete Photo
+                                </button>
+                            )}
+                        </div>
                         <div className="w-full space-y-2">
                             {/* 이름 수정 필드 */}
                             <InputField

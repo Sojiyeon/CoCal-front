@@ -5,20 +5,29 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
-import ProfileSettingsModal, { useUser } from '@/components/modals/ProfileSettingModal';
+import ProfileSettingsModal, { useUser, UserProvider } from '@/components/modals/ProfileSettingModal';
+import { fetchWithAuth } from '@/utils/authService';
 
 const API_BASE_URL = 'https://cocal-server.onrender.com';
-
+const API_PROJECTS_ENDPOINT = `${API_BASE_URL}/api/project`;
 const API_ME_ENDPOINT= `${API_BASE_URL}/api/users/me`;
+
 const API_ENDPOINTS = {
     UPDATE_USER_NAME: `${API_BASE_URL}/api/users/edit-name`,
     UPDATE_USER_PASSWORD: `${API_BASE_URL}/api/users/edit-pwd`,
     UPDATE_USER_PHOTO: `${API_BASE_URL}/api/users/profile-image`,
+    DELETE_USER_PHOTO: `${API_BASE_URL}/api/users/profile-image`,
 };
 
 // --- DUMMY DATA & TYPES ---
 
 type ProjectCategory = 'All' | 'In Progress' | 'Completed';
+
+interface TeamMemberForCard {
+    id: number;
+    name: string;
+    imageUrl: string;
+}
 
 interface Project {
     id: number;
@@ -26,7 +35,7 @@ interface Project {
     startDate: string;
     endDate: string;
     status: 'In Progress' | 'Completed';
-    colorTags: string[]; // 색상 태그
+    members: TeamMemberForCard[];
 }
 
 interface CurrentUser {
@@ -48,6 +57,7 @@ interface ExpectedApiEndpoints {
     UPDATE_USER_NAME: string;
     UPDATE_USER_PASSWORD: string;
     UPDATE_USER_PHOTO: string;
+    DELETE_USER_PHOTO: string;
 }
 interface ProfileSettingsModalProps {
     isOpen: boolean;
@@ -61,11 +71,25 @@ const ProfileSettingsModalTyped: FC<ProfileSettingsModalProps> = ProfileSettings
 
 // 초기 더미 프로젝트 데이터
 const INITIAL_PROJECTS: Project[] = [
-    { id: 1, name: 'Project name', startDate: '2025-09-22', endDate: '2025-12-31', status: 'In Progress', colorTags: ['#6EE7B7', '#93C5FD'] },
-    { id: 2, name: 'Project name2', startDate: '2025-08-22', endDate: '2025-12-31', status: 'In Progress', colorTags: ['#FCA5A5', '#FDBA74', '#A78BFA'] },
-    { id: 3, name: 'Project name3', startDate: '2025-09-22', endDate: '2025-12-31', status: 'Completed', colorTags: ['#A78BFA', '#FBCFE8'] },
-    { id: 4, name: 'Project name4', startDate: '2025-09-22', endDate: '2025-12-31', status: 'In Progress', colorTags: ['#6EE7B7'] },
-    { id: 5, name: 'Project name5', startDate: '2025-08-22', endDate: '2025-10-15', status: 'Completed', colorTags: ['#A78BFA', '#93C5FD'] },
+    { id: 1, name: 'Project name', startDate: '2025-09-22', endDate: '2025-12-31', status: 'In Progress', members: [
+            { id: 101, name: 'Alice', imageUrl: 'https://placehold.co/100x100/4F46E5/FFFFFF?text=A' },
+            { id: 104, name: 'Dave', imageUrl: 'https://placehold.co/100x100/EF4444/FFFFFF?text=D' },
+        ]  },
+    { id: 2, name: 'Project name2', startDate: '2025-08-22', endDate: '2025-12-31', status: 'In Progress', members: [
+            { id: 103, name: 'Charlie', imageUrl: 'https://placehold.co/100x100/F59E0B/FFFFFF?text=C' },
+        ]  },
+    { id: 3, name: 'Project name3', startDate: '2025-09-22', endDate: '2025-12-31', status: 'Completed', members: [
+            { id: 102, name: 'Bob', imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF?text=B' },
+            { id: 103, name: 'Charlie', imageUrl: 'https://placehold.co/100x100/F59E0B/FFFFFF?text=C' },
+            { id: 104, name: 'Dave', imageUrl: 'https://placehold.co/100x100/EF4444/FFFFFF?text=D' },
+        ]  },
+    { id: 4, name: 'Project name4', startDate: '2025-09-22', endDate: '2025-12-31', status: 'In Progress', members: [
+            { id: 103, name: 'Charlie', imageUrl: 'https://placehold.co/100x100/F59E0B/FFFFFF?text=C' },
+            { id: 104, name: 'Dave', imageUrl: 'https://placehold.co/100x100/EF4444/FFFFFF?text=D' },
+        ]  },
+    { id: 5, name: 'Project name5', startDate: '2025-08-22', endDate: '2025-10-15', status: 'Completed', members: [
+            { id: 102, name: 'Bob', imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF?text=B' },
+        ]  },
 ];
 
 
@@ -141,6 +165,11 @@ const ProjectCard: FC<{ project: Project }> = ({ project }) => {
         { label: 'Delete', action: () => console.log('Delete clicked for', project.name), isDestructive: true },
     ];
 
+    const members = Array.isArray(project.members) ? project.members : [];
+    const MAX_VISIBLE_MEMBERS = 5; // 최대 5명 표시
+    const visibleMembers = members.slice(0, MAX_VISIBLE_MEMBERS);
+    const extraMembersCount = members.length - MAX_VISIBLE_MEMBERS;
+
     return (
         <div className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition duration-200 relative border border-gray-100">
             <div className="flex justify-between items-start">
@@ -150,7 +179,6 @@ const ProjectCard: FC<{ project: Project }> = ({ project }) => {
                         {formatDates(project.startDate, project.endDate)}
                     </p>
                 </div>
-
                 {/* 드롭다운 메뉴 버튼 */}
                 <div ref={dropdownRef}>
                     <button
@@ -160,21 +188,24 @@ const ProjectCard: FC<{ project: Project }> = ({ project }) => {
                         <MoreVertical className="w-5 h-5" />
                     </button>
                 </div>
-            </div>
-
-            {/* 색상 태그 */}
-            <div className="flex space-x-1.5 mt-4">
-                {project.colorTags.slice(0, 3).map((color, index) => (
-                    <div
-                        key={index}
-                        className="w-4 h-4 rounded-full border border-white shadow-sm"
-                        style={{ backgroundColor: color }}
-                        title={`Tag ${index + 1}`}
-                    />
-                ))}
-                {project.colorTags.length > 3 && (
-                    <span className="text-xs text-gray-500 pt-[2px]">{`+${project.colorTags.length - 3}`}</span>
-                )}
+                <div className="flex items-center space-x-[-8px] mt-4">
+                    {visibleMembers.map((member, index) => (
+                        // 이미지 스택 효과를 위해 z-index와 negative margin 사용
+                        <img
+                            key={member.id || index}
+                            src={member.imageUrl}
+                            alt={member.name || 'Team member'}
+                            // Tailwind CSS: w-7 h-7, rounded-full, border-2 border-white
+                            className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-sm transition transform hover:scale-110"
+                            style={{ zIndex: visibleMembers.length - index }}
+                        />
+                    ))}
+                    {extraMembersCount > 0 && (
+                        <div className="w-7 h-7 rounded-full bg-gray-200 border-2 border-white shadow-sm flex items-center justify-center text-xs font-medium text-gray-600 z-10">
+                            +{extraMembersCount}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* 드롭다운 메뉴 (Edit/Delete) */}
@@ -320,55 +351,101 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
 
 // --- Main Dashboard Page ---
 const API_LOGOUT_ENDPOINT = `${API_BASE_URL}/api/auth/logout`;
-const ProjectDashboardPage: React.FC = () => {
+const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In Progress' | 'Completed' => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(startDateStr);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDateStr);
+    end.setHours(0, 0, 0, 0);
+
+    if (end.getTime() < today.getTime()) {
+        return 'Completed';
+    }
+    // 'In Progress' 또는 'Completed'만 반환하므로 타입이 안전해집니다.
+    return 'In Progress';
+};
+
+    const ProjectDashboardPage: React.FC = () => {
     const router = useRouter();
     const { user, isLoading: isLoadingUser, logout } = useUser();
     // const [currentUser, setCurrentUser] = useState<CurrentUser>(DEFAULT_USER);
-    // const [isLoadingUser, setIsLoadingUser] = useState(true);
+    const [isLoadingProjects, setIsLoadingProjects] = useState(false);
     const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
     const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('All');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
+    const fetchProjects = async () => {
+        setIsLoadingProjects(true);
+        try {
+            console.log(`API 호출: ${API_PROJECTS_ENDPOINT}로 프로젝트 목록 조회 요청`);
+            const response = await fetchWithAuth(API_PROJECTS_ENDPOINT, {
+                method: 'GET',
+            });
+            if (response.ok) {
+                const result = await response.json();
+                const rawData = result.data;
+                const projectsData: Project[] = Array.isArray(rawData) ? rawData.map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    startDate: item.startDate,
+                    endDate: item.endDate,
+                    status: calculateProjectStatus(item.startDate, item.endDate),
+                    members: Array.isArray(item.members) ? item.members : [], // 멤버 기본값 설정
+                })) : [];
+                setProjects(projectsData);
+                console.log('프로젝트 목록 조회 성공:', projectsData.length, '개');
+            } else if (response.status === 401) {
+                console.error("AccessToken 및 RefreshToken 만료. 로그아웃 처리 필요.");
+                handleLogout(); // 로그아웃 처리
+            } else {
+                console.error('프로젝트 목록 로드 실패:', response.status);
+            }
+        } catch (error) {
+            console.error("프로젝트 목록 로드 중 네트워크 오류:", error);
+        } finally {
+            setIsLoadingProjects(false);
+        }
+    };
 /*
     const fetchUserProfile = async (token: string) => {
         setIsLoadingUser(true);
         try {
             console.log(`API 호출: ${API_ME_ENDPOINT}로 사용자 정보 요청`);
-            const response = await fetch(API_ME_ENDPOINT, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (response.ok) {
-                const result = await response.json();
-                const userData = result.data;
+            const response = await fetchWithAuth(API_ME_ENDPOINT, {
+                                method: 'GET',
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            if (response.ok) {
+                                const result = await response.json();
+                                const userData = result.data;
 
-                const userProfile: CurrentUser = {
-                    id: userData.id || null,
-                    name: userData.name || DEFAULT_USER.name,
-                    email: userData.email || DEFAULT_USER.email,
-                    imageUrl: userData.profileImageUrl || DEFAULT_USER.imageUrl
-                };
-                setCurrentUser(userProfile);
-                console.log('서버에서 사용자 프로필 로드 성공:', userProfile);
-                localStorage.setItem('userProfile', JSON.stringify(userProfile));
-            } else {
-                console.error('사용자 정보 로드 실패:', response.status);
-                if (response.status === 401) {
-                    console.log("토큰 만료/유효하지 않음. 자동 로그아웃 처리.");
-                    localStorage.removeItem('accessToken');
-                    localStorage.removeItem('refreshToken');
-                    // window.location.href = '/'; // 실제 앱에서는 리디렉션
-                }
-            }
-        } catch (error) {
-            console.error("사용자 정보 로드 네트워크 오류:", error);
-        } finally {
-            setIsLoadingUser(false);
-        }
-    };
-*/
-
+                                const userProfile: CurrentUser = {
+                                    id: userData.id || null,
+                                    name: userData.name || DEFAULT_USER.name,
+                                    email: userData.email || DEFAULT_USER.email,
+                                    imageUrl: userData.profileImageUrl || DEFAULT_USER.imageUrl
+                                };
+                                setCurrentUser(userProfile);
+                                console.log('서버에서 사용자 프로필 로드 성공:', userProfile);
+                                localStorage.setItem('userProfile', JSON.stringify(userProfile));
+                            } else {
+                                console.error('사용자 정보 로드 실패:', response.status);
+                                if (response.status === 401) {
+                                    console.log("토큰 만료/유효하지 않음. 자동 로그아웃 처리.");
+                                    localStorage.removeItem('accessToken');
+                                    localStorage.removeItem('refreshToken');
+                                    // window.location.href = '/'; // 실제 앱에서는 리디렉션
+                                }
+                            }
+                        } catch (error) {
+                            console.error("사용자 정보 로드 네트워크 오류:", error);
+                        } finally {
+                            setIsLoadingUser(false);
+                        }
+                    };
+                */
 /*
     useEffect(() => {
         const accessToken = localStorage.getItem('accessToken');
@@ -394,18 +471,70 @@ const ProjectDashboardPage: React.FC = () => {
         }
     }, []);
 */
-
+    useEffect(() => {
+        if (!isLoadingUser && user.id) {
+            fetchProjects();
+        }
+    }, [isLoadingUser, user.id]);
     // 프로젝트 생성 핸들러
-    const handleCreateProject = (data: ProjectFormData) => {
-        const newProject: Project = {
-            id: Date.now(),
+    const handleCreateProject = async (data: ProjectFormData) => {
+        const projectData = {
+            // id: Date.now(),
             name: data.name,
+            description: data.description,
             startDate: data.startDate,
             endDate: data.endDate,
-            status: 'In Progress',
-            colorTags: ['#34D399'],
+            // status: 'In Progress',
         };
-        setProjects(prev => [newProject, ...prev]);
+        try {
+            console.log('API 호출: 프로젝트 생성 (POST) 요청 중...');
+            const response = await fetchWithAuth(API_PROJECTS_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(projectData),
+            });
+            if (response.ok) {
+                const result = await response.json();
+                const serverProject = result.data;
+                if (!serverProject || !serverProject.id) {
+                    console.error("프로젝트 생성 성공 응답에 필수 ID 필드가 누락되었습니다.", serverProject);
+                    alert("프로젝트 생성에는 성공했으나, 목록 조회 오류로 표시되지 않습니다. 새로고침해보세요.");
+                    fetchProjects(); // 서버에 다시 요청하여 목록 동기화 시도
+                    return;
+                }
+                const defaultMember: TeamMemberForCard = {
+                    id: user.id || 0,
+                    name: user.name || 'Owner',
+                    imageUrl: user.profileImageUrl || DEFAULT_USER.imageUrl,
+                };
+                const calculatedStatus = calculateProjectStatus(serverProject.startDate || data.startDate, serverProject.endDate || data.endDate);
+                const createdProject: Project = {
+                    id: serverProject.id,
+                    name: serverProject.name || data.name,
+                    startDate: serverProject.startDate || data.startDate,
+                    endDate: serverProject.endDate || data.endDate,
+                    status: calculatedStatus,
+                    members: Array.isArray(serverProject.members)
+                        ? serverProject.members
+                        : [defaultMember], // 서버가 멤버를 반환하지 않으면 생성자(본인) 추가
+                };
+                // 클라이언트 상태에 즉시 추가 (새로고침 없이 목록에 표시)
+                setProjects(prev => [createdProject, ...prev]);
+                console.log('프로젝트 생성 성공 및 상태 업데이트 완료:', createdProject.name);
+            } else if (response.status === 401) {
+                console.error("인증 실패. 로그아웃 처리 필요.");
+                handleLogout();
+            } else {
+                console.error('프로젝트 생성 실패:', response.status, await response.text());
+                // 생성 실패 시 사용자에게 알림 (옵션)
+                alert("프로젝트 생성에 실패했습니다. 다시 시도해 주세요.");
+            }
+        } catch (error) {
+            console.error("프로젝트 생성 중 네트워크 오류:", error);
+            alert("네트워크 연결에 문제가 발생했습니다.");
+        }
     };
 
     // 프로젝트 필터링 로직
@@ -447,8 +576,7 @@ const ProjectDashboardPage: React.FC = () => {
         }
     };
 */
-
-    if (isLoadingUser) {
+    if (isLoadingUser || isLoadingProjects) {
         return (
             <div className="min-h-screen bg-gray-50 font-sans flex items-center justify-center">
                 <div className="flex flex-col items-center">
@@ -458,6 +586,7 @@ const ProjectDashboardPage: React.FC = () => {
             </div>
         );
     }
+    const currentUserName = user.name || 'Guest';
     const displayUser: CurrentUser = {
         id: user.id,
         name: user.name || DEFAULT_USER.name,
@@ -497,7 +626,6 @@ const ProjectDashboardPage: React.FC = () => {
                         {filteredProjects.map(project => (
                             // [추가] 캘린더 연동
                             <Link href={`/calendar/${project.id}`} key={project.id}>
-
                                 <ProjectCard project={project} />
                             </Link>
                         ))}
@@ -513,6 +641,7 @@ const ProjectDashboardPage: React.FC = () => {
             <CreateProjectModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
+                userName={currentUserName}
                 onCreateProject={handleCreateProject}
             />
 
