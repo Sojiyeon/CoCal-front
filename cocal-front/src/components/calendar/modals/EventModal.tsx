@@ -5,15 +5,12 @@ import { CalendarEvent, ModalFormData } from "../types";
 
 type ActiveTab = "Event" | "Todo" | "Memo";
 
-// [수정 1] 컴포넌트와 관련 없는 상수는 밖으로 분리하는 것이 좋습니다.
 const palettes = [
     ["#19183B", "#708993", "#A1C2BD", "#E7F2EF"],
     ["#F8FAFC", "#D9EAFD", "#BCCCDC", "#9AA6B2"],
     ["#FFEADD", "#FF6666", "#BF3131", "#7D0A0A"],
 ];
 
-// [수정 2] ColorPaletteSelector를 별도의 컴포넌트로 분리합니다.
-// 부모로부터 상태와 상태 변경 함수를 props로 받습니다.
 interface ColorPaletteProps {
     selectedColor: string;
     onColorChange: (color: string) => void;
@@ -23,14 +20,14 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
 
     const handleColorSelect = (color: string) => {
-        onColorChange(color); // 부모로부터 받은 함수를 실행
+        onColorChange(color);
         setIsPaletteOpen(false);
     };
 
     return (
         <div className="relative w-full">
             <button
-                type="button" // form 안에서 submit 방지
+                type="button"
                 onClick={() => setIsPaletteOpen(!isPaletteOpen)}
                 className="w-full border rounded-md px-3 py-2 text-sm flex items-center gap-2 cursor-pointer hover:bg-slate-50"
             >
@@ -67,13 +64,13 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
 }
 interface Props {
     onClose: () => void;
-    onSave: (itemData: ModalFormData, type: ActiveTab) => void;
+    onSave: (itemData: ModalFormData, type: ActiveTab, id?: number) => void;
     initialDate?: string | null;
     editEvent: CalendarEvent | null;
     projectId: number;
 }
 
-export function EventModal({ onClose, onSave, initialDate, projectId }: Props) {
+export function EventModal({ onClose, onSave, editEvent, initialDate, projectId }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
     const [isLoading, setIsLoading] = useState(false);
 
@@ -92,27 +89,40 @@ export function EventModal({ onClose, onSave, initialDate, projectId }: Props) {
     });
 
     useEffect(() => {
-        const date = initialDate ? new Date(initialDate) : new Date();
-        const startDateTime = new Date(
-            date.getTime() - date.getTimezoneOffset() * 60000
-        )
-            .toISOString()
-            .slice(0, 16);
-        date.setHours(date.getHours() + 1);
-        const endDateTime = new Date(
-            date.getTime() - date.getTimezoneOffset() * 60000
-        )
-            .toISOString()
-            .slice(0, 16);
-        const justDate = startDateTime.split("T")[0];
+        // [수정] '수정 모드'일 경우 (editEvent prop이 있을 때)
+        if (editEvent) {
+            // 폼 데이터를 수정할 이벤트의 정보로 채웁니다.
+            setFormData({
+                title: editEvent.title,
+                description: editEvent.description || "",
+                url: "", // 실제 데이터 구조에 맞게 수정 필요
+                startAt: editEvent.startAt.slice(0, 16),
+                endAt: editEvent.endAt.slice(0, 16),
+                location: editEvent.location || "",
+                visibility: editEvent.visibility,
+                memoDate: editEvent.startAt.split("T")[0],
+                content: "", // 이벤트 수정 시에는 사용하지 않음
+                color: editEvent.color,
+                category: "Project 1", // 실제 데이터 구조에 맞게 수정 필요
+            });
+            // 수정 시에는 'Event' 탭이 기본으로 선택되도록 강제
+            setActiveTab("Event");
+        } else {
+            // '생성 모드'일 경우 (editEvent prop이 없을 때) - 기존 로직
+            const date = initialDate ? new Date(initialDate) : new Date();
+            const startDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            date.setHours(date.getHours() + 1);
+            const endDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            const justDate = startDateTime.split("T")[0];
 
-        setFormData((prev) => ({
-            ...prev,
-            startAt: startDateTime,
-            endAt: endDateTime,
-            memoDate: justDate,
-        }));
-    }, [initialDate]);
+            setFormData((prev) => ({
+                ...prev,
+                startAt: startDateTime,
+                endAt: endDateTime,
+                memoDate: justDate,
+            }));
+        }
+    }, [initialDate, editEvent]);
 
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -131,8 +141,6 @@ export function EventModal({ onClose, onSave, initialDate, projectId }: Props) {
     const handleSave = async () => {
         setIsLoading(true);
 
-        // [수정] Unused parameter 경고 해결을 위해 projectId를 사용합니다.
-        console.log(`Saving item for project ID: ${projectId}`);
 
         // ===============================================================
         // ▼▼▼ API 호출 로직 주석 처리 ▼▼▼
@@ -221,14 +229,14 @@ export function EventModal({ onClose, onSave, initialDate, projectId }: Props) {
                             <span>Reminder</span> <span>15min ago</span>
                         </div>
 
-                            <input
-                                type="text"
-                                name="url"
-                                placeholder="URL"
-                                value={formData.url}
-                                onChange={handleInputChange}
-                                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
+                        <input
+                            type="text"
+                            name="url"
+                            placeholder="URL"
+                            value={formData.url}
+                            onChange={handleInputChange}
+                            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
                         <div>
                             <label className="text-sm font-medium text-slate-600">
                                 Visibility
@@ -367,7 +375,8 @@ export function EventModal({ onClose, onSave, initialDate, projectId }: Props) {
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
             <div className="bg-white rounded-xl shadow-lg p-6 w-[500px]">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold text-slate-800">New</h2>
+                    <h2 className="text-lg font-bold text-slate-800">{editEvent ? "Edit Event" : "New"}</h2>
+
                     <button
                         onClick={onClose}
                         className="text-slate-400 hover:text-slate-600 text-2xl"
@@ -377,8 +386,8 @@ export function EventModal({ onClose, onSave, initialDate, projectId }: Props) {
                 </div>
                 <div className="flex items-center gap-2 mb-6 border-b pb-2">
                     <TabButton tabName="Event" />
-                    <TabButton tabName="Todo" />
-                    <TabButton tabName="Memo" />
+                    {!editEvent && <TabButton tabName="Todo" />}
+                    {!editEvent && <TabButton tabName="Memo" />}
                 </div>
                 <div>{renderForm()}</div>
                 <div className="mt-6 flex justify-end">
