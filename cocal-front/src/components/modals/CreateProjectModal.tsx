@@ -63,7 +63,6 @@ const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, user
                         required
                     />
                 </div>
-
                 {/* Project Description */}
                 <div>
                     <label htmlFor="projectDescription" className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
@@ -77,7 +76,6 @@ const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, user
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150 resize-y"
                     />
                 </div>
-
                 {/* Client Name */}
                 <div>
                     <label htmlFor="clientName" className="block text-sm font-medium text-gray-700 mb-1">Project Creator</label>
@@ -91,7 +89,6 @@ const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, user
                     />
                     <p className="text-xs text-gray-500 mt-1">This project will be created under your name.</p>
                 </div>
-
                 {/* Start Date / End Date */}
                 <div className="flex space-x-4">
                     <div className="flex-1">
@@ -119,7 +116,6 @@ const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, user
                         />
                     </div>
                 </div>
-
                 {/* Create Button */}
                 <div className="flex justify-center pt-4">
                     <Button
@@ -134,5 +130,4 @@ const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, user
         </Modal>
     );
 };
-
 export default CreateProjectModal;

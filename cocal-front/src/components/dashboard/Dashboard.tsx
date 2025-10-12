@@ -9,7 +9,7 @@ import ProfileSettingsModal, { useUser, UserProvider } from '@/components/modals
 import { fetchWithAuth } from '@/utils/authService';
 
 const API_BASE_URL = 'https://cocal-server.onrender.com';
-const API_PROJECTS_ENDPOINT = `${API_BASE_URL}/api/project`;
+const API_PROJECTS_ENDPOINT = `${API_BASE_URL}/api/projects`;
 const API_ME_ENDPOINT= `${API_BASE_URL}/api/users/me`;
 
 const API_ENDPOINTS = {
