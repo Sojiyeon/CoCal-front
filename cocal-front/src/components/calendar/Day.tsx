@@ -13,7 +13,7 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
 
     const dayEvents = events.filter((e) => {
         // 'start_date'를 'start_at'으로 수정
-        const start = new Date(e.start_at);
+        const start = new Date(e.startAt);
         return (
             start.getFullYear() === date.getFullYear() &&
             start.getMonth() === date.getMonth() &&
@@ -24,8 +24,8 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
     const renderEvents = () => {
         return dayEvents.map((event) => {
             // 'start_date'와 'end_date'를 'start_at'과 'end_at'으로 수정
-            const start = new Date(event.start_at);
-            const end = new Date(event.end_at || event.start_at);
+            const start = new Date(event.startAt);
+            const end = new Date(event.endAt || event.startAt);
 
             const startHour = start.getHours() + start.getMinutes() / 60;
             const endHour = end.getHours() + end.getMinutes() / 60;
