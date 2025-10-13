@@ -2,6 +2,7 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
@@ -396,7 +397,7 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
             if (response.ok) {
                 const result = await response.json();
                 const rawData = result.data?.content || result.data || result;
-                const projectsData: Project[] = Array.isArray(rawData) ? rawData.map((item: any) => ({
+                const projectsData: Project[] = Array.isArray(rawData) ? rawData.map(item => ({
                     id: item.id,
                     name: item.name,
                     description: item.description,
@@ -418,8 +419,8 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
             } else {
                 console.error('프로젝트 목록 로드 실패:', response.status);
             }
-        } catch (error) {
-            console.error("프로젝트 목록 로드 중 네트워크 오류:", error);
+        } catch (_error) {
+            console.error("프로젝트 목록 로드 중 네트워크 오류:", _error);
         } finally {
             setIsLoadingProjects(false);
         }

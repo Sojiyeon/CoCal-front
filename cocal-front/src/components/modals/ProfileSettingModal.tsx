@@ -62,8 +62,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const errorData = await response.json();
                 console.error(`프로필 로드 실패: ${errorData.message || response.statusText}`);
             }
-        } catch (error) {
-            console.error("네트워크 오류가 발생했습니다:", error);
+        } catch (_error) {
+            console.error("네트워크 오류가 발생했습니다:", _error);
         } finally {
             setIsLoading(false); // 로딩 종료
         }
@@ -78,7 +78,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ refreshToken }),
                 });
-            } catch (error) {
+            } catch (_error) {
                 // 오류가 발생해도 클라이언트 측 정리는 계속 진행
             }
         }
@@ -304,13 +304,13 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                 try {
                     const errorData = JSON.parse(responseText);
                     message = errorData.message || response.statusText;
-                } catch (e) {
+                } catch (_e) {
                     console.error("비정상적인 응답:", responseText);
                 }
                 alert(`사진 업데이트 실패: ${message}`);
             }
-        } catch (error) {
-            console.error("사진 업로드 네트워크 오류:", error);
+        } catch (_error) {
+            console.error("사진 업로드 네트워크 오류:", _error);
             alert("사진 업로드 중 네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
         }
     };
@@ -347,8 +347,8 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                 const errorData = await response.json();
                 alert(`이미지 삭제 실패: ${errorData.message || '서버 오류'}`);
             }
-        } catch (error) {
-            console.error("이미지 삭제 네트워크 오류:", error);
+        } catch (_error) {
+            console.error("이미지 삭제 네트워크 오류:", _error);
             alert("이미지 삭제 중 네트워크 오류가 발생했습니다.");
         }
     };
@@ -384,8 +384,8 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                 alert(`이름 수정 실패: ${errorData.message || response.statusText}`);
             }
 
-        } catch (error) {
-            console.error("네트워크 오류 발생:", error);
+        } catch (_error) {
+            console.error("네트워크 오류 발생:", _error);
             alert("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
         } finally {
             setIsEditingName(false); // 수정 모달 닫기
@@ -421,8 +421,8 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                 console.error('비밀번호 변경 실패:', errorData);
                 alert(`비밀번호 변경 실패: ${errorData.message || '현재 비밀번호가 일치하지 않거나 오류가 발생했습니다.'}`);
             }
-        } catch (error) {
-            console.error("네트워크 오류:", error);
+        } catch (_error) {
+            console.error("네트워크 오류:", _error);
             alert("네트워크 오류가 발생했습니다.");
         } finally {
             setIsEditingPassword(false); // 모달 닫기
@@ -454,8 +454,8 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                 const errorData = await response.json().catch(() => ({ message: '삭제 실패' }));
                 console.error('계정 삭제 실패:', response.status, errorData.message);
             }
-        } catch (error) {
-            console.error("계정 삭제 네트워크 오류:", error);
+        } catch (_error) {
+            console.error("계정 삭제 네트워크 오류:", _error);
         } finally {
             window.location.href = '/'; }
     };
