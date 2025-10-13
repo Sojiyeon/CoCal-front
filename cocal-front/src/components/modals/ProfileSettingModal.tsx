@@ -304,7 +304,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                 try {
                     const errorData = JSON.parse(responseText);
                     message = errorData.message || response.statusText;
-                } catch (e) {
+                } catch (_e) {
                     console.error("비정상적인 응답:", responseText);
                 }
                 alert(`사진 업데이트 실패: ${message}`);

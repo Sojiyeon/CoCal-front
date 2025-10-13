@@ -67,7 +67,7 @@ const Login: React.FC = () => {
                 }
             }
             router.push('/dashboard');
-        } catch (err) {
+        } catch (_err) {
             // 네트워크 에러나 JSON 파싱 실패 등
             setError('로그인 중 네트워크 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
         } finally {
