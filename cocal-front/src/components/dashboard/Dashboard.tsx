@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
-import ProfileSettingsModal, { useUser, UserProvider } from '@/components/modals/ProfileSettingModal';
+import ProfileSettingsModal, { useUser } from '@/components/modals/ProfileSettingModal';
 import { fetchWithAuth } from '@/utils/authService';
 
 const API_BASE_URL = 'https://cocal-server.onrender.com';
@@ -173,8 +173,9 @@ const ProjectCard: FC<{ project: Project }> = ({ project }) => {
 
     return (
         <div className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition duration-200 relative border border-gray-100">
-            <div className="flex justify-between items-start">
-                <div className="flex flex-col">
+            {/* 상단 (이름, 날짜, 드롭다운 버튼) */}
+            <div className="flex justify-between items-start mb-4">
+                <div className="flex flex-col flex-grow">
                     <h3 className="font-semibold text-gray-900 line-clamp-1">{project.name}</h3>
                     <p className="text-xs text-gray-500 mt-1">
                         {formatDates(project.startDate, project.endDate)}
@@ -189,26 +190,26 @@ const ProjectCard: FC<{ project: Project }> = ({ project }) => {
                         <MoreVertical className="w-5 h-5" />
                     </button>
                 </div>
-                <div className="flex items-center space-x-[-8px] mt-4">
-                    {visibleMembers.map((member, index) => (
-                        // 이미지 스택 효과를 위해 z-index와 negative margin 사용
-                        <img
-                            key={member.id || index}
-                            src={member.imageUrl}
-                            alt={member.name || 'Team member'}
-                            // Tailwind CSS: w-7 h-7, rounded-full, border-2 border-white
-                            className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-sm transition transform hover:scale-110"
-                            style={{ zIndex: visibleMembers.length - index }}
-                        />
-                    ))}
-                    {extraMembersCount > 0 && (
-                        <div className="w-7 h-7 rounded-full bg-gray-200 border-2 border-white shadow-sm flex items-center justify-center text-xs font-medium text-gray-600 z-10">
-                            +{extraMembersCount}
-                        </div>
-                    )}
-                </div>
             </div>
-
+            <div className="flex items-center space-x-[-4px] pt-2 border-t border-gray-100">
+                {visibleMembers.map((member, index) => (
+                    // 이미지 스택 효과를 위해 z-index와 negative margin 사용
+                    <img
+                        key={member.id || index}
+                        src={member.imageUrl}
+                        title={member.name}
+                        alt={member.name || 'Team member'}
+                        // Tailwind CSS: w-7 h-7, rounded-full, border-2 border-white
+                        className="w-6 h-6 rounded-full object-cover border-2 border-white shadow-sm transition transform hover:scale-110"
+                        style={{ zIndex: visibleMembers.length - index }}
+                    />
+                ))}
+                {extraMembersCount > 0 && (
+                    <div className="w-6 h-6 rounded-full bg-gray-200 border-2 border-white shadow-sm flex items-center justify-center text-xs font-medium text-gray-600 z-10">
+                        +{extraMembersCount}
+                    </div>
+                )}
+            </div>
             {/* 드롭다운 메뉴 (Edit/Delete) */}
             {isDropdownOpen && (
                 <div
@@ -548,9 +549,9 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
         if (selectedCategory === 'All') return true;
         return project.status === selectedCategory;
     });
+
     const handleOpenSettingsModal = () => setIsSettingsModalOpen(true);
     const handleCloseSettingsModal = () => setIsSettingsModalOpen(false);
-
 
         /*
             const handleLogout = async () => {
@@ -620,22 +621,20 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
                     onSelectCategory={setSelectedCategory}
                     onOpenCreateModal={() => setIsCreateModalOpen(true)}
                 />
-
                 {/* 프로젝트 목록 표시 */}
-                {projects.length === 0 ? (
+                {isLoadingProjects ? (
+                    <div className="flex justify-center items-center py-20">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-800"></div>
+                    </div>
+                ) : filteredProjects.length === 0 ? (
                     <EmptyState selectedCategory={selectedCategory} />
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {filteredProjects.map(project => (
-                            // [추가] 캘린더 연동
                             <Link href={`/calendar/${project.id}`} key={project.id}>
                                 <ProjectCard project={project} />
                             </Link>
                         ))}
-                        {/*이전 코드 주석처리*/}
-                        {/*{filteredProjects.map(project => (*/}
-                        {/*    <ProjectCard key={project.id} project={project} />*/}
-                        {/*))}*/}
                     </div>
                 )}
             </main>
