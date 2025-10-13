@@ -396,7 +396,7 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
             });
             if (response.ok) {
                 const result = await response.json();
-                const rawData = result.data?.content || result.data || result;
+                const rawData = result.data?.content as Project[];
                 const projectsData: Project[] = Array.isArray(rawData) ? rawData.map(item => ({
                     id: item.id,
                     name: item.name,
@@ -425,69 +425,7 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
             setIsLoadingProjects(false);
         }
     }, [handleLogout]);
-/*
-    const fetchUserProfile = async (token: string) => {
-        setIsLoadingUser(true);
-        try {
-            console.log(`API 호출: ${API_ME_ENDPOINT}로 사용자 정보 요청`);
-            const response = await fetchWithAuth(API_ME_ENDPOINT, {
-                                method: 'GET',
-                                headers: { 'Authorization': `Bearer ${token}` }
-                            });
-                            if (response.ok) {
-                                const result = await response.json();
-                                const userData = result.data;
 
-                                const userProfile: CurrentUser = {
-                                    id: userData.id || null,
-                                    name: userData.name || DEFAULT_USER.name,
-                                    email: userData.email || DEFAULT_USER.email,
-                                    imageUrl: userData.profileImageUrl || DEFAULT_USER.imageUrl
-                                };
-                                setCurrentUser(userProfile);
-                                console.log('서버에서 사용자 프로필 로드 성공:', userProfile);
-                                localStorage.setItem('userProfile', JSON.stringify(userProfile));
-                            } else {
-                                console.error('사용자 정보 로드 실패:', response.status);
-                                if (response.status === 401) {
-                                    console.log("토큰 만료/유효하지 않음. 자동 로그아웃 처리.");
-                                    localStorage.removeItem('accessToken');
-                                    localStorage.removeItem('refreshToken');
-                                    // window.location.href = '/'; // 실제 앱에서는 리디렉션
-                                }
-                            }
-                        } catch (error) {
-                            console.error("사용자 정보 로드 네트워크 오류:", error);
-                        } finally {
-                            setIsLoadingUser(false);
-                        }
-                    };
-                */
-/*
-    useEffect(() => {
-        const accessToken = localStorage.getItem('accessToken');
-        if (accessToken) {
-            fetchUserProfile(accessToken);
-        } else {
-            const profileString = localStorage.getItem('userProfile');
-            if (profileString) {
-                try {
-                    const profile = JSON.parse(profileString);
-                    // 로드된 정보를 상태에 설정
-                    setCurrentUser({
-                        id: profile.id || null,
-                        name: profile.name || 'User',
-                        email: profile.email || 'No Email',
-                        imageUrl: profile.imageUrl || DEFAULT_USER.imageUrl
-                    });
-                } catch (e) {
-                    console.error("사용자 프로필 JSON 파싱 오류:", e);
-                }
-            }
-            setIsLoadingUser(false);
-        }
-    }, []);
-*/
     useEffect(() => {
         if (!isLoadingUser && user.id) {
             fetchProjects();
@@ -514,7 +452,7 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
             });
             if (response.ok) {
                 const result = await response.json();
-                const serverProject = result.data;
+                const serverProject = result.data?.content;
                 if (!serverProject || !serverProject.id) {
                     console.error("프로젝트 생성 성공 응답에 필수 ID 필드가 누락되었습니다.", serverProject);
                     alert("프로젝트 생성에는 성공했으나, 목록 조회 오류로 표시되지 않습니다. 새로고침해보세요.");
