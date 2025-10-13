@@ -8,8 +8,10 @@ import Link from 'next/link';
 const API = 'https://cocal-server.onrender.com';
 // 서버 API 경로
 const API_LOGIN_ENDPOINT = `${API}/api/auth/login`;
+// const link = `https://`
 const handleGoogleLogin = () => {
     window.location.href = `${API}/oauth2/authorization/google`;
+    // https://cocal-front.vercel.app/oauth/success?accessToken=${accessToken}&expiresIn=${1200}
 };
 
 const Login: React.FC = () => {
