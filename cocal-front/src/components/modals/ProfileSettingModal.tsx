@@ -78,7 +78,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ refreshToken }),
                 });
-            } catch (_error) {
+            } catch (error) {
                 // 오류가 발생해도 클라이언트 측 정리는 계속 진행
             }
         }
@@ -304,7 +304,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                 try {
                     const errorData = JSON.parse(responseText);
                     message = errorData.message || response.statusText;
-                } catch (_e) {
+                } catch (e) {
                     console.error("비정상적인 응답:", responseText);
                 }
                 alert(`사진 업데이트 실패: ${message}`);

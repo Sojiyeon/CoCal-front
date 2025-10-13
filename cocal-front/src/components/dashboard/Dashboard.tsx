@@ -2,7 +2,7 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+// import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
@@ -38,6 +38,10 @@ interface Project {
     status: 'In Progress' | 'Completed';
     members: TeamMemberForCard[];
     ownerId: number;
+}
+
+interface ServerProjectResponse {
+    content: Project[] | Project;
 }
 
 interface CurrentUser {
@@ -396,7 +400,7 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
             });
             if (response.ok) {
                 const result = await response.json();
-                const rawData = result.data?.content as Project[];
+                const rawData = (result.data as ServerProjectResponse)?.content;
                 const projectsData: Project[] = Array.isArray(rawData) ? rawData.map(item => ({
                     id: item.id,
                     name: item.name,
@@ -452,7 +456,7 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
             });
             if (response.ok) {
                 const result = await response.json();
-                const serverProject = result.data?.content;
+                const serverProject = (result.data as ServerProjectResponse)?.content as Project;
                 if (!serverProject || !serverProject.id) {
                     console.error("프로젝트 생성 성공 응답에 필수 ID 필드가 누락되었습니다.", serverProject);
                     alert("프로젝트 생성에는 성공했으나, 목록 조회 오류로 표시되지 않습니다. 새로고침해보세요.");
@@ -474,8 +478,8 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
                     ownerId: serverProject.ownerId || user.id || 0,
                     status: calculatedStatus,
                     members: Array.isArray(serverProject.members)
-                        ? serverProject.members.map((m: any) => ({ id: m.userId, name: m.name,
-                            imageUrl: m.profileImageUrl || DEFAULT_USER.imageUrl
+                        ? serverProject.members.map((m: TeamMemberForCard) => ({ id: m.id, name: m.name,
+                            imageUrl: m.imageUrl || DEFAULT_USER.imageUrl
                         }))
                         : [defaultMember],
                 };
