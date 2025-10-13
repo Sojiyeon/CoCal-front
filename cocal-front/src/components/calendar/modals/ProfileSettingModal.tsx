@@ -3,12 +3,14 @@
 import React, { FC, useState, useRef } from 'react';
 import { X, ChevronRight } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
+import { fetchWithAuth } from '@/utils/authService';
 
 // --- 타입 정의 ---
 interface ApiEndpoints {
     UPDATE_USER_NAME: string;
     UPDATE_USER_PASSWORD: string;
     UPDATE_USER_PHOTO: string;
+    DELETE_USER_PHOTO: string;
 }
 
 interface ProfileSettingsModalProps {
@@ -94,38 +96,91 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
 
     const handlePhotoClick = () => fileInputRef.current?.click();
 
+    // [수정] 이미지 업로드 로직
     const uploadProfilePhoto = async (file: File) => {
         const accessToken = localStorage.getItem('accessToken');
-        if (!accessToken) { alert("Authentication expired. Please log in again."); void logout(); return; }
+        if (!accessToken) {
+            alert("인증 정보가 만료되었습니다. 다시 로그인해주세요.");
+            logout();
+            return;
+        }
         const formData = new FormData();
-        formData.append('profileImage', file);
+        formData.append('image', file);
 
         try {
-            const response = await fetch(apiEndpoints.UPDATE_USER_PHOTO, { method: 'PUT', headers: { 'Authorization': `Bearer ${accessToken}` }, body: formData });
+            console.log(`API 호출: ${apiEndpoints.UPDATE_USER_PHOTO}로 파일 [${file.name}] 전송`);
+
+            const response = await fetchWithAuth(apiEndpoints.UPDATE_USER_PHOTO, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    // FormData를 사용할 때는 Content-Type을 설정하지 않음
+                },
+                body: formData,
+            });
             if (response.ok) {
                 const result = await response.json();
-                setUser(prev => ({ ...prev, profileImageUrl: result.data.profileImageUrl || prev.profileImageUrl }));
-                alert('Profile photo updated.');
+                const data = result.data || result;
+                setUser(prev => ({
+                    ...prev,
+                    profileImageUrl: data.profileImageUrl || data.imageUrl || prev.profileImageUrl
+                }));
+                console.log('프로필 사진 업데이트 성공:', data);
+                alert('프로필 사진이 성공적으로 변경되었습니다.');
+
             } else {
-                const errorData = await response.json().catch(() => ({}));
-                alert(`Photo update failed: ${errorData.message || 'An error occurred.'}`);
+                const responseText = await response.text();
+                let message = response.statusText;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    message = errorData.message || response.statusText;
+                } catch (e) {
+                    console.error("비정상적인 응답:", responseText);
+                }
+                alert(`사진 업데이트 실패: ${message}`);
             }
-        } catch (_err) { alert("An error occurred during photo upload."); }
+        } catch (error) {
+            console.error("사진 업로드 네트워크 오류:", error);
+            alert("사진 업로드 중 네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+        }
     };
+
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) void uploadProfilePhoto(file);
-        event.target.value = '';
+        event.target.value = ''; // 같은 파일 재선택을 위해 초기화
     };
+
+    // [추가] 이미지 삭제 로직 (Dashboard 참고)
+    const handleDeletePhoto = async () => {
+        if (!window.confirm("프로필 이미지를 삭제하시겠습니까?")) return;
+
+        try {
+            const response = await fetchWithAuth(apiEndpoints.DELETE_USER_PHOTO, {
+                method: 'DELETE',
+            });
+            if (response.ok) {
+                setUser(prev => ({...prev, profileImageUrl: null}));
+                alert('프로필 이미지가 삭제되었습니다.');
+            } else {
+                const errorData = await response.json();
+                alert(`이미지 삭제 실패: ${errorData.message || '서버 오류'}`);
+            }
+        } catch (error) {
+            console.error("이미지 삭제 네트워크 오류:", error);
+            alert("이미지 삭제 중 네트워크 오류가 발생했습니다.");
+        }
+    };
+
 
     const handleNameUpdate = async (newName: string) => {
         const accessToken = localStorage.getItem('accessToken');
         if (!accessToken) { return; }
         try {
-            const response = await fetch(apiEndpoints.UPDATE_USER_NAME, {
-                method: 'PUT', // [수정] 404 에러 해결을 위해 PATCH를 PUT으로 변경합니다.
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+            const response = await fetchWithAuth(apiEndpoints.UPDATE_USER_NAME, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: newName })
             });
             if (response.ok) {
@@ -144,9 +199,9 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
         const accessToken = localStorage.getItem('accessToken');
         if (!accessToken) { return; }
         try {
-            const response = await fetch(apiEndpoints.UPDATE_USER_PASSWORD, {
-                method: 'PUT', // [수정] 404 에러 해결을 위해 PATCH를 PUT으로 변경합니다.
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+            const response = await fetchWithAuth(apiEndpoints.UPDATE_USER_PASSWORD, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ currentPassword, newPassword })
             });
             if (response.ok) {
@@ -160,19 +215,20 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
     };
 
     const handleDeleteAccount = async () => {
-        if (!window.confirm("Are you sure? This action cannot be undone.")) return;
-        const accessToken = localStorage.getItem('accessToken');
-        if (!accessToken) return;
+        if (!window.confirm("정말 계정을 삭제하시겠습니까?")) return;
         try {
-            const response = await fetch(API_DELETE_ENDPOINT, { method: 'DELETE', headers: { 'Authorization': `Bearer ${accessToken}` } });
+            // [수정] 일반 fetch 대신 fetchWithAuth를 사용합니다.
+            const response = await fetchWithAuth(API_DELETE_ENDPOINT, { method: 'DELETE' });
             if (response.ok) {
-                alert("Account deleted successfully.");
-                void logout();
+                alert("계정이 성공적으로 삭제되었습니다.");
+                logout(); // UserContext의 logout 함수 사용
+                window.location.href = '/'; // 홈페이지로 리디렉션
             } else {
-                alert('Failed to delete account.');
+                alert('계정 삭제에 실패했습니다.');
             }
-        } catch (_err) { alert("A network error occurred."); }
+        } catch (err) { alert("네트워크 오류가 발생했습니다."); }
     };
+
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
@@ -187,7 +243,17 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                         <h2 className="text-2xl font-bold text-gray-800 mb-6">Profile Settings</h2>
                         <img src={user.profileImageUrl || 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User'} alt="Profile" className="w-24 h-24 rounded-full object-cover mb-3 border-4 border-gray-100" />
                         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
-                        <button onClick={handlePhotoClick} className="mb-6 text-sm text-blue-600 hover:text-blue-700 font-medium">Change Photo</button>
+                        {/* [추가] 이미지 변경/삭제 버튼 UI (Dashboard 참고) */}
+                        <div className="flex items-center space-x-4 mb-6">
+                            <button onClick={handlePhotoClick} className="text-sm text-blue-600 hover:text-blue-700 font-medium transition">
+                                Change Photo
+                            </button>
+                            {user.profileImageUrl && (
+                                <button onClick={handleDeletePhoto} className="text-sm text-red-500 hover:text-red-700 font-medium transition">
+                                    Delete Photo
+                                </button>
+                            )}
+                        </div>
                         <div className="w-full space-y-2">
                             <InputField label="Name" value={user.name || ''} editable={true} onClick={() => setIsEditingName(true)} />
                             <InputField label="Email" value={user.email || ''} />

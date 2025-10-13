@@ -18,6 +18,7 @@ import { CalendarEvent, EventTodo, Project, ModalFormData, DateMemo, UserSummary
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
 import { sampleEvents,sampleMemos  } from "./sampleData";
 
+
 interface SidebarTodo extends EventTodo {
     parentEventTitle: string;
     parentEventColor: string;
@@ -30,6 +31,7 @@ const API_ENDPOINTS = {
     UPDATE_USER_NAME: `${BASE_URL}/users/edit-name`,
     UPDATE_USER_PASSWORD: `${BASE_URL}/users/edit-pwd`,
     UPDATE_USER_PHOTO: `${BASE_URL}/users/profile-image`,
+    DELETE_USER_PHOTO: `${BASE_URL}/users/profile-image`,
 };
 
 export default function CalendarUI() {
