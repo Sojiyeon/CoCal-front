@@ -3,7 +3,6 @@
 import React, { useState, FC, useRef, useEffect, useMemo } from 'react';
 import { Moon, Settings, LogOut } from 'lucide-react';
 
-// 컴포넌트가 받을 props 타입을 정의합니다.
 interface ProfileDropdownProps {
     user: {
         name: string;
@@ -18,7 +17,7 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // 드롭다운 외부를 클릭하면 닫히도록 하는 로직입니다.
+    // 드롭다운 외부를 클릭하면 닫히도록 하는 로직
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -33,7 +32,7 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
         };
     }, [isOpen]);
 
-    // 드롭다운 메뉴 아이템 목록입니다.
+    // 드롭다운 메뉴 아이템 목록
     const menuItems = useMemo(() => [
         {
             label: 'Dark Mode',
@@ -60,7 +59,7 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
 
     return (
         <div className="relative z-50" ref={dropdownRef}>
-            {/* 프로필 이미지와 이름을 표시하는 부분입니다. 클릭하면 드롭다운이 열립니다. */}
+
             <div
                 className="flex items-center space-x-2 cursor-pointer p-1"
                 onClick={() => setIsOpen(!isOpen)}

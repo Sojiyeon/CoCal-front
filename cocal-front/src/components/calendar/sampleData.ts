@@ -25,7 +25,7 @@ export const sampleEvents: CalendarEvent[] = [
     },
 
 ];
-// [수정] 날짜 메모 타입 (memos 테이블)
+//  날짜 메모 타입 (memos 테이블)
 export const sampleMemos: DateMemo[] = [
     {
     id: 1,

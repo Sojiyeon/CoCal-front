@@ -10,7 +10,6 @@ interface Props {
 }
 
 export function EventDetailModal({ event, onClose, onEdit }: Props) {
-    // Tab 관련 state와 컴포넌트들 제거
 
     const formatTime = (dateString: string) => {
         return new Date(dateString).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -38,7 +37,7 @@ export function EventDetailModal({ event, onClose, onEdit }: Props) {
             <div className="flex items-start">
                 <span className="w-24 text-slate-500 pt-1">Memo</span>
                 <div className="flex-1 text-slate-800 bg-slate-50 p-2 rounded-md text-xs min-h-[4rem]">
-                    {/* event.description이 없으면 '작성된 메모가 없습니다.'를 표시합니다. */}
+                    {/* event.description이 없으면 '작성된 메모가 없습니다.'를 표시. */}
                     {event.description || '작성된 메모가 없습니다.'}
                 </div>
             </div>
@@ -53,7 +52,6 @@ export function EventDetailModal({ event, onClose, onEdit }: Props) {
         </div>
     );
 
-    // MemoContent 컴포넌트 제거
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
@@ -69,10 +67,9 @@ export function EventDetailModal({ event, onClose, onEdit }: Props) {
                             <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl">×</button>
                         </div>
                     </div>
-                    {/* Tab 버튼 UI 제거 */}
+
                 </div>
                 <div className="p-4">
-                    {/* EventContent만 직접 렌더링 */}
                     <EventContent />
                 </div>
             </div>

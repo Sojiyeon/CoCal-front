@@ -1,10 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-// [추가] Next.js의 Image 컴포넌트를 import 합니다.
-
-// api 유틸리티 import는 유지하되, 실제 호출은 주석 처리합니다.
-// import { api } from "../../../utils/api";
 
 // --- 타입 정의 ---
 interface TeamMember {
@@ -26,7 +22,7 @@ interface ProjectInvite {
     expiresAt: string;
 }
 
-// [추가] API 연동 전 사용할 샘플 데이터
+// API 연동 전 사용할 샘플 데이터
 const sampleMembers: TeamMember[] = [
     { memberId: 1, userId: 1, name: "User 1 (me)", email: "user1@example.com", avatarUrl: null, role: 'OWNER', status: 'ACTIVE', me: true },
     { memberId: 2, userId: 2, name: "User 2", email: "user2@example.com", avatarUrl: null, role: 'MEMBER', status: 'ACTIVE', me: false },
@@ -54,18 +50,8 @@ export function TeamModal({ projectId, onClose }: Props) {
             setIsLoading(true);
             setError(null);
             try {
-                // ===============================================================
-                // ▼▼▼ API 호출 로직 주석 처리 ▼▼▼
-                // ===============================================================
-                /*
-                // GET /api/team/{projectId}/list API를 호출합니다.
-                const response = await api.get(`/team/${projectId}/list`);
-                setMembers(response.data.members || []);
-                setInvites(response.data.invites || []);
-                */
-                // ===============================================================
 
-                // [대체 코드] API 대신 임시 샘플 데이터를 사용합니다.
+                //  API 대신 임시 샘플 데이터
                 console.warn("개발 모드: TeamModal에서 API 호출을 건너뛰고 샘플 데이터를 사용합니다.");
                 setTimeout(() => {
                     setMembers(sampleMembers);
@@ -73,7 +59,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                     setIsLoading(false);
                 }, 500); // 0.5초 로딩 시뮬레이션
 
-            } catch (err: unknown) { // [수정] 'any' 대신 'unknown' 타입을 사용하고, 에러 타입을 확인합니다.
+            } catch (err: unknown) {
                 if (err instanceof Error) {
                     setError(err.message);
                 } else {
@@ -95,18 +81,8 @@ export function TeamModal({ projectId, onClose }: Props) {
         }
         setIsLoading(true);
         try {
-            // ===============================================================
-            // ▼▼▼ API 호출 로직 주석 처리 ▼▼▼
-            // ===============================================================
-            /*
-            // POST /api/team/{projectId}/invites-email API를 호출합니다.
-            const response = await api.post(`/team/${projectId}/invites-email`, { email });
-            // 성공 시, 반환된 초대 정보를 invites 상태에 추가하여 UI를 즉시 업데이트합니다.
-            setInvites(prev => [response.data, ...prev]);
-            */
-            // ===============================================================
 
-            // [대체 코드] API 대신 임시 로직을 사용합니다.
+            // API 대신 임시 로직을 사용
             console.warn(`개발 모드: ${email} 초대를 시뮬레이션합니다.`);
             setTimeout(() => {
                 const newInvite: ProjectInvite = {
@@ -122,7 +98,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                 setIsLoading(false);
             }, 1000);
 
-        } catch (err: unknown) { // [수정] 'any' 대신 'unknown' 타입을 사용하고, 에러 타입을 확인합니다.
+        } catch (err: unknown) {
             if (err instanceof Error) {
                 window.alert(`Invite failed: ${err.message}`);
             } else {

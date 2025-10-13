@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CalendarEvent } from "./types"; // 공통 타입 import
+import { CalendarEvent } from "./types";
 
 interface DayViewProps {
     events: CalendarEvent[];
@@ -12,7 +12,7 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
     const hours = Array.from({ length: 16 }, (_, i) => i + 8);
 
     const dayEvents = events.filter((e) => {
-        // 'start_date'를 'start_at'으로 수정
+
         const start = new Date(e.startAt);
         return (
             start.getFullYear() === date.getFullYear() &&
@@ -23,7 +23,7 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
 
     const renderEvents = () => {
         return dayEvents.map((event) => {
-            // 'start_date'와 'end_date'를 'start_at'과 'end_at'으로 수정
+
             const start = new Date(event.startAt);
             const end = new Date(event.endAt || event.startAt);
 

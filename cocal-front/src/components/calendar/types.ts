@@ -1,5 +1,5 @@
-// ===================== 타입 정의 =====================
-// [추가] API 응답에 있는 사용자 요약 정보 타입을 정의합니다.
+
+//  API 응답에 있는 사용자 요약 정보 타입을 정의
 export interface UserSummary {
     userId: number;
     name: string;
@@ -59,8 +59,8 @@ export type DateMemo = {
     projectId: number;
     memoDate: string;
     content: string;
-    author: UserSummary[]; // [수정] authorId: number -> author: UserSummary[]
-    createdAt: string; // [추가] 생성 시각 필드 추가
+    author: UserSummary[];
+    createdAt: string;
     title: string;
 };
 
@@ -83,19 +83,9 @@ export interface Project {
    // colorTags: string[]; // 색상 태그
 }
 
-// // Project
-// export interface Project {
-//     id: number;
-//     name: string;
-//     ownerId: number;
-//     startDate: string;
-//     endDate: string;
-//     status: 'IN_PROGRESS' | 'COMPLETED';
-//     members: ProjectMember[];
-//
-// }
 
-// [추가] TeamModal에서 사용할 팀 멤버 상세 타입을 API 응답에 맞춰 정의합니다.
+
+// TeamModal에서 사용할 팀 멤버 상세 타입을 API 응답에 맞춰 정의
 export interface TeamMemberDetail extends ProjectMember {
     memberId: number;
     role: 'OWNER' | 'ADMIN' | 'MEMBER';
@@ -103,7 +93,7 @@ export interface TeamMemberDetail extends ProjectMember {
     me: boolean;
 }
 
-// [추가] TeamModal에서 사용할 프로젝트 초대 타입을 정의합니다.
+//TeamModal에서 사용할 프로젝트 초대 타입
 export interface ProjectInvite {
     inviteId: number;
     email: string;

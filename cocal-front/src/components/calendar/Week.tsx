@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CalendarEvent } from "./types"; // 공통 타입 import
+import { CalendarEvent } from "./types";
 
 interface WeekViewProps {
     events: CalendarEvent[];
@@ -13,13 +13,13 @@ export default function WeekView({ events }: WeekViewProps) {
 
     const renderEvents = (dayIdx: number) => {
         const dayEvents = events.filter((e) => {
-            // [수정] e.start_date를 e.start_at으로 변경
+
             const start = new Date(e.startAt);
-            return start.getDay() === (dayIdx + 1) % 7; // Monday=0 기준
+            return start.getDay() === (dayIdx + 1) % 7;
         });
 
         return dayEvents.map((event) => {
-            // [수정] event.start_date와 event.end_date를 event.start_at과 event.end_at으로 변경
+
             const start = new Date(event.startAt);
             const end = new Date(event.endAt || event.startAt);
 
