@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 
-// 'default_view' 컬럼에 맞는 타입 정의
+
 type DefaultView = 'MONTH' | 'WEEK' | 'DAY';
 
 // 모달이 사용할 데이터의 형태 정의
@@ -28,15 +28,14 @@ export function SettingsModal({ projectId, userId, onClose }: Props) {
     });
     const [isLoading, setIsLoading] = useState(false);
 
-    // 컴포넌트 마운트 시, 프로젝트와 사용자 설정 데이터를 불러옵니다.
+
     useEffect(() => {
         setIsLoading(true);
-        // [API-연동] 실제 멤버 목록을 불러오는 API 호출 로직으로 교체 예정
-        // Promise.all을 사용해 두 개의 API를 동시에 호출합니다.
+
         Promise.all([
-            // 1. 프로젝트 정보 불러오기 (projects 테이블)
+            // 1. 프로젝트 정보 불러오기
             Promise.resolve({ id: projectId, name: "Project1", start_date: "2025-09-20", end_date: "2025-10-23" }),
-            // 2. 사용자 정보 불러오기 (users 테이블)
+            // 2. 사용자 정보 불러오기
             Promise.resolve({ id: userId, default_view: "MONTH" })
         ]).then(([projectData, userData]) => {
             setSettings({
@@ -63,13 +62,13 @@ export function SettingsModal({ projectId, userId, onClose }: Props) {
     // 저장 핸들러
     const handleSave = () => {
         setIsLoading(true);
-        // [API-연동] 실제 멤버 목록을 불러오는 API 호출 로직으로 교체 예정
+
         console.log("Saving data:", settings);
-        // Promise.all을 사용해 두 개의 API에 저장 요청을 보냅니다.
+
         Promise.all([
-            // 1. 프로젝트 정보 업데이트 (PATCH /api/projects/{projectId})
+            // 1. 프로젝트 정보 업데이트
             Promise.resolve({ success: true, table: 'projects' }),
-            // 2. 사용자 기본 보기 업데이트 (PATCH /api/users/{userId})
+            // 2. 사용자 기본 보기 업데이트
             Promise.resolve({ success: true, table: 'users' })
         ]).then(() => {
             alert("Settings saved successfully!");
@@ -120,11 +119,7 @@ export function SettingsModal({ projectId, userId, onClose }: Props) {
                                         <label className="block text-xs font-medium text-slate-500 mb-1">Project Name</label>
                                         <input type="text" name="projectName" value={settings.projectName} onChange={handleInputChange} className="w-full border rounded-md px-3 py-2 text-sm"/>
                                     </div>
-                                    {/* 'Client Name'은 현재 DB 스키마에 없으므로 주석 처리. 필요시 DB에 컬럼 추가 후 활성화 */}
-                                    {/* <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Client Name</label>
-                    <input type="text" name="clientName" className="w-full border rounded-md px-3 py-2 text-sm"/>
-                  </div> */}
+
                                     <div className="flex gap-3">
                                         <div className="flex-1">
                                             <label className="block text-xs font-medium text-slate-500 mb-1">Start Date</label>

@@ -3,7 +3,7 @@
 "use client";
 
 import React from "react";
-import { DateMemo } from "../types"; // types.ts에서 DateMemo 타입을 가져옵니다.
+import { DateMemo } from "../types";
 
 interface Props {
     memo: DateMemo;
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function MemoDetailModal({ memo, onClose }: Props) {
-    // author 배열의 첫 번째 사용자를 작성자로 간주합니다.
+
     const author = memo.author?.[0];
 
     return (

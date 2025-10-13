@@ -97,13 +97,13 @@ export default function CalendarUI() {
     const matrix = getMonthMatrix(viewYear, viewMonth);
 
     // --- 이벤트 핸들러 함수들 ---
-// 1. 미니 캘린더 날짜 클릭 핸들러: 사이드바의 할일 목록만 업데이트합니다.
+// 1. 미니 캘린더 날짜 클릭 핸들러: 사이드바의 할일 목록만 업데이트
     const handleSidebarDateSelect = (day: number) => {
         const newDate = new Date(miniYear, miniMonth, day);
         setSelectedSidebarDate(newDate);
     };
 
-    // 2. 메인 캘린더 날짜 클릭 핸들러: Day 뷰로 전환합니다.
+    // 2. 메인 캘린더 날짜 클릭 핸들러: Day 뷰로 전환
     const handleMainDateClick = (day: number) => {
         const newDate = new Date(viewYear, viewMonth, day);
         setSelectedDate(newDate);
@@ -139,8 +139,7 @@ export default function CalendarUI() {
         if (id) {
             setEvents(prevEvents => prevEvents.map(event => {
                 if (event.id === id) {
-                    // [핵심 수정] 기존 event 데이터에 itemData를 덮어쓰되,
-                    // description은 itemData.content 값으로 명시적으로 업데이트합니다.
+
                     return {
                         ...event,
                         ...itemData,
@@ -293,7 +292,7 @@ export default function CalendarUI() {
                             return (
                                 <div
                                     key={`${ri}-${ci}`}
-                                    // [수정] 미니 캘린더 전용 핸들러 (사이드바 할일 업데이트용)를 연결합니다.
+                                    // 미니 캘린더 전용 핸들러 (사이드바 할일 업데이트용)를 연결
                                     onClick={() => day && handleSidebarDateSelect(day)}
                                     className={`h-7 flex items-center justify-center rounded cursor-pointer ${isTodayDate ? "bg-slate-800 text-white" : isSelected ? "bg-slate-200 text-slate-800" : "text-slate-500 hover:bg-slate-100"}`}
                                 >
@@ -310,7 +309,7 @@ export default function CalendarUI() {
                         <div className="flex items-center gap-6">
                             <button onClick={prevMonth}
                                     className="text-slate-800 hover:text-slate-600 text-xl">&#x276E;</button>
-                            {/* [수정] Day 뷰일 때는 선택된 날짜를, 아닐 때는 기존 월/년을 표시 */}
+                            {/* Day 뷰일 때는 선택된 날짜를, 아닐 때는 기존 월/년을 표시 */}
                             <h2 className="text-lg font-semibold text-slate-800">
                                 {viewMode === 'day'
                                     ? selectedDate.toLocaleDateString('en-US', {

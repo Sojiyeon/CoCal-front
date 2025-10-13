@@ -96,7 +96,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
 
     const handlePhotoClick = () => fileInputRef.current?.click();
 
-    // [수정] 이미지 업로드 로직
+    //  이미지 업로드 로직
     const uploadProfilePhoto = async (file: File) => {
         const accessToken = localStorage.getItem('accessToken');
         if (!accessToken) {
@@ -114,7 +114,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
-                    // FormData를 사용할 때는 Content-Type을 설정하지 않음
+
                 },
                 body: formData,
             });
@@ -217,7 +217,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
     const handleDeleteAccount = async () => {
         if (!window.confirm("정말 계정을 삭제하시겠습니까?")) return;
         try {
-            // [수정] 일반 fetch 대신 fetchWithAuth를 사용합니다.
+
             const response = await fetchWithAuth(API_DELETE_ENDPOINT, { method: 'DELETE' });
             if (response.ok) {
                 alert("계정이 성공적으로 삭제되었습니다.");
@@ -243,7 +243,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                         <h2 className="text-2xl font-bold text-gray-800 mb-6">Profile Settings</h2>
                         <img src={user.profileImageUrl || 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User'} alt="Profile" className="w-24 h-24 rounded-full object-cover mb-3 border-4 border-gray-100" />
                         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
-                        {/* [추가] 이미지 변경/삭제 버튼 UI (Dashboard 참고) */}
+
                         <div className="flex items-center space-x-4 mb-6">
                             <button onClick={handlePhotoClick} className="text-sm text-blue-600 hover:text-blue-700 font-medium transition">
                                 Change Photo

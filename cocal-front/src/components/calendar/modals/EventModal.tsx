@@ -20,26 +20,26 @@ interface ColorPaletteProps {
 
 function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProps) {
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-// [추가] 버튼 요소에 접근하기 위한 ref
+//버튼 요소에 접근하기 위한 ref
     const buttonRef = useRef<HTMLButtonElement>(null);
 
-    // [추가] 팔레트의 위치를 저장할 상태
+    // 팔레트의 위치를 저장할 상태
     const [paletteStyle, setPaletteStyle] = useState({});
     const handleColorSelect = (color: string) => {
         onColorChange(color);
       //  setIsPaletteOpen(false);
     };
-    // [추가] 팔레트를 열고 닫는 토글 함수
+    // 팔레트를 열고 닫는 토글 함수
     const togglePalette = () => {
         if (!isPaletteOpen) {
-            // 팔레트를 열 때, 버튼의 화면상 위치를 계산합니다.
+
             if (buttonRef.current) {
                 const rect = buttonRef.current.getBoundingClientRect();
                 setPaletteStyle({
-                    position: 'fixed', // 위치 기준을 전체 화면으로 변경
-                    top: `${rect.top}px`, // 버튼의 상단에 맞춤
-                    left: `${rect.right + 8}px`, // 버튼의 오른쪽에 8px 간격을 두고 위치
-                    zIndex: 100 // 다른 요소들 위에 보이도록 z-index를 높게 설정
+                    position: 'fixed',
+                    top: `${rect.top}px`,
+                    left: `${rect.right + 8}px`,
+                    zIndex: 100
                 });
             }
         }
@@ -49,7 +49,8 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
         <div className="relative w-full">
             <button
                 type="button"
-                onClick={() => setIsPaletteOpen(!isPaletteOpen)}
+                ref={buttonRef}
+                onClick={togglePalette}
                 className="w-full border rounded-md px-3 py-2 text-sm flex items-center gap-2 cursor-pointer hover:bg-slate-50"
             >
                 <div
@@ -63,7 +64,7 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
                     className="w-auto bg-white border rounded-md shadow-lg p-3"
                     style={paletteStyle}
                 >
-                    {/* [수정] 팔레트와 컬러 피커를 가로로 배치하기 위해 flex 사용 */}
+
                     <div className="flex gap-4">
                         {/* 기존 팔레트 영역 */}
                         <div className="space-y-3">
@@ -83,12 +84,12 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
                             ))}
                         </div>
 
-                        {/* [추가] 컬러 피커 (컬러 서클) 영역 */}
+                        {/*  컬러 피커 (컬러 서클) 영역 */}
                         <div>
                             <HexColorPicker
                                 color={selectedColor}
                                 onChange={handleColorSelect}
-                                style={{width: '250px'}} // 원하는 너비로 직접 지정 (예: 150px)
+                                style={{width: '250px'}}
                             />
                         </div>
                     </div>
@@ -106,7 +107,7 @@ interface Props {
     projectId: number;
 }
 
-export function EventModal({onClose, onSave, editEvent, initialDate, projectId }: Props) {
+export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
     const [isLoading, setIsLoading] = useState(false);
 
@@ -125,9 +126,9 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
     });
 
     useEffect(() => {
-        // [수정] '수정 모드'일 경우 (editEvent prop이 있을 때)
+        // '수정 모드'일 경우 (editEvent prop이 있을 때)
         if (editEvent) {
-            // 폼 데이터를 수정할 이벤트의 정보로 채웁니다.
+
             setFormData({
                 title: editEvent.title,
                 description: editEvent.description || "",
@@ -166,7 +167,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
-    // [수정 4] 색상 변경을 처리하는 함수를 만듭니다.
+    //  색상 변경을 처리하는 함수
     const handleColorChange = (newColor: string) => {
         setFormData(prev => ({ ...prev, color: newColor }));
     };
@@ -179,39 +180,13 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
 
         console.warn(`개발 모드: ${activeTab} 저장을 시뮬레이션합니다.`);
 
-        // [핵심 수정] onSave 함수는 여기서 단 한 번만 호출되어야 합니다.
-        // '수정 모드'일 경우 editEvent.id를, 아닐 경우 undefined를 전달합니다.
+
         onSave(formData, activeTab, editEvent ? editEvent.id : undefined);
 
         setIsLoading(false);
         onClose();
     };
 
-        // ===============================================================
-        // ▼▼▼ API 호출 로직 주석 처리 ▼▼▼
-        // ===============================================================
-        /*
-        try {
-            if (activeTab === "Event") {
-                // ... API 호출 시 projectId 사용
-                const response = await fetch(`/api/projects/${projectId}/events`, ...);
-            }
-            if (activeTab === "Memo") {
-                // ... API 호출 시 projectId 사용
-                const response = await fetch(`/api/projects/${projectId}/memos`, ...);
-            }
-        } catch (error) {
-            console.error("❌ Error while saving:", error);
-        }
-        */
-        // ===============================================================
-
-    //     console.warn(`개발 모드: ${activeTab} 저장을 시뮬레이션합니다. API 호출은 주석 처리되었습니다.`);
-    //     onSave(formData, activeTab);
-    //
-    //     setIsLoading(false);
-    //     onClose();
-    // };
 
     const TabButton = ({ tabName }: { tabName: ActiveTab }) => (
         <button
@@ -248,7 +223,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
                             onChange={handleInputChange}
                             className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
-                        {/* [추가] 이벤트 탭에 메모를 입력할 수 있는 textarea 추가 */}
+                        {/* 이벤트 탭에 메모를 입력할 수 있는 textarea 추가 */}
                         <textarea
                             name="content" // formData의 'content'와 연결
                             placeholder="Write a memo for this event..."
@@ -329,10 +304,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
                             onColorChange={handleColorChange}
                         />
 
-                        {/*<div className="w-full border rounded-md px-3 py-2 text-sm flex items-center gap-2">*/}
-                        {/*    <div className="w-5 h-5 rounded-full bg-blue-500"></div>*/}
-                        {/*    <span>Color</span>*/}
-                        {/*</div>*/}
+
                     </div>
                 );
             case "Todo":
