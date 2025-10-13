@@ -79,11 +79,19 @@ export default function CalendarUI() {
     }, [events, selectedSidebarDate]);
 
     useEffect(() => {
+        if (!user || !projectId) return; // user가 로딩 중이거나 projectId가 없으면 중단
+        // user가 문자열(string)로 들어올 수도 있고,
+        // 이미 객체(object)로 들어올 수도 있어서 안전하게 처리하기 위한 코드입니다.
+        const currentUser =
+            typeof user === "string"  // 👉 user의 타입이 문자열이면
+                ? JSON.parse(user)    // 문자열(JSON 형태)을 실제 객체로 변환
+                : user;               // 이미 객체라면 그대로 사용
+
         setTimeout(() => {
             const fetchedProjectData: Project = {
                 id: projectId,
-                name: '${name}',
-                ownerId: 1,
+                name: currentUser.name, // 여기서 user의 name을 직접 참조
+                ownerId: Number(currentUser.id), // 필요하면 user.id도 사용
                 startDate: "2025-01-01",
                 endDate: "2025-12-31",
                 status: 'In Progress',
@@ -91,7 +99,7 @@ export default function CalendarUI() {
             };
             setCurrentProject(fetchedProjectData);
         }, 500);
-    }, [projectId]);
+    }, [projectId, user]);
 
      //const miniMatrix = getMonthMatrix(miniYear, miniMonth);
     const matrix = getMonthMatrix(viewYear, viewMonth);
