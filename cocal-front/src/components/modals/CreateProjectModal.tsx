@@ -8,9 +8,10 @@ import Button from '../ui/Button';
 // 프로젝트 생성 데이터 타입 정의
 export interface ProjectFormData {
     name: string;
-    description: string;
+    description?: string;
     startDate: string;
     endDate: string;
+    members?: number[];
 }
 
 interface CreateProjectModalProps {

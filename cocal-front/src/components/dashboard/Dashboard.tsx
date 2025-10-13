@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, FC, useRef, useEffect, useMemo } from 'react';
+import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
@@ -32,6 +32,7 @@ interface TeamMemberForCard {
 interface Project {
     id: number;
     name: string;
+    description?: string;
     startDate: string;
     endDate: string;
     status: 'In Progress' | 'Completed';
@@ -305,7 +306,7 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
                     className="w-10 h-10 rounded-full object-cover shadow-inner ring-1 ring-gray-200"
                     onError={(e) => { e.currentTarget.src = 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User' }}
                 />
-                <div className="flex flex-col text-xs hidden sm:block">
+                <div className="flex-col text-xs hidden sm:block">
                     <span className="font-semibold text-gray-900 block">
                         {user.name}
                     </span>
@@ -369,14 +370,18 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
     const ProjectDashboardPage: React.FC = () => {
     const router = useRouter();
     const { user, isLoading: isLoadingUser, logout } = useUser();
-    // const [currentUser, setCurrentUser] = useState<CurrentUser>(DEFAULT_USER);
     const [isLoadingProjects, setIsLoadingProjects] = useState(false);
     const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
     const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('All');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
-    const fetchProjects = async () => {
+    const handleLogout = useCallback(async () => {
+        await logout();
+        router.push('/');
+    }, [logout, router]);
+
+    const fetchProjects = useCallback(async () => {
         setIsLoadingProjects(true);
         try {
             console.log(`API 호출: ${API_PROJECTS_ENDPOINT}로 프로젝트 목록 조회 요청`);
@@ -386,9 +391,10 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
             if (response.ok) {
                 const result = await response.json();
                 const rawData = result.data;
-                const projectsData: Project[] = Array.isArray(rawData) ? rawData.map((item: any) => ({
+                const projectsData: Project[] = Array.isArray(rawData) ? rawData.map((item: Project) => ({ // 💡 타입 수정 반영
                     id: item.id,
                     name: item.name,
+                    description: item.description,
                     startDate: item.startDate,
                     endDate: item.endDate,
                     status: calculateProjectStatus(item.startDate, item.endDate),
@@ -407,7 +413,7 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
         } finally {
             setIsLoadingProjects(false);
         }
-    };
+    }, [handleLogout]);
 /*
     const fetchUserProfile = async (token: string) => {
         setIsLoadingUser(true);
@@ -475,11 +481,11 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
         if (!isLoadingUser && user.id) {
             fetchProjects();
         }
-    }, [isLoadingUser, user.id]);
+    }, [isLoadingUser, user.id, fetchProjects]);
     // 프로젝트 생성 핸들러
     const handleCreateProject = async (data: ProjectFormData) => {
         const projectData = {
-            // id: Date.now(),
+            id: Date.now(),
             name: data.name,
             description: data.description,
             startDate: data.startDate,
@@ -545,37 +551,34 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
     const handleOpenSettingsModal = () => setIsSettingsModalOpen(true);
     const handleCloseSettingsModal = () => setIsSettingsModalOpen(false);
 
-    const handleLogout = async () => {
-        await logout();
-        router.push('/');
-    };
-/*
-    const handleLogout = async () => {
-        const refreshToken = localStorage.getItem('refreshToken');
 
-        try {
-            if (refreshToken) {
-                console.log('서버에 로그아웃 요청 중...');
-                await fetch(API_LOGOUT_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ refreshToken }),
-                });
-            }
-        } catch (error) {
-            console.error("로그아웃 API 호출 실패 (클라이언트 정리 진행):", error);
-        } finally {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('userProfile');
+        /*
+            const handleLogout = async () => {
+                const refreshToken = localStorage.getItem('refreshToken');
 
-            setCurrentUser(DEFAULT_USER);
-            // alert("로그아웃되었습니다."); // alert 대신 console.log 사용
-            console.log("로그아웃되었습니다.");
-            window.location.href = '/';
-        }
-    };
-*/
+                try {
+                    if (refreshToken) {
+                        console.log('서버에 로그아웃 요청 중...');
+                        await fetch(API_LOGOUT_ENDPOINT, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ refreshToken }),
+                        });
+                    }
+                } catch (error) {
+                    console.error("로그아웃 API 호출 실패 (클라이언트 정리 진행):", error);
+                } finally {
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                    localStorage.removeItem('userProfile');
+
+                    setCurrentUser(DEFAULT_USER);
+                    // alert("로그아웃되었습니다."); // alert 대신 console.log 사용
+                    console.log("로그아웃되었습니다.");
+                    window.location.href = '/';
+                }
+            };
+        */
     if (isLoadingUser || isLoadingProjects) {
         return (
             <div className="min-h-screen bg-gray-50 font-sans flex items-center justify-center">
