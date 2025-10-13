@@ -20,7 +20,8 @@ export function EventDetailModal({ event, onClose, onEdit }: Props) {
         <div className="space-y-4 text-sm">
             <div className="flex items-center">
                 <span className="w-24 text-slate-500">Time</span>
-                <span className="text-slate-800 font-medium">{`${formatTime(event.startAt)} - ${formatTime(event.endAt)}`}</span>
+                <span
+                    className="text-slate-800 font-medium">{`${formatTime(event.startAt)} - ${formatTime(event.endAt)}`}</span>
             </div>
             <div className="flex items-center">
                 <span className="w-24 text-slate-500">Team</span>
@@ -34,10 +35,21 @@ export function EventDetailModal({ event, onClose, onEdit }: Props) {
                 <span className="w-24 text-slate-500">Location</span>
                 <span className="text-slate-800">{event.location || 'Not specified'}</span>
             </div>
+            <div className="flex items-start">
+                <span className="w-24 text-slate-500 pt-1">Memo</span>
+                <div className="flex-1 text-slate-800 bg-slate-50 p-2 rounded-md text-xs min-h-[4rem]">
+                    {/* event.description이 없으면 '작성된 메모가 없습니다.'를 표시합니다. */}
+                    {event.description || '작성된 메모가 없습니다.'}
+                </div>
+            </div>
             <div className="flex items-center"><span className="w-24 text-slate-500">Repeat</span><span>-</span></div>
             <div className="flex items-center"><span className="w-24 text-slate-500">Reminder</span><span>-</span></div>
-            <div className="flex items-start"><span className="w-24 text-slate-500 pt-1">Memo</span><div className="flex-1 text-slate-800 bg-slate-50 p-2 rounded-md text-xs">메모 예시입니다.</div></div>
-            <div className="flex items-center"><span className="w-24 text-slate-500">URL</span><a href="#" className="text-blue-600 truncate">naver.com</a></div>
+            <div className="flex items-start"><span className="w-24 text-slate-500 pt-1">Memo</span>
+                <div className="flex-1 text-slate-800 bg-slate-50 p-2 rounded-md text-xs">메모 예시입니다.</div>
+            </div>
+            <div className="flex items-center"><span className="w-24 text-slate-500">URL</span><a href="#"
+                                                                                                  className="text-blue-600 truncate">naver.com</a>
+            </div>
         </div>
     );
 
