@@ -2,7 +2,6 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-// import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
@@ -28,7 +27,22 @@ interface TeamMemberForCard {
     name: string;
     imageUrl: string;
 }
-
+// any에러때문에만듦
+interface ServerMember {
+    userId: number; // 서버 타입과 일치하도록 number로 가정
+    name: string;
+    profileImageUrl: string | null | undefined;
+}
+interface ServerProjectItem {
+    id: number;
+    name: string;
+    description: string;
+    startDate: string;
+    endDate: string;
+    ownerId: number;
+    members: ServerMember[]; // 타입 안정성 확보
+}
+//any에러
 interface Project {
     id: number;
     name: string;
@@ -41,7 +55,7 @@ interface Project {
 }
 
 interface ServerProjectResponse {
-    content: Project[] | Project;
+    content: ServerProjectItem[] | ServerProjectItem;
 }
 
 interface CurrentUser {
@@ -49,6 +63,7 @@ interface CurrentUser {
     name: string;
     email: string;
     imageUrl: string;
+    profileImageUrl?: string;
 }
 
 // 사용자 정보의 기본값
@@ -400,8 +415,10 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
             });
             if (response.ok) {
                 const result = await response.json();
-                const rawData = (result.data as ServerProjectResponse)?.content;
-                const projectsData: Project[] = Array.isArray(rawData) ? rawData.map(item => ({
+                const rawData = (result.data as { content: ServerProjectItem[] | ServerProjectItem })?.content;
+                const rawDataArray = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
+
+                const projectsData: Project[] = rawDataArray.map((item: ServerProjectItem) => ({
                     id: item.id,
                     name: item.name,
                     description: item.description,
@@ -409,12 +426,13 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
                     endDate: item.endDate,
                     ownerId: item.ownerId,
                     status: calculateProjectStatus(item.startDate, item.endDate),
-                    members: Array.isArray(item.members) ? item.members.map((member: any) => ({
-                        id: member.userId,
-                        name: member.name,
-                        imageUrl: member.profileImageUrl || 'default_url',
+                    members: Array.isArray(item.members) ?
+                        item.members.map((member: ServerMember): TeamMemberForCard => ({ // member에 타입 명시
+                            id: member.userId,
+                            name: member.name,
+                            imageUrl: member.profileImageUrl || 'default_url',
                     })) : [],
-                })) : [];
+                }));
                 setProjects(projectsData);
                 console.log('프로젝트 목록 조회 성공:', projectsData.length, '개');
             } else if (response.status === 401) {
@@ -436,7 +454,7 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
         }
     }, [isLoadingUser, user.id, fetchProjects]);
     // 프로젝트 생성 핸들러
-    const handleCreateProject = async (data: ProjectFormData) => {
+        const handleCreateProject = async (data: ProjectFormData) => {
         const projectData = {
             id: Date.now(),
             name: data.name,
@@ -456,7 +474,7 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
             });
             if (response.ok) {
                 const result = await response.json();
-                const serverProject = (result.data as ServerProjectResponse)?.content as Project;
+                const serverProject = (result.data as { content: ServerProjectItem })?.content;
                 if (!serverProject || !serverProject.id) {
                     console.error("프로젝트 생성 성공 응답에 필수 ID 필드가 누락되었습니다.", serverProject);
                     alert("프로젝트 생성에는 성공했으나, 목록 조회 오류로 표시되지 않습니다. 새로고침해보세요.");
@@ -478,8 +496,10 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
                     ownerId: serverProject.ownerId || user.id || 0,
                     status: calculatedStatus,
                     members: Array.isArray(serverProject.members)
-                        ? serverProject.members.map((m: TeamMemberForCard) => ({ id: m.id, name: m.name,
-                            imageUrl: m.imageUrl || DEFAULT_USER.imageUrl
+                        ? serverProject.members.map((m: ServerMember): TeamMemberForCard => ({
+                            id: m.userId,
+                            name: m.name,
+                            imageUrl: m.profileImageUrl || DEFAULT_USER.imageUrl
                         }))
                         : [defaultMember],
                 };
