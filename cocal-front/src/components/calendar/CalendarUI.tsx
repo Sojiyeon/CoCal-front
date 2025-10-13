@@ -133,16 +133,22 @@ export default function CalendarUI() {
 
 
     const handleSaveItem = (itemData: ModalFormData, type: 'Event' | 'Todo' | 'Memo', id?: number) => {
-        // '수정' 로직 (현재는 Event만 해당)
+        // '수정' 로직
         if (id) {
-            setEvents(prevEvents => prevEvents.map(event =>
-                event.id === id
-                    ? { ...event, ...itemData, title: itemData.title || "Untitled" } as CalendarEvent
-                    : event
-            ));
+            setEvents(prevEvents => prevEvents.map(event => {
+                if (event.id === id) {
+                    // [핵심 수정] 기존 event 데이터에 itemData를 덮어쓰되,
+                    // description은 itemData.content 값으로 명시적으로 업데이트합니다.
+                    return {
+                        ...event,
+                        ...itemData,
+                        description: itemData.content || itemData.description, // content를 우선적으로 사용
+                    };
+                }
+                return event;
+            }));
             return;
         }
-
         if (type === 'Event') {
             const newEvent: CalendarEvent = {
                 id: Date.now(),
@@ -151,7 +157,7 @@ export default function CalendarUI() {
                 startAt: itemData.startAt,
                 endAt: itemData.endAt,
                 color: itemData.color || '#3b82f6', // 기본 색상
-                description: itemData.description,
+                description: itemData.content || itemData.description,
                 location: itemData.location,
                 visibility: itemData.visibility,
                 urlId: 0,
