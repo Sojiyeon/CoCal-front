@@ -105,7 +105,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 };
 // --- END User Context ---
 
-
 interface ApiEndpoints {
     UPDATE_USER_NAME: string;
     UPDATE_USER_PASSWORD: string;

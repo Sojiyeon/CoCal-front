@@ -10,7 +10,6 @@ import { fetchWithAuth } from '@/utils/authService';
 
 const API_BASE_URL = 'https://cocal-server.onrender.com';
 const API_PROJECTS_ENDPOINT = `${API_BASE_URL}/api/projects`;
-const API_ME_ENDPOINT= `${API_BASE_URL}/api/users/me`;
 
 const API_ENDPOINTS = {
     UPDATE_USER_NAME: `${API_BASE_URL}/api/users/edit-name`,
@@ -37,6 +36,7 @@ interface Project {
     endDate: string;
     status: 'In Progress' | 'Completed';
     members: TeamMemberForCard[];
+    ownerId: number;
 }
 
 interface CurrentUser {
@@ -51,7 +51,7 @@ const DEFAULT_USER: CurrentUser = {
     id: null,
     name: 'Guest',
     email: 'guest@example.com',
-    imageUrl: 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=U', // 임시 이미지
+    imageUrl: 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=Guset', // 임시 이미지
 };
 
 interface ExpectedApiEndpoints {
@@ -72,25 +72,11 @@ const ProfileSettingsModalTyped: FC<ProfileSettingsModalProps> = ProfileSettings
 
 // 초기 더미 프로젝트 데이터
 const INITIAL_PROJECTS: Project[] = [
-    { id: 1, name: 'Project name', startDate: '2025-09-22', endDate: '2025-12-31', status: 'In Progress', members: [
-            { id: 101, name: 'Alice', imageUrl: 'https://placehold.co/100x100/4F46E5/FFFFFF?text=A' },
-            { id: 104, name: 'Dave', imageUrl: 'https://placehold.co/100x100/EF4444/FFFFFF?text=D' },
-        ]  },
-    { id: 2, name: 'Project name2', startDate: '2025-08-22', endDate: '2025-12-31', status: 'In Progress', members: [
-            { id: 103, name: 'Charlie', imageUrl: 'https://placehold.co/100x100/F59E0B/FFFFFF?text=C' },
-        ]  },
-    { id: 3, name: 'Project name3', startDate: '2025-09-22', endDate: '2025-12-31', status: 'Completed', members: [
-            { id: 102, name: 'Bob', imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF?text=B' },
-            { id: 103, name: 'Charlie', imageUrl: 'https://placehold.co/100x100/F59E0B/FFFFFF?text=C' },
-            { id: 104, name: 'Dave', imageUrl: 'https://placehold.co/100x100/EF4444/FFFFFF?text=D' },
-        ]  },
-    { id: 4, name: 'Project name4', startDate: '2025-09-22', endDate: '2025-12-31', status: 'In Progress', members: [
-            { id: 103, name: 'Charlie', imageUrl: 'https://placehold.co/100x100/F59E0B/FFFFFF?text=C' },
-            { id: 104, name: 'Dave', imageUrl: 'https://placehold.co/100x100/EF4444/FFFFFF?text=D' },
-        ]  },
-    { id: 5, name: 'Project name5', startDate: '2025-08-22', endDate: '2025-10-15', status: 'Completed', members: [
-            { id: 102, name: 'Bob', imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF?text=B' },
-        ]  },
+    { id: 1, name: 'Owner Project', startDate: '2025-09-22', endDate: '2025-12-31', status: 'In Progress', ownerId: 12, members: [{ id: 12, name: 'Me', imageUrl: 'https://placehold.co/100x100/4F46E5/FFFFFF?text=A' }] },
+    { id: 2, name: 'Member Project', description: 'This is a project I am only a member of.', startDate: '2025-08-22', endDate: '2025-12-31', status: 'In Progress', ownerId: 99, members: [{ id: 99, name: 'Owner', imageUrl: 'https://placehold.co/100x100/F59E0B/FFFFFF?text=C' }, { id: 12, name: 'Me', imageUrl: 'https://placehold.co/100x100/F59E0B/FFFFFF?text=C' }] },
+    { id: 3, name: 'Completed Project', startDate: '2025-09-22', endDate: '2025-10-10', status: 'Completed', ownerId: 12, members: [{ id: 12, name: 'Me', imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF?text=B' }] },
+    { id: 4, name: 'No Member Project', startDate: '2025-09-22', endDate: '2025-12-31', status: 'In Progress', ownerId: 100, members: [] },
+    { id: 5, name: 'Completed No Desc', startDate: '2025-08-22', endDate: '2025-10-15', status: 'Completed', ownerId: 10, members: [{ id: 12, name: 'Me', imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF?text=B' }] },
 ];
 
 
@@ -138,11 +124,18 @@ const ProjectCategoryFilter: FC<ProjectCategoryFilterProps> = ({
     );
 };
 
-
 // --- ProjectCard Component (생략) ---
-const ProjectCard: FC<{ project: Project }> = ({ project }) => {
+interface ProjectCardProps {
+    project: Project;
+    currentUserId: number | null;
+}
+
+const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const isOwner = project.ownerId === currentUserId;
+    const isMember = project.members.some(member => member.id === currentUserId);
+    const showDescription = !isOwner && isMember && project.description;
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -182,24 +175,33 @@ const ProjectCard: FC<{ project: Project }> = ({ project }) => {
                     </p>
                 </div>
                 {/* 드롭다운 메뉴 버튼 */}
-                <div ref={dropdownRef}>
-                    <button
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className="p-1 text-gray-400 hover:text-gray-700 transition relative z-20"
-                    >
-                        <MoreVertical className="w-5 h-5" />
-                    </button>
+                <div className="flex-shrink-0 relative">
+                    {isOwner ? ( // owner
+                        <div ref={dropdownRef}>
+                            <button
+                                onClick={(e: React.MouseEvent) => {
+                                    e.preventDefault(); // Link 태그로의 이동 방지
+                                    setIsDropdownOpen(!isDropdownOpen);
+                                }}
+                                className="p-1 text-gray-400 hover:text-gray-700 transition relative z-20"
+                            >
+                                <MoreVertical className="w-5 h-5" />
+                            </button>
+                        </div>
+                    ) : showDescription ? ( // member
+                        <p className="text-xs text-gray-600 line-clamp-2 mt-1 w-24 text-right">
+                            {project.description}
+                        </p>
+                    ) : null}
                 </div>
             </div>
             <div className="flex items-center space-x-[-4px] pt-2 border-t border-gray-100">
                 {visibleMembers.map((member, index) => (
-                    // 이미지 스택 효과를 위해 z-index와 negative margin 사용
                     <img
                         key={member.id || index}
                         src={member.imageUrl}
                         title={member.name}
                         alt={member.name || 'Team member'}
-                        // Tailwind CSS: w-7 h-7, rounded-full, border-2 border-white
                         className="w-6 h-6 rounded-full object-cover border-2 border-white shadow-sm transition transform hover:scale-110"
                         style={{ zIndex: visibleMembers.length - index }}
                     />
@@ -211,7 +213,7 @@ const ProjectCard: FC<{ project: Project }> = ({ project }) => {
                 )}
             </div>
             {/* 드롭다운 메뉴 (Edit/Delete) */}
-            {isDropdownOpen && (
+            {isDropdownOpen && isOwner && (
                 <div
                     className="absolute top-10 right-2 bg-gray-800 text-white rounded-lg shadow-xl z-30 w-28 overflow-hidden transform origin-top-right transition-all duration-150 ease-out"
                     style={{ zIndex: 50 }}
@@ -220,8 +222,12 @@ const ProjectCard: FC<{ project: Project }> = ({ project }) => {
                         <button
                             key={item.label}
                             className={`w-full text-left px-3 py-2 text-sm transition 
-                ${item.isDestructive ? 'text-red-400 hover:bg-gray-700/50' : 'hover:bg-gray-700'}`}
-                            onClick={() => { item.action(); setIsDropdownOpen(false); }}
+        ${item.isDestructive ? 'text-red-400 hover:bg-gray-700/50' : 'hover:bg-gray-700'}`}
+                            onClick={(e: React.MouseEvent) => {
+                                e.stopPropagation();
+                                item.action();
+                                setIsDropdownOpen(false);
+                            }}
                         >
                             {item.label}
                         </button>
@@ -352,7 +358,6 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
 };
 
 // --- Main Dashboard Page ---
-const API_LOGOUT_ENDPOINT = `${API_BASE_URL}/api/auth/logout`;
 const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In Progress' | 'Completed' => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -364,7 +369,6 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
     if (end.getTime() < today.getTime()) {
         return 'Completed';
     }
-    // 'In Progress' 또는 'Completed'만 반환하므로 타입이 안전해집니다.
     return 'In Progress';
 };
 
@@ -391,15 +395,20 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
             });
             if (response.ok) {
                 const result = await response.json();
-                const rawData = result.data;
-                const projectsData: Project[] = Array.isArray(rawData) ? rawData.map((item: Project) => ({ // 💡 타입 수정 반영
+                const rawData = result.data?.content || result.data || result;
+                const projectsData: Project[] = Array.isArray(rawData) ? rawData.map((item: any) => ({
                     id: item.id,
                     name: item.name,
                     description: item.description,
                     startDate: item.startDate,
                     endDate: item.endDate,
+                    ownerId: item.ownerId,
                     status: calculateProjectStatus(item.startDate, item.endDate),
-                    members: Array.isArray(item.members) ? item.members : [], // 멤버 기본값 설정
+                    members: Array.isArray(item.members) ? item.members.map((member: any) => ({
+                        id: member.userId,
+                        name: member.name,
+                        imageUrl: member.profileImageUrl || 'default_url',
+                    })) : [],
                 })) : [];
                 setProjects(projectsData);
                 console.log('프로젝트 목록 조회 성공:', projectsData.length, '개');
@@ -520,14 +529,17 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
                 const createdProject: Project = {
                     id: serverProject.id,
                     name: serverProject.name || data.name,
+                    description: serverProject.description,
                     startDate: serverProject.startDate || data.startDate,
                     endDate: serverProject.endDate || data.endDate,
+                    ownerId: serverProject.ownerId || user.id || 0,
                     status: calculatedStatus,
                     members: Array.isArray(serverProject.members)
-                        ? serverProject.members
-                        : [defaultMember], // 서버가 멤버를 반환하지 않으면 생성자(본인) 추가
+                        ? serverProject.members.map((m: any) => ({ id: m.userId, name: m.name,
+                            imageUrl: m.profileImageUrl || DEFAULT_USER.imageUrl
+                        }))
+                        : [defaultMember],
                 };
-                // 클라이언트 상태에 즉시 추가 (새로고침 없이 목록에 표시)
                 setProjects(prev => [createdProject, ...prev]);
                 console.log('프로젝트 생성 성공 및 상태 업데이트 완료:', createdProject.name);
             } else if (response.status === 401) {
@@ -553,33 +565,6 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
     const handleOpenSettingsModal = () => setIsSettingsModalOpen(true);
     const handleCloseSettingsModal = () => setIsSettingsModalOpen(false);
 
-        /*
-            const handleLogout = async () => {
-                const refreshToken = localStorage.getItem('refreshToken');
-
-                try {
-                    if (refreshToken) {
-                        console.log('서버에 로그아웃 요청 중...');
-                        await fetch(API_LOGOUT_ENDPOINT, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ refreshToken }),
-                        });
-                    }
-                } catch (error) {
-                    console.error("로그아웃 API 호출 실패 (클라이언트 정리 진행):", error);
-                } finally {
-                    localStorage.removeItem('accessToken');
-                    localStorage.removeItem('refreshToken');
-                    localStorage.removeItem('userProfile');
-
-                    setCurrentUser(DEFAULT_USER);
-                    // alert("로그아웃되었습니다."); // alert 대신 console.log 사용
-                    console.log("로그아웃되었습니다.");
-                    window.location.href = '/';
-                }
-            };
-        */
     if (isLoadingUser || isLoadingProjects) {
         return (
             <div className="min-h-screen bg-gray-50 font-sans flex items-center justify-center">
@@ -632,7 +617,7 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {filteredProjects.map(project => (
                             <Link href={`/calendar/${project.id}`} key={project.id}>
-                                <ProjectCard project={project} />
+                                <ProjectCard project={project} currentUserId={user.id}/>
                             </Link>
                         ))}
                     </div>
@@ -650,7 +635,6 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
             <ProfileSettingsModalTyped
                 isOpen={isSettingsModalOpen}
                 onClose={handleCloseSettingsModal}
-                // currentUser={currentUser}
                 apiEndpoints={API_ENDPOINTS}
             />
         </div>
