@@ -91,6 +91,7 @@ export interface Project {
     endDate: string;
     status: 'In Progress' | 'Completed';
     members: ProjectMember[];
+    description?: string;
    // colorTags: string[]; // 색상 태그
 }
 
