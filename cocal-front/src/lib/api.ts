@@ -1,1 +1,1 @@
-// axios 등으로 백엔드 API와 통신하는 함수들 관리
+// src/lib/api/auth.ts

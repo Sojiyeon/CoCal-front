@@ -4,15 +4,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { useRouter } from 'next/navigation';
 import Button from '../ui/Button';
 import Link from 'next/link';
-
-const API = 'https://cocal-server.onrender.com';
-// 서버 API 경로
-const API_LOGIN_ENDPOINT = `${API}/api/auth/login`;
-// const link = `https://`
-const handleGoogleLogin = () => {
-    window.location.href = `${API}/oauth2/authorization/google`;
-    // https://cocal-front.vercel.app/oauth/success?accessToken=${accessToken}&expiresIn=${1200}
-};
+import {authApi} from "@/api/authApi";
 
 const Login: React.FC = () => {
     const router = useRouter();
@@ -21,55 +13,33 @@ const Login: React.FC = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    // 구글 소셜 로그인 핸들러
+    const handleGoogleLogin = () => {
+        const url:string = authApi.getGoogleAuthUrl();
+        window.location.href = url; // <- 실제 이동
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("1. handleSubmit 함수 호출됨.");
-        if (!email || !password) {
-            console.log("2. 유효성 검사 실패로 중단됨.");
-            return;
-        }
-        console.log("3. API 요청 직전!");
         setIsLoading(true);
         setError('');
-
+        console.log("login 요청 시작");
         try {
-            const response = await fetch(API_LOGIN_ENDPOINT, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                setError(data.message || '이메일 또는 비밀번호가 올바르지 않습니다.');
-                return;
+            // 로그인 요청 → accessToken 저장
+            const accessToken = await authApi.login(email, password);
+            // accessToken으로 사용자 정보 요청
+            const user = await authApi.getUserInfo(accessToken);
+            if (user) {
+                localStorage.setItem('userProfile', JSON.stringify(user));
+                console.log('사용자 정보 저장 완료:', user);
             }
 
-            const authData = data.data || data;
-            const { accessToken, refreshToken, user } = authData;
-
-            if (typeof accessToken === 'string' && accessToken) {
-                localStorage.setItem('accessToken', accessToken);
-
-                    if (refreshToken) {
-                        localStorage.setItem('refreshToken', refreshToken);
-                    } else {
-                        console.warn('Refresh Token이 응답에 포함되어 있지 않습니다.');
-                    }
-
-                if (user && user.name && user.email) {
-                    const userProfile = { profileImageUrl: user.profileImageUrl, name: user.name, email: user.email };
-                    localStorage.setItem('userProfile', JSON.stringify(userProfile));
-                    console.log('User profile saved from login response:', userProfile);
-                } else {
-                    console.warn('사용자 프로필 정보(user.name, user.email)가 응답에 없습니다.');
-                }
-            }
+            // 대시보드로 이동
             router.push('/dashboard');
-        } catch (_err) {
-            // 네트워크 에러나 JSON 파싱 실패 등
-            setError('로그인 중 네트워크 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message || '로그인 중 문제가 발생했습니다.');
+            }
         } finally {
             setIsLoading(false);
         }
