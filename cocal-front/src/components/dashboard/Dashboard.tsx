@@ -42,6 +42,7 @@ interface ServerProjectItem {
     endDate: string;
     ownerId: number;
     members: ServerMember[]; // 타입 안정성 확보
+    status: string; // 서버 응답에 status 포함
 }
 //any에러
 interface Project {
@@ -239,6 +240,7 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
             {/* 드롭다운 메뉴 (Edit/Delete) */}
             {isDropdownOpen && isOwner && (
                 <div
+                    onClick={(e) => e.stopPropagation()}
                     className="absolute top-10 right-2 bg-gray-800 text-white rounded-lg shadow-xl z-30 w-28 overflow-hidden transform origin-top-right transition-all duration-150 ease-out"
                     style={{ zIndex: 50 }}
                 >
@@ -250,10 +252,8 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
                             onClick={(e: React.MouseEvent) => {
                                 e.preventDefault();
                                 e.stopPropagation();
+                                console.log(`[Step 1] ${item.label} 버튼 클릭 성공! ID: ${project.id}`);
                                 item.action();
-                                if (item.label === 'Edit') {
-                                    onEdit(project);
-                                }
                                 setIsDropdownOpen(false);
                             }}
                         >
@@ -394,13 +394,14 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
     const end = new Date(endDateStr);
     end.setHours(0, 0, 0, 0);
 
+    // IN_PROGRESS가 서버에서는 현재 날짜가 시작일과 종료일 사이일 때를 의미한다고 가정
     if (end.getTime() < today.getTime()) {
         return 'Completed';
     }
     return 'In Progress';
 };
 
-    const ProjectDashboardPage: React.FC = () => {
+const ProjectDashboardPage: React.FC = () => {
     const router = useRouter();
     const { user, isLoading: isLoadingUser, logout } = useUser();
     const [isLoadingProjects, setIsLoadingProjects] = useState(false);
@@ -443,7 +444,7 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
                             id: member.userId,
                             name: member.name,
                             imageUrl: member.profileImageUrl || 'default_url',
-                    })) : [],
+                        })) : [],
                 }));
                 setProjects(projectsData);
                 console.log('프로젝트 목록 조회 성공:', projectsData.length, '개');
@@ -517,6 +518,7 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
                 };
                 setProjects(prev => [createdProject, ...prev]);
                 console.log('프로젝트 생성 성공 및 상태 업데이트 완료:', createdProject.name);
+                setIsCreateModalOpen(false); // 생성 후 모달 닫기
             } else if (response.status === 401) {
                 console.error("인증 실패. 로그아웃 처리 필요.");
                 handleLogout();
@@ -532,52 +534,67 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
     };
 
     const handleOpenEditModal = (project: Project) => {
+        console.log(`[Step 2] 모달 열기 핸들러 시작. 프로젝트: ${project.name}`);
         setEditingProject(project); // 편집할 프로젝트 설정
         setIsEditModalOpen(true);   // 모달 열기
+        console.log('[Step 3] setEditingProject 및 setIsEditModalOpen 호출 완료.');
     };
     const handleCloseEditModal = () => {
         setIsEditModalOpen(false);
         setEditingProject(null); // 상태 초기화
     };
+
+    // 프로젝트 업데이트 API 로직 수정
     const handleUpdateProject = async (data: ProjectFormData) => {
         if (!editingProject) return;
-        const projectData = {
-            id: Date.now(),
-            name: data.name,
-            description: data.description,
-            startDate: data.startDate,
-            endDate: data.endDate,
-            // status: 'In Progress',
-        };
+
         try {
+            console.log(`API 호출: ${API_PROJECTS_ENDPOINT}/${editingProject.id} 프로젝트 수정 (PUT) 요청 중...`);
             const response = await fetchWithAuth(`${API_PROJECTS_ENDPOINT}/${editingProject.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
+                body: JSON.stringify({
+                    name: data.name,
+                    description: data.description,
+                    startDate: data.startDate,
+                    endDate: data.endDate,
+                }),
             });
+
             if (response.ok) {
-                // 상태 업데이트: 기존 프로젝트 목록에서 해당 프로젝트를 찾아 정보 업데이트
+                const result = await response.json();
+                const updatedServerProject = result.data as ServerProjectItem;
+
                 setProjects(prev => prev.map(p => {
                     if (p.id !== editingProject.id) return p;
+
+                    // 서버 응답으로 받은 필드를 사용하여 프로젝트 상태 업데이트
                     const updatedProject: Project = {
-                        ...p, // 기존 필드들 유지
-                        name: data.name,
-                        description: data.description,
-                        startDate: data.startDate,
-                        endDate: data.endDate,
-                        status: calculateProjectStatus(data.startDate, data.endDate),
-                        members: p.members, // members/ownerId는 서버 응답이 없으면 기존 값을 유지
-                        ownerId: p.ownerId,
-                    }; return updatedProject;
+                        ...p,
+                        name: updatedServerProject.name || data.name,
+                        description: updatedServerProject.description || data.description,
+                        startDate: updatedServerProject.startDate || data.startDate,
+                        endDate: updatedServerProject.endDate || data.endDate,
+                        // 서버 응답의 날짜를 사용하여 상태 재계산
+                        status: calculateProjectStatus(
+                            updatedServerProject.startDate || data.startDate,
+                            updatedServerProject.endDate || data.endDate
+                        ),
+                    };
+                    return updatedProject;
                 }));
                 console.log('Project updated successfully.');
+                handleCloseEditModal(); // 성공 시 모달 닫기
             } else {
-                console.error('프로젝트 업데이트 실패:', response.status);
+                console.error('프로젝트 업데이트 실패:', response.status, await response.text());
+                alert(`프로젝트 업데이트에 실패했습니다. (상태 코드: ${response.status})`);
             }
         } catch (_error) {
             console.error('프로젝트 업데이트 중 네트워크 오류:', _error);
+            alert('네트워크 오류로 프로젝트를 업데이트할 수 없습니다.');
         }
     };
+
     const handleDeleteProject = async (projectId: number) => {
         if (window.confirm('정말로 이 프로젝트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
             try {
@@ -659,14 +676,16 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {projects.map(project => (
-                            <Link href={`/calendar/${project.id}`} key={project.id} onClick={(e) => e.preventDefault()}>
-                                <ProjectCard
+                            // <Link href={`/calendar/${project.id}`} key={project.id} onClick={(e) => e.preventDefault()}>
+                            <div key={project.id} onClick={() => router.push(`/calendar/${project.id}`)} className="cursor-pointer">
+                            <ProjectCard
                                     project={project}
                                     currentUserId={user?.id || null}
                                     onEdit={handleOpenEditModal}
                                     onDelete={handleDeleteProject}
                                 />
-                            </Link>
+                            {/*// </Link>*/}
+                            </div>
                         ))}
                     </div>
                 )}
@@ -684,13 +703,17 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
                 onClose={handleCloseSettingsModal}
                 apiEndpoints={API_ENDPOINTS}
             />
+            {/* editingProject가 null이 아닐 때만 렌더링 */}
             {editingProject && (
+                <>
+                {console.log('[Step 4] EditProjectModal 컴포넌트 렌더링 시작.', { isOpen: isEditModalOpen, project: editingProject.name })}
                 <EditProjectModal
                     isOpen={isEditModalOpen}
                     onClose={handleCloseEditModal}
                     onUpdateProject={handleUpdateProject}
                     projectToEdit={editingProject}
                 />
+                </>
             )}
         </div>
     );
