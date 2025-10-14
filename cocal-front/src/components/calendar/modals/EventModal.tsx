@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef  } from "react";
 import { CalendarEvent, ModalFormData } from "../types";
 import { HexColorPicker } from "react-colorful";
+import {api} from "@/components/calendar/utils/api";
 type ActiveTab = "Event" | "Todo" | "Memo";
 
 const palettes = [
@@ -17,6 +18,7 @@ interface ColorPaletteProps {
     selectedColor: string;
     onColorChange: (color: string) => void;
 }
+
 
 function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProps) {
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
@@ -96,7 +98,7 @@ interface Props {
     projectId: number;
 }
 
-export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
+export function EventModal({onClose, onSave, editEvent, initialDate, projectId }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
     const [isLoading, setIsLoading] = useState(false);
 
@@ -164,18 +166,32 @@ export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
         setFormData((prev) => ({ ...prev, visibility }));
     };
 
+    // 생성 시 db에 저장
     const handleSave = async () => {
         setIsLoading(true);
-
-        console.warn(`개발 모드: ${activeTab} 저장을 시뮬레이션합니다.`);
-
-
-        onSave(formData, activeTab, editEvent ? editEvent.id : undefined);
-
-        setIsLoading(false);
-        onClose();
+        try {
+            if (activeTab === "Memo") {
+                const memoData = {
+                    title: formData.title,
+                    content: formData.content,
+                    url: formData.url,
+                    memoDate: formData.memoDate,
+                };
+                // projectId를 props에서 가져와 사용
+                const response = await api.post(`/projects/${projectId}/memos`, memoData);
+                // 부모 컴포넌트로 새 메모 전달
+                onSave(response.data, activeTab);
+                console.log("메모 저장 완료");
+            } else {
+                onSave(formData, activeTab, editEvent ? editEvent.id : undefined);
+            }
+            onClose();
+        } catch (err) {
+            alert("저장 중 오류 발생");
+        } finally {
+            setIsLoading(false);
+        }
     };
-
 
     const TabButton = ({ tabName }: { tabName: ActiveTab }) => (
         <button
