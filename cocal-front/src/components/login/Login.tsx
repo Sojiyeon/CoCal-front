@@ -14,7 +14,10 @@ const Login: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     // 구글 소셜 로그인 핸들러
-    const handleGoogleLogin = () => authApi.getGoogleAuthUrl();
+    const handleGoogleLogin = () => {
+        const url:string = authApi.getGoogleAuthUrl();
+        window.location.href = url; // <- 실제 이동
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -24,8 +27,6 @@ const Login: React.FC = () => {
         try {
             // 로그인 요청 → accessToken 저장
             const accessToken = await authApi.login(email, password);
-            // 저장이 끝난 뒤에 라우팅
-            await Promise.resolve();
             // accessToken으로 사용자 정보 요청
             const user = await authApi.getUserInfo(accessToken);
             if (user) {
