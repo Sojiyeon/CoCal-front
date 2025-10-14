@@ -1,18 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-
-// --- 타입 정의 ---
-interface TeamMember {
-    memberId: number;
-    userId: number;
-    name: string;
-    email: string;
-    avatarUrl: string | null;
-    role: 'OWNER' | 'ADMIN' | 'MEMBER';
-    status: 'ACTIVE' | 'BLOCKED' | 'DELETED';
-    me: boolean;
-}
+import {
+    getTeamList,
+    TeamMember,
+    TeamInvite,
+    sendEmailInvite,
+    kickMember,
+    getOpenInviteLink,
+    cancelInvite
+} from "@/api/teamApi";
 
 interface ProjectInvite {
     inviteId: number;
@@ -21,16 +18,6 @@ interface ProjectInvite {
     createdAt: string;
     expiresAt: string;
 }
-
-// API 연동 전 사용할 샘플 데이터
-const sampleMembers: TeamMember[] = [
-    { memberId: 1, userId: 1, name: "User 1 (me)", email: "user1@example.com", avatarUrl: null, role: 'OWNER', status: 'ACTIVE', me: true },
-    { memberId: 2, userId: 2, name: "User 2", email: "user2@example.com", avatarUrl: null, role: 'MEMBER', status: 'ACTIVE', me: false },
-];
-const sampleInvites: ProjectInvite[] = [
-    { inviteId: 1, email: "pending@example.com", status: 'PENDING', createdAt: new Date().toISOString(), expiresAt: new Date().toISOString() }
-];
-
 
 interface Props {
     projectId: number;
@@ -43,95 +30,96 @@ export function TeamModal({ projectId, onClose }: Props) {
     const [invites, setInvites] = useState<ProjectInvite[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [copying, setCopying] = useState(false);
 
     // 컴포넌트가 마운트될 때 데이터를 불러오는 부분
     useEffect(() => {
-        const fetchTeamData = async () => {
+        (async () => {
             setIsLoading(true);
             setError(null);
             try {
-
-                //  API 대신 임시 샘플 데이터
-                console.warn("개발 모드: TeamModal에서 API 호출을 건너뛰고 샘플 데이터를 사용합니다.");
-                setTimeout(() => {
-                    setMembers(sampleMembers);
-                    setInvites(sampleInvites);
-                    setIsLoading(false);
-                }, 500); // 0.5초 로딩 시뮬레이션
-
+                const { members, invites } = await getTeamList(projectId);
+                setMembers(members);
+                setInvites(invites);
             } catch (err: unknown) {
-                if (err instanceof Error) {
-                    setError(err.message);
-                } else {
-                    setError("Failed to load team data.");
-                }
+                setError(err instanceof Error ? err.message : "팀원 데이터를 불러오지 못했습니다.");
                 console.error(err);
+            } finally {
                 setIsLoading(false);
             }
-        };
-
-        void fetchTeamData();
+        })();
     }, [projectId]);
 
     // 이메일로 팀원을 초대하는 핸들러
     const handleInvite = async () => {
         if (!email) {
-            window.alert("Please enter an email address.");
+            window.alert("이메일을 적어주세요.");
             return;
         }
         setIsLoading(true);
         try {
-
-            // API 대신 임시 로직을 사용
-            console.warn(`개발 모드: ${email} 초대를 시뮬레이션합니다.`);
-            setTimeout(() => {
-                const newInvite: ProjectInvite = {
-                    inviteId: Math.random(),
-                    email: email,
-                    status: 'PENDING',
-                    createdAt: new Date().toISOString(),
-                    expiresAt: new Date().toISOString(),
-                };
-                setInvites(prev => [newInvite, ...prev]);
-                setEmail("");
-                window.alert(`${email} has been invited (simulation).`);
-                setIsLoading(false);
-            }, 1000);
-
+            // api 요청
+            const newInvite: TeamInvite = await sendEmailInvite(projectId, email);
+            setInvites((prev) => [newInvite, ...prev]);
+            setEmail("");
+            window.alert(`${email}님에게 초대 메일을 보냈습니다.`);
         } catch (err: unknown) {
             if (err instanceof Error) {
                 window.alert(`Invite failed: ${err.message}`);
             } else {
-                window.alert('An unknown error occurred during the invitation.');
+                window.alert("초대 요청 중 알 수 없는 에러가 발생했습니다.");
             }
+        } finally {
             setIsLoading(false);
         }
     };
 
     // 팀원을 제거하는 핸들러
-    const handleRemoveMember = (memberId: number) => {
-        if (window.confirm("Are you sure you want to remove this member?")) {
-            // [API-연동] DELETE /api/team/{projectId}/members/{memberId} 와 같은 API를 호출해야 합니다.
-            console.log(`Removing member ${memberId} from project ${projectId}`);
-            setMembers(prev => prev.filter(m => m.memberId !== memberId));
+    const handleRemoveMember = async (projectId: number, userId: number) => {
+        const confirm = window.confirm("정말 이 멤버를 추방하시겠습니까?");
+        if (!confirm) return;
+        try {
+            // api 요청
+            const message = await kickMember(projectId, userId);
+            alert(message);
+            setMembers(prev => prev.filter(m => m.userId !== userId));
+        } catch (err: unknown) {
+            console.error(err);
         }
     };
 
     // 초대를 취소하는 핸들러
-    const handleCancelInvite = (inviteId: number) => {
-        if (window.confirm("Are you sure you want to cancel this invitation?")) {
-            // [API-연동] DELETE /api/team/invites/{inviteId} 와 같은 API를 호출해야 합니다.
-            console.log(`Canceling invitation ${inviteId}`);
-            setInvites(prev => prev.filter(i => i.inviteId !== inviteId));
+    const handleCancelInvite =  async (projectId: number, inviteId: number) => {
+        if (!window.confirm("정말 이 초대를 취소하시겠습니까?")) return;
+        try {
+            // api 호출
+            const message = await cancelInvite(projectId, inviteId);
+            alert(message);
+            // 성공 시 상태 업데이트
+            setInvites((prev) => prev.filter((i) => i.inviteId !== inviteId));
+        } catch (err: unknown) {
+            console.error("초대 취소 실패:", err);
+            alert(
+                err instanceof Error
+                    ? err.message
+                    : "초대 취소 중 알 수 없는 오류가 발생했습니다."
+            );
         }
     };
 
     // 초대 링크 복사 핸들러
-    const handleCopyLink = () => {
-        const inviteLink = `${window.location.origin}/project/${projectId}/join`;
-        navigator.clipboard.writeText(inviteLink).then(() => {
-            window.alert("Invite link copied to clipboard!");
-        });
+    const handleCopyLink = async () => {
+        if (typeof window === "undefined") return;
+        setCopying(true);
+        try {
+            const inviteLink = await getOpenInviteLink(projectId);
+            await navigator.clipboard.writeText(inviteLink);
+            window.alert("초대 링크가 클립보드에 복사되었습니다!");
+        } catch (err: unknown) {
+            console.error(err);
+        } finally {
+            setCopying(false);
+        }
     };
 
     return (
@@ -142,7 +130,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                     <div className="flex items-center gap-4">
                         <button onClick={handleCopyLink} className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
                             <svg width="16" height="16" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
-                            Copy link
+                            {copying ? "Copying..." : "Copy Link"}
                         </button>
                         <button onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>
                     </div>
@@ -180,7 +168,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                                     </div>
                                 </div>
                                 {!member.me ? (
-                                    <button onClick={() => handleRemoveMember(member.memberId)} className="text-slate-500 hover:text-red-600 text-xs font-medium">
+                                    <button onClick={() => handleRemoveMember(projectId, member.userId)} className="text-slate-500 hover:text-red-600 text-xs font-medium">
                                         Remove
                                     </button>
                                 ) : (
@@ -197,7 +185,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                                         <div className="text-xs text-slate-400">{invite.status}...</div>
                                     </div>
                                 </div>
-                                <button onClick={() => handleCancelInvite(invite.inviteId)} className="text-slate-500 hover:text-red-600 text-xs font-medium">
+                                <button onClick={() => handleCancelInvite(projectId, invite.inviteId)} className="text-slate-500 hover:text-red-600 text-xs font-medium">
                                     Cancel
                                 </button>
                             </div>
