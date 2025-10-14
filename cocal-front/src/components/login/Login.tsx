@@ -23,10 +23,11 @@ const Login: React.FC = () => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
-
+        console.log("login 요청 시작");
         try {
             // 로그인 요청 → accessToken 저장
             const accessToken = await authApi.login(email, password);
+            console.log("accessToken", accessToken);
             // accessToken으로 사용자 정보 요청
             const user = await authApi.getUserInfo(accessToken);
             if (user) {
@@ -35,7 +36,7 @@ const Login: React.FC = () => {
             }
 
             // 대시보드로 이동
-            router.push('/dashboard');
+            // router.push('/dashboard');
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message || '로그인 중 문제가 발생했습니다.');
