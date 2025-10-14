@@ -112,28 +112,28 @@ export const fetchWithAuth = async (url:string,  options: RequestInit = {}) => {
 };
 
 // fetchWithAuth를 감싸서 JSON을 반환하는 함수
-export const fetchJsonWithAuth = async <T = any>(
+export const fetchJsonWithAuth = async <T = unknown>(
     url: string,
     options: RequestInit = {}
-): Promise<T> => {
+): Promise<T | null> => {
     // 기존 토큰 재발급/재시도 로직은 fetchWithAuth가 그대로 처리
     const response = await fetchWithAuth(url, options);
 
     // 204 No Content 대응
-    if (response.status === 204) {
-        return null as T;
-    }
+    if (response.status === 204) return null;
 
     // JSON 파싱 시도
-    let data: any = null;
+    let data: unknown = null;
     try {
         // Content-Type이 JSON이 아니어도 서버가 JSON을 돌려주는 경우가 있어
         // 우선 json() 시도, 실패하면 text() 후 에러로 보냄
         data = await response.json();
-    } catch (e: unknown) {
+    } catch {
         const text = await response.text().catch(() => '');
         const parseErr = new Error(
-            `JSON 파싱 실패(${response.status} ${response.statusText}): ${text?.slice(0, 200) || '응답 본문 없음'}`
+            `JSON 파싱 실패(${response.status} ${response.statusText}): ${
+                text?.slice(0, 200) || '응답 본문 없음'
+            }`
         ) as Error & { status?: number; raw?: string };
         parseErr.status = response.status;
         parseErr.raw = text;
@@ -143,8 +143,10 @@ export const fetchJsonWithAuth = async <T = any>(
     // HTTP 에러라면 데이터 안의 메시지를 최대한 살려 에러로 throw
     if (!response.ok) {
         const err = new Error(
-            data?.message || data?.error || `${response.status} ${response.statusText}`
-        ) as Error & { status?: number; body?: any };
+            (data as Record<string, unknown>)?.message?.toString() ||
+            (data as Record<string, unknown>)?.error?.toString() ||
+            `${response.status} ${response.statusText}`
+        ) as Error & { status?: number; body?: unknown };
         err.status = response.status;
         err.body = data;
         throw err;
