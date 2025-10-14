@@ -74,7 +74,7 @@ export async function sendEmailInvite(
 ): Promise<TeamInvite> {
     const url = `/api/team/${projectId}/invites-email`;
     const body = JSON.stringify({ email });
-    const result = await fetchJsonWithAuth<ApiResponse<any>>(url, {
+    const result = await fetchJsonWithAuth<ApiResponse<TeamInvite>>(url, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -91,7 +91,7 @@ export async function sendEmailInvite(
 
     // 서버 응답의 id 필드를 inviteId로 맞춰줌
     const normalizedInvite: TeamInvite = {
-        inviteId: invite.id,
+        inviteId: invite.inviteId,
         email: invite.email,
         status: invite.status,
         createdAt: invite.createdAt,
