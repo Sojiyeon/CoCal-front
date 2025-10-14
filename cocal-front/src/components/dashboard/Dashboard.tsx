@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
+import EditProjectModal from '@/components/modals/EditProjectModal';
 import ProfileSettingsModal, { useUser } from '@/components/modals/ProfileSettingModal';
 import { fetchWithAuth } from '@/utils/authService';
 
@@ -148,9 +149,11 @@ const ProjectCategoryFilter: FC<ProjectCategoryFilterProps> = ({
 interface ProjectCardProps {
     project: Project;
     currentUserId: number | null;
+    onEdit: (project: Project) => void;
+    onDelete: (projectId: number) => void;
 }
 
-const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId }) => {
+const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onDelete }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const isOwner = project.ownerId === currentUserId;
@@ -175,8 +178,8 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId }) => {
 
     // 드롭다운 메뉴 항목
     const dropdownItems = [
-        { label: 'Edit', action: () => console.log('Edit clicked for', project.name) },
-        { label: 'Delete', action: () => console.log('Delete clicked for', project.name), isDestructive: true },
+        { label: 'Edit', action: () => onEdit(project), isDestructive: false },
+        { label: 'Delete', action: () => onDelete(project.id), isDestructive: true },
     ];
 
     const members = Array.isArray(project.members) ? project.members : [];
@@ -188,19 +191,20 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId }) => {
         <div className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition duration-200 relative border border-gray-100">
             {/* 상단 (이름, 날짜, 드롭다운 버튼) */}
             <div className="flex justify-between items-start mb-4">
-                <div className="flex flex-col flex-grow">
-                    <h3 className="font-semibold text-gray-900 line-clamp-1">{project.name}</h3>
+                <div className="flex flex-col flex-grow min-w-0">
+                    <h3 className="font-semibold text-gray-900 truncate">{project.name}</h3>
                     <p className="text-xs text-gray-500 mt-1">
                         {formatDates(project.startDate, project.endDate)}
                     </p>
                 </div>
                 {/* 드롭다운 메뉴 버튼 */}
                 <div className="flex-shrink-0 relative">
-                    {isOwner ? ( // owner
+                    {isOwner ? (
                         <div ref={dropdownRef}>
                             <button
                                 onClick={(e: React.MouseEvent) => {
-                                    e.preventDefault(); // Link 태그로의 이동 방지
+                                    e.preventDefault();
+                                    e.stopPropagation();
                                     setIsDropdownOpen(!isDropdownOpen);
                                 }}
                                 className="p-1 text-gray-400 hover:text-gray-700 transition relative z-20"
@@ -208,7 +212,7 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId }) => {
                                 <MoreVertical className="w-5 h-5" />
                             </button>
                         </div>
-                    ) : showDescription ? ( // member
+                    ) : showDescription ? (
                         <p className="text-xs text-gray-600 line-clamp-2 mt-1 w-24 text-right">
                             {project.description}
                         </p>
@@ -242,10 +246,14 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId }) => {
                         <button
                             key={item.label}
                             className={`w-full text-left px-3 py-2 text-sm transition 
-        ${item.isDestructive ? 'text-red-400 hover:bg-gray-700/50' : 'hover:bg-gray-700'}`}
+            ${item.isDestructive ? 'text-red-400 hover:bg-gray-700/50' : 'hover:bg-gray-700'}`}
                             onClick={(e: React.MouseEvent) => {
+                                e.preventDefault();
                                 e.stopPropagation();
                                 item.action();
+                                if (item.label === 'Edit') {
+                                    onEdit(project);
+                                }
                                 setIsDropdownOpen(false);
                             }}
                         >
@@ -396,9 +404,13 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
     const router = useRouter();
     const { user, isLoading: isLoadingUser, logout } = useUser();
     const [isLoadingProjects, setIsLoadingProjects] = useState(false);
-    const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
+    // const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
+    const [projects, setProjects] = useState<Project[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('All');
+    // --- 모달 상태 관리 ---
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
     const handleLogout = useCallback(async () => {
@@ -454,7 +466,7 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
         }
     }, [isLoadingUser, user.id, fetchProjects]);
     // 프로젝트 생성 핸들러
-        const handleCreateProject = async (data: ProjectFormData) => {
+    const handleCreateProject = async (data: ProjectFormData) => {
         const projectData = {
             id: Date.now(),
             name: data.name,
@@ -519,6 +531,74 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
         }
     };
 
+    const handleOpenEditModal = (project: Project) => {
+        setEditingProject(project); // 편집할 프로젝트 설정
+        setIsEditModalOpen(true);   // 모달 열기
+    };
+    const handleCloseEditModal = () => {
+        setIsEditModalOpen(false);
+        setEditingProject(null); // 상태 초기화
+    };
+    const handleUpdateProject = async (data: ProjectFormData) => {
+        if (!editingProject) return;
+        const projectData = {
+            id: Date.now(),
+            name: data.name,
+            description: data.description,
+            startDate: data.startDate,
+            endDate: data.endDate,
+            // status: 'In Progress',
+        };
+        try {
+            const response = await fetchWithAuth(`${API_PROJECTS_ENDPOINT}/${editingProject.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            if (response.ok) {
+                // 상태 업데이트: 기존 프로젝트 목록에서 해당 프로젝트를 찾아 정보 업데이트
+                setProjects(prev => prev.map(p => {
+                    if (p.id !== editingProject.id) return p;
+                    const updatedProject: Project = {
+                        ...p, // 기존 필드들 유지
+                        name: data.name,
+                        description: data.description,
+                        startDate: data.startDate,
+                        endDate: data.endDate,
+                        status: calculateProjectStatus(data.startDate, data.endDate),
+                        members: p.members, // members/ownerId는 서버 응답이 없으면 기존 값을 유지
+                        ownerId: p.ownerId,
+                    }; return updatedProject;
+                }));
+                console.log('Project updated successfully.');
+            } else {
+                console.error('프로젝트 업데이트 실패:', response.status);
+            }
+        } catch (_error) {
+            console.error('프로젝트 업데이트 중 네트워크 오류:', _error);
+        }
+    };
+    const handleDeleteProject = async (projectId: number) => {
+        if (window.confirm('정말로 이 프로젝트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+            try {
+                const response = await fetchWithAuth(`${API_PROJECTS_ENDPOINT}/${projectId}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) { // 상태 업데이트: 목록에서 삭제된 프로젝트 제거
+                    setProjects(prevProjects => prevProjects.filter(p => p.id !== projectId));
+                    console.log('프로젝트 삭제 성공:', projectId);
+                } else {
+                    console.error('프로젝트 삭제 실패:', response.status);
+                    alert('프로젝트 삭제에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('프로젝트 삭제 중 네트워크 오류:', error);
+                alert('네트워크 오류로 프로젝트를 삭제할 수 없습니다.');
+            }
+        }
+    };
+
     // 프로젝트 필터링 로직
     const filteredProjects = projects.filter(project => {
         if (selectedCategory === 'All') return true;
@@ -578,9 +658,14 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
                     <EmptyState selectedCategory={selectedCategory} />
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {filteredProjects.map(project => (
-                            <Link href={`/calendar/${project.id}`} key={project.id}>
-                                <ProjectCard project={project} currentUserId={user.id}/>
+                        {projects.map(project => (
+                            <Link href={`/calendar/${project.id}`} key={project.id} onClick={(e) => e.preventDefault()}>
+                                <ProjectCard
+                                    project={project}
+                                    currentUserId={user?.id || null}
+                                    onEdit={handleOpenEditModal}
+                                    onDelete={handleDeleteProject}
+                                />
                             </Link>
                         ))}
                     </div>
@@ -594,12 +679,19 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
                 userName={currentUserName}
                 onCreateProject={handleCreateProject}
             />
-
             <ProfileSettingsModalTyped
                 isOpen={isSettingsModalOpen}
                 onClose={handleCloseSettingsModal}
                 apiEndpoints={API_ENDPOINTS}
             />
+            {editingProject && (
+                <EditProjectModal
+                    isOpen={isEditModalOpen}
+                    onClose={handleCloseEditModal}
+                    onUpdateProject={handleUpdateProject}
+                    projectToEdit={editingProject}
+                />
+            )}
         </div>
     );
 };
