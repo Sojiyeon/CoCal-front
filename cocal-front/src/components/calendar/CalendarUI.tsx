@@ -118,6 +118,29 @@ export default function CalendarUI() {
         setSidebarTodos([...publicTodos, ...privateTodosForDate]);
     }, [events, privateTodos, selectedSidebarDate]);
 
+    // 페이지 로드 시 캘린더 데이터 불러오기
+    useEffect(() => {
+        if (isNaN(projectId)) return;
+
+        const fetchCalendarData = async () => {
+            try {
+                const json = await api.get(`/cal/${projectId}`);
+                if (json.success && json.data) {
+                    // API에서 받은 이벤트와 메모로 상태 초기화
+                    setEvents(json.data.events || []);
+                    setMemos(json.data.memos || []);
+                } else {
+                    console.error("캘린더 데이터가 없습니다.");
+                }
+            } catch (error) {
+                console.error("캘린더 API 호출 실패:", error);
+            }
+        };
+
+        fetchCalendarData();
+    }, [projectId]);
+
+
     // 페이지 로드 시 프로젝트 정보를 가져오는 효과
     useEffect(() => {
         if (isNaN(projectId)) return;
