@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://cocal-server.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 const REISSUE_API_ENDPOINT = `${API_BASE_URL}/api/auth/reissue`;
 
 export const clearSessionAndLogout = () => {
@@ -58,16 +58,16 @@ export const reissueAccessToken = async () => {
     }
 };
 
-export const fetchWithAuth = async (url, options = {}) => {
+export const fetchWithAuth = async (url:string,  options: RequestInit = {}) => {
     const accessToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
     // Authorization 헤더가 options에 없으면 현재 AccessToken으로 추가합니다.
     const finalOptions = {
         ...options,
         headers: {
-            ...options.headers,
-            'Authorization': accessToken ? `Bearer ${accessToken}` : options.headers?.Authorization,
-        },
+            ...(options.headers || {}),
+            Authorization: `Bearer ${accessToken || ''}`,
+        }
     };
 
     let response = await fetch(url, finalOptions);
@@ -99,15 +99,57 @@ export const fetchWithAuth = async (url, options = {}) => {
                 console.error("AccessToken 재발급 실패. 로그아웃이 필요합니다.");
                 clearSessionAndLogout();
             }
-        } catch (error) {
+        } catch (error: unknown) {
             // reissueAccessToken에서 던진 SESSION_EXPIRED 에러를 여기서 잡고, 다시 던져서
             // 최상위 호출자가 (e.g., UserProvider) 알 수 있도록 합니다.
-            if (error.message.includes("SESSION_EXPIRED")) {
+            if (error instanceof Error) {
                 throw error;
             }
-            // 그 외 오류도 로그아웃 유도
             clearSessionAndLogout();
         }
     }
     return response;
+};
+
+// fetchWithAuth를 감싸서 JSON을 반환하는 함수
+export const fetchJsonWithAuth = async <T = any>(
+    url: string,
+    options: RequestInit = {}
+): Promise<T> => {
+    // 기존 토큰 재발급/재시도 로직은 fetchWithAuth가 그대로 처리
+    const response = await fetchWithAuth(url, options);
+
+    // 204 No Content 대응
+    if (response.status === 204) {
+        return null as T;
+    }
+
+    // JSON 파싱 시도
+    let data: any = null;
+    try {
+        // Content-Type이 JSON이 아니어도 서버가 JSON을 돌려주는 경우가 있어
+        // 우선 json() 시도, 실패하면 text() 후 에러로 보냄
+        data = await response.json();
+    } catch (e: unknown) {
+        const text = await response.text().catch(() => '');
+        const parseErr = new Error(
+            `JSON 파싱 실패(${response.status} ${response.statusText}): ${text?.slice(0, 200) || '응답 본문 없음'}`
+        ) as Error & { status?: number; raw?: string };
+        parseErr.status = response.status;
+        parseErr.raw = text;
+        throw parseErr;
+    }
+
+    // HTTP 에러라면 데이터 안의 메시지를 최대한 살려 에러로 throw
+    if (!response.ok) {
+        const err = new Error(
+            data?.message || data?.error || `${response.status} ${response.statusText}`
+        ) as Error & { status?: number; body?: any };
+        err.status = response.status;
+        err.body = data;
+        throw err;
+    }
+
+    // 성공 시 JSON 그대로 반환
+    return data as T;
 };
