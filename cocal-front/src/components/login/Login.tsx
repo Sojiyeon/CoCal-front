@@ -34,8 +34,10 @@ const Login: React.FC = () => {
 
             // 대시보드로 이동
             router.push('/dashboard');
-        } catch (err: any) {
-            setError(err.message || '로그인 중 문제가 발생했습니다.');
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message || '로그인 중 문제가 발생했습니다.');
+            }
         } finally {
             setIsLoading(false);
         }

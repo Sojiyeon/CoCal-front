@@ -7,8 +7,8 @@ export const authApi = {
         try {
             const response = await fetch(`${API_BASE}/api/auth/login`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({email, password}),
                 credentials: 'include',
             });
 
@@ -26,10 +26,14 @@ export const authApi = {
             console.log('AccessToken 저장 완료:');
 
             return accessToken;
-        } catch (err) {
-                console.error('로그인 요청 실패:', err);
-                throw err;
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                console.error('로그인 요청 실패:', err.message);
+            } else {
+                console.error('로그인 요청 실패: 알 수 없는 오류', err);
             }
+            throw err;
+        }
     },
 
     // 사용자 정보 조회 함수
@@ -51,8 +55,12 @@ export const authApi = {
             }
 
             return data.data; // 서버에서 user 객체로 내려주는 부분
-        } catch (err) {
-            console.error('사용자 정보 요청 실패:', err);
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                console.error('사용자 정보 요청 실패:', err.message);
+            } else {
+                console.error('로그인 요청 실패: 알 수 없는 오류', err);
+            }
             throw err;
         }
     },
