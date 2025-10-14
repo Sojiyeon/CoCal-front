@@ -4,7 +4,12 @@ console.log("API_BASE:", API_BASE);
 export const authApi = {
     // 로그인
     async login(email: string, password: string) {
+        if (typeof window === "undefined") {
+            // 서버/엣지에서 호출되면 바로 중단
+            throw new Error("login()은 client에서 실행되어야 합니다.");
+        }
         try {
+            console.log("login 실행");
             const response = await fetch(`${API_BASE}/api/auth/login`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
@@ -18,12 +23,16 @@ export const authApi = {
             }
 
             const accessToken = data.data?.accessToken;
+            console.log('AccessToken: ', accessToken);
             if (!accessToken) throw new Error('accessToken이 응답에 없습니다.');
 
             // accessToken만 localStorage에 저장
-            localStorage.setItem('accessToken', accessToken);
+            window.localStorage.setItem('accessToken', accessToken);
             await new Promise(res => setTimeout(res, 100)); // 0.1초 대기
-            console.log('AccessToken 저장 완료:');
+            // 저장 확인 로그
+            const check = window.localStorage.getItem("accessToken");
+            if (!check) throw new Error("localStorage 저장 확인 실패");
+            console.log('AccessToken 저장 완료');
 
             return accessToken;
         } catch (err: unknown) {
