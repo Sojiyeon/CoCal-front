@@ -21,6 +21,7 @@ import { useUser } from "@/contexts/UserContext";
 import { CalendarEvent, EventTodo, Project, ModalFormData, DateMemo, UserSummary, PrivateTodo, SidebarTodo } from "./types";
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
 import { sampleEvents, sampleMemos } from "./sampleData";
+import {api} from "@/components/calendar/utils/api";
 
 
 // 오늘 날짜를 저장하는 상수
@@ -117,21 +118,37 @@ export default function CalendarUI() {
         setSidebarTodos([...publicTodos, ...privateTodosForDate]);
     }, [events, privateTodos, selectedSidebarDate]);
 
-    // 페이지 로드 시 프로젝트 정보를 가져오는 효과 (현재는 임시 데이터 사용)
+    // 페이지 로드 시 프로젝트 정보를 가져오는 효과
     useEffect(() => {
-        setTimeout(() => {
-            const fetchedProjectData: Project = {
-                id: projectId,
-                name: '프로젝트 이름',
-                ownerId: 1,
-                startDate: "2025-01-01",
-                endDate: "2025-12-31",
-                status: 'In Progress',
-                members: []
-            };
-            setCurrentProject(fetchedProjectData);
-        }, 500);
+        if (isNaN(projectId)) return;
+
+        const fetchProject = async () => {
+            try {
+                const json = await api.get(`/projects/${projectId}`);
+                // api.get은 이미 accessToken을 Authorization 헤더에 붙여서 호출함
+                if (json.success && json.data) {
+                    setCurrentProject(json.data);
+                } else {
+                    throw new Error("프로젝트 데이터가 없습니다.");
+                }
+            } catch (error) {
+                console.error("프로젝트 정보 로드 실패:", error);
+                setCurrentProject({
+                    id: projectId,
+                    name: "프로젝트 이름 로드 실패",
+                    ownerId: 0,
+                    startDate: "",
+                    endDate: "",
+                    status: "In Progress",
+                    description: "",
+                    members: []
+                });
+            }
+        };
+
+        fetchProject();
     }, [projectId]);
+
 
     // 현재 뷰의 연도와 월에 맞는 날짜 배열(매트릭스) 생성
     const matrix = getMonthMatrix(viewYear, viewMonth);
