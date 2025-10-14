@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef  } from "react";
 import { CalendarEvent, ModalFormData } from "../types";
 import { HexColorPicker } from "react-colorful";
+import {api} from "@/components/calendar/utils/api";
 type ActiveTab = "Event" | "Todo" | "Memo";
 
 const palettes = [
@@ -17,6 +18,7 @@ interface ColorPaletteProps {
     selectedColor: string;
     onColorChange: (color: string) => void;
 }
+
 
 function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProps) {
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
@@ -96,7 +98,7 @@ interface Props {
     projectId: number;
 }
 
-export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
+export function EventModal({onClose, onSave, editEvent, initialDate, projectId }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
     const [isLoading, setIsLoading] = useState(false);
 
@@ -111,7 +113,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
         memoDate: "",
         content: "",
         color: "",
-        category: "Project 1",
+       // category: "Project 1",
     });
 
     useEffect(() => {
@@ -129,7 +131,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
                 memoDate: editEvent.startAt.split("T")[0],
                 content: editEvent.description || "", // 이벤트 수정 시에는 사용하지 않음
                 color: editEvent.color,
-                category: "Project 1", // 실제 데이터 구조에 맞게 수정 필요
+               // category: "Project 1", // 실제 데이터 구조에 맞게 수정 필요
             });
             // 수정 시에는 'Event' 탭이 기본으로 선택되도록 강제
             setActiveTab("Event");
@@ -164,18 +166,32 @@ export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
         setFormData((prev) => ({ ...prev, visibility }));
     };
 
+    // 생성 시 db에 저장
     const handleSave = async () => {
         setIsLoading(true);
-
-        console.warn(`개발 모드: ${activeTab} 저장을 시뮬레이션합니다.`);
-
-
-        onSave(formData, activeTab, editEvent ? editEvent.id : undefined);
-
-        setIsLoading(false);
-        onClose();
+        try {
+            if (activeTab === "Memo") {
+                const memoData = {
+                    title: formData.title,
+                    content: formData.content,
+                    url: formData.url,
+                    memoDate: formData.memoDate,
+                };
+                // projectId를 props에서 가져와 사용
+                const response = await api.post(`/projects/${projectId}/memos`, memoData);
+                // 부모 컴포넌트로 새 메모 전달
+                onSave(response.data, activeTab);
+                console.log("메모 저장 완료");
+            } else {
+                onSave(formData, activeTab, editEvent ? editEvent.id : undefined);
+            }
+            onClose();
+        } catch (err) {
+            alert("저장 중 오류 발생");
+        } finally {
+            setIsLoading(false);
+        }
     };
-
 
     const TabButton = ({ tabName }: { tabName: ActiveTab }) => (
         <button
@@ -307,10 +323,10 @@ export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
                                 </label>
                             </div>
                         </div>
-                        <div
-                            className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">
-                            <span>Category</span> <span>{formData.category}</span>
-                        </div>
+                        {/*<div*/}
+                        {/*    className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">*/}
+                        {/*    /!*<span>Category</span> <span>{formData.category}</span>*!/*/}
+                        {/*</div>*/}
 
                         <div
                             className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">

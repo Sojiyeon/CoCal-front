@@ -134,7 +134,7 @@ export interface ModalFormData {
     visibility: 'PUBLIC' | 'PRIVATE';
     memoDate: string;
     content: string;
-    category: string;
+    //category: string;
     color: string;
 }
 
