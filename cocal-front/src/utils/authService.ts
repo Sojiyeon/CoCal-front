@@ -18,13 +18,6 @@ export const reissueAccessToken = async () => {
         return null;
     }
 
-    const refreshToken = localStorage.getItem('refreshToken');
-
-    if (!refreshToken) {
-        console.error("RefreshToken이 없습니다. 로그아웃이 필요합니다.");
-        clearSessionAndLogout();
-    }
-
     try {
         console.log(`API 호출: ${REISSUE_API_ENDPOINT}로 AccessToken 재발급 요청`);
 
@@ -33,17 +26,14 @@ export const reissueAccessToken = async () => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ refreshToken }),
+            credentials: 'include',
         });
 
         if (response.ok) {
             const result = await response.json();
             const newAccessToken = result.data.accessToken;
-            // 서버가 새 RefreshToken도 주면 업데이트하고, 아니면 기존 것을 유지
-            const newRefreshToken = result.data.refreshToken || refreshToken;
 
             localStorage.setItem('accessToken', newAccessToken);
-            localStorage.setItem('refreshToken', newRefreshToken);
 
             console.log("AccessToken 재발급 성공.");
             return newAccessToken;
@@ -55,6 +45,7 @@ export const reissueAccessToken = async () => {
     } catch (error) {
         console.error("AccessToken 재발급 중 네트워크 오류:", error);
         clearSessionAndLogout();
+        return null;
     }
 };
 
@@ -117,7 +108,7 @@ export const fetchJsonWithAuth = async <T = unknown>(
     options: RequestInit = {}
 ): Promise<T | null> => {
     // 기존 토큰 재발급/재시도 로직은 fetchWithAuth가 그대로 처리
-    const response = await fetchWithAuth(url, options);
+    const response = await fetchWithAuth(API_BASE_URL+url, options);
 
     // 204 No Content 대응
     if (response.status === 204) return null;
