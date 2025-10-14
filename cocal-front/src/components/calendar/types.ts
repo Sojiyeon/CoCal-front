@@ -14,10 +14,20 @@ export type EventTodo = {
     title: string;
     description: string | null;
     status: 'IN_PROGRESS' | 'DONE';
-    offsetMinutes: number;
     authorId: number | null;
     orderNo: number;
+    type: 'EVENT' | 'PRIVATE'; // [수정] 'PRIVATE'도 허용하도록 확장
 };
+// 사이드바의 'To do' 목록에 사용될 확장된 타입 정의
+export interface SidebarTodo extends EventTodo {
+    id: number;
+    title: string;
+    status: 'IN_PROGRESS' | 'DONE';
+    type: 'EVENT' | 'PRIVATE'; // Public(EVENT) / Private 구분
+    parentEventTitle: string;
+    parentEventColor: string;
+    authorId: number | null;
+}
 
 // 이벤트 데이터 타입 (events 테이블)
 export type CalendarEvent = {
@@ -40,18 +50,19 @@ export type CalendarEvent = {
 };
 
 // 개인 할 일 타입 (private_todos 테이블)
-export type PrivateTodo = {
+
+
+export interface PrivateTodo {
     id: number;
-    projectId: number;
-    //owner_id: number;
-    urlId: number;
     title: string;
     description: string | null;
-    date: string | null; // DATETIME 값
+    date: string;
     status: 'IN_PROGRESS' | 'DONE';
-    offsetMinutes: number;
-    orderNo: number;
-};
+    type: 'PRIVATE';
+    projectId: number;
+    userId: number;
+    url?: string | null;
+}
 
 // [수정] 날짜 메모 타입 (memos 테이블)
 export type DateMemo = {

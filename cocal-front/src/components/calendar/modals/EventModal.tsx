@@ -31,20 +31,9 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
     };
     // 팔레트를 열고 닫는 토글 함수
     const togglePalette = () => {
-        if (!isPaletteOpen) {
-
-            if (buttonRef.current) {
-                const rect = buttonRef.current.getBoundingClientRect();
-                setPaletteStyle({
-                    position: 'fixed',
-                    top: `${rect.top}px`,
-                    left: `${rect.right + 8}px`,
-                    zIndex: 100
-                });
-            }
-        }
         setIsPaletteOpen(!isPaletteOpen);
     };
+
     return (
         <div className="relative w-full">
             <button
@@ -249,10 +238,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
                                 className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                             />
                         </div>
-                        <div
-                            className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">
-                            <span>Repeat</span> <span>&gt;</span>
-                        </div>
+
                         <div
                             className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">
                             <span>Reminder</span> <span>15min ago</span>
@@ -266,35 +252,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
                             onChange={handleInputChange}
                             className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
-                        <div>
-                            <label className="text-sm font-medium text-slate-600">
-                                Visibility
-                            </label>
-                            <div className="flex gap-4 mt-2">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        name="visibility"
-                                        value="PUBLIC"
-                                        checked={formData.visibility === "PUBLIC"}
-                                        onChange={() => handleVisibilityChange("PUBLIC")}
-                                        className="form-radio h-4 w-4 text-blue-600"
-                                    />
-                                    <span className="text-sm">Public</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="radio"
-                                        name="visibility"
-                                        value="PRIVATE"
-                                        checked={formData.visibility === "PRIVATE"}
-                                        onChange={() => handleVisibilityChange("PRIVATE")}
-                                        className="form-radio h-4 w-4 text-blue-600"
-                                    />
-                                    <span className="text-sm">Private</span>
-                                </label>
-                            </div>
-                        </div>
+
                         <div className="w-full border rounded-md px-3 py-2 text-sm text-slate-400">
                             Invitees
                         </div>
@@ -326,13 +284,36 @@ export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
                             className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                             rows={3}
                         />
-                        <div className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">
+                        <div>
+                            <label className="text-sm font-medium text-slate-600">Visibility</label>
+                            <div className="flex gap-4 mt-2">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio" name="visibility" value="PUBLIC"
+                                        checked={formData.visibility === "PUBLIC"}
+                                        onChange={() => handleVisibilityChange("PUBLIC")}
+                                        className="form-radio h-4 w-4 text-blue-600"
+                                    />
+                                    <span className="text-sm">Public</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="radio" name="visibility" value="PRIVATE"
+                                        checked={formData.visibility === "PRIVATE"}
+                                        onChange={() => handleVisibilityChange("PRIVATE")}
+                                        className="form-radio h-4 w-4 text-blue-600"
+                                    />
+                                    <span className="text-sm">Private</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div
+                            className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">
                             <span>Category</span> <span>{formData.category}</span>
                         </div>
-                        <div className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">
-                            <span>Repeat</span> <span>&gt;</span>
-                        </div>
-                        <div className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">
+
+                        <div
+                            className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">
                             <span>Reminder</span> <span>🔔</span>
                         </div>
                         <div className="relative">
