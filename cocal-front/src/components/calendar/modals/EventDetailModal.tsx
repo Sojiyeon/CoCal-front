@@ -41,7 +41,6 @@ export function EventDetailModal({ event, onClose, onEdit }: Props) {
                     {event.description || '작성된 메모가 없습니다.'}
                 </div>
             </div>
-            <div className="flex items-center"><span className="w-24 text-slate-500">Repeat</span><span>-</span></div>
             <div className="flex items-center"><span className="w-24 text-slate-500">Reminder</span><span>-</span></div>
             <div className="flex items-start"><span className="w-24 text-slate-500 pt-1">Memo</span>
                 <div className="flex-1 text-slate-800 bg-slate-50 p-2 rounded-md text-xs">메모 예시입니다.</div>
