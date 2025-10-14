@@ -14,17 +14,19 @@ const Login: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     // 구글 소셜 로그인 핸들러
-    const handleGoogleLogin = () => authApi.getGoogleAuthUrl();
+    const handleGoogleLogin = () => {
+        const url:string = authApi.getGoogleAuthUrl();
+        window.location.href = url; // <- 실제 이동
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
-
+        console.log("login 요청 시작");
         try {
             // 로그인 요청 → accessToken 저장
             const accessToken = await authApi.login(email, password);
-
             // accessToken으로 사용자 정보 요청
             const user = await authApi.getUserInfo(accessToken);
             if (user) {
