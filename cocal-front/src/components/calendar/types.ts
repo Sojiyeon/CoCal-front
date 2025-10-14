@@ -73,6 +73,7 @@ export type DateMemo = {
     author: UserSummary[];
     createdAt: string;
     title: string;
+    url: string;
 };
 
 // 프로젝트 멤버 타입

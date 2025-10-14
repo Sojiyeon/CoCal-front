@@ -232,6 +232,7 @@ export default function CalendarUI() {
                 content: itemData.content,
                 author: authorInfo,
                 createdAt: new Date().toISOString(),
+                url: itemData.url || ""
             };
             setMemos(prevMemos => [...prevMemos, newMemo]);
         } else if (type === 'Todo') {
@@ -363,164 +364,209 @@ export default function CalendarUI() {
             </div>
             {/* 메인 영역 */}
             <div className="flex flex-1 overflow-hidden">
-                {/* 왼쪽 사이드바:자식 컴포넌트로 분리하여 렌더링 */}
-                <SidebarLeft
-                    miniYear={miniYear}
-                    miniMonth={miniMonth}
-                    prevMiniMonth={prevMiniMonth}
-                    nextMiniMonth={nextMiniMonth}
-                    miniMatrix={miniMatrix}
-                    selectedSidebarDate={selectedSidebarDate}
-                    handleSidebarDateSelect={handleSidebarDateSelect}
-                    sidebarTodos={sidebarTodos}
-                    user={(user && user.id) ? { // user와 user.id가 모두 유효한 값일 때만 객체 생성
-                        userId: user.id,
-                        name: user.name ?? 'User',
-                        email: user.email ?? '',
-                        profileImageUrl: user.profileImageUrl
-                    } : null}
-                    handleToggleTodoStatus={handleToggleTodoStatus}
-                />
-                {/* 메인 캘린더 영역 */}
-                <main className="flex-1 p-6 overflow-auto">
-                    {/* 메인 캘린더 헤더 */}
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-6">
-                            <button onClick={prevMonth} className="w-12 h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-xlp-2 rounded-full hover:bg-slate-100">&#x276E;</button>
-                            <h2 className="text-lg font-semibold text-slate-800">
-                                {viewMode === 'day'
-                                    ? selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-                                    : new Date(viewYear, viewMonth).toLocaleString("en-US", { month: "long", year: "numeric" })
-                                }
-                            </h2>
-                            <button onClick={nextMonth} className="w-12 h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-xlp-2 rounded-full hover:bg-slate-100">&#x276F;</button>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <select value={viewMode} onChange={(e) => setViewMode(e.target.value as "day" | "week" | "month")} className="border rounded px-3 py-1 text-sm">
-                                <option value="month">Month</option>
-                                <option value="week">Week</option>
-                                <option value="day">Day</option>
-                            </select>
-                        </div>
-                    </div>
-                    {/* 월간/주간/일간 뷰 렌더링 */}
+                <div className="mt-9">
+                    {/* 왼쪽 사이드바:자식 컴포넌트로 분리하여 렌더링 */}
+                    <SidebarLeft
 
-                    {viewMode === "month" && (
-                        <>
-                            <div className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2">
-                                {weekdays.map((w) => (<div key={w} className="text-center">{w}</div>))}
+                        miniYear={miniYear}
+                        miniMonth={miniMonth}
+                        prevMiniMonth={prevMiniMonth}
+                        nextMiniMonth={nextMiniMonth}
+                        miniMatrix={miniMatrix}
+                        selectedSidebarDate={selectedSidebarDate}
+                        handleSidebarDateSelect={handleSidebarDateSelect}
+                        sidebarTodos={sidebarTodos}
+                        user={(user && user.id) ? { // user와 user.id가 모두 유효한 값일 때만 객체 생성
+                            userId: user.id,
+                            name: user.name ?? 'User',
+                            email: user.email ?? '',
+                            profileImageUrl: user.profileImageUrl
+                        } : null}
+                        handleToggleTodoStatus={handleToggleTodoStatus}
+                    />
+                </div>
+                    {/* 메인 캘린더 영역 */}
+                    <main className="flex-1 p-6 overflow-auto">
+                        {/* 메인 캘린더 헤더 */}
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-6">
+                                <button onClick={prevMonth}
+                                        className="w-12 h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-xlp-2 rounded-full hover:bg-slate-100">&#x276E;</button>
+                                <h2 className="text-lg font-semibold text-slate-800">
+                                    {viewMode === 'day'
+                                        ? selectedDate.toLocaleDateString('en-US', {
+                                            month: 'long',
+                                            day: 'numeric',
+                                            year: 'numeric'
+                                        })
+                                        : new Date(viewYear, viewMonth).toLocaleString("en-US", {
+                                            month: "long",
+                                            year: "numeric"
+                                        })
+                                    }
+                                </h2>
+                                <button onClick={nextMonth}
+                                        className="w-12 h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-xlp-2 rounded-full hover:bg-slate-100">&#x276F;</button>
                             </div>
-                            <div className="grid grid-cols-1 border-l border-gray-200">
-                                {matrix.map((week, weekIndex) => {
-                                    // 현재 주(week)에 걸쳐있는 모든 이벤트를 찾습니다.
-                                    const weekEvents = events.filter(event => {
-                                        const eventStart = new Date(event.startAt.split('T')[0]);
-                                        const weekStartDay = week.find(d => d);
-                                        if (!weekStartDay) return false;
-                                        const weekStartDate = new Date(viewYear, viewMonth, weekStartDay);
+                            <div className="flex items-center gap-3">
+                                <select value={viewMode}
+                                        onChange={(e) => setViewMode(e.target.value as "day" | "week" | "month")}
+                                        className="border rounded px-3 py-1 text-sm">
+                                    <option value="month">Month</option>
+                                    <option value="week">Week</option>
+                                    <option value="day">Day</option>
+                                </select>
+                            </div>
+                        </div>
+                        {/* 월간/주간/일간 뷰 렌더링 */}
 
-                                        const eventEnd = new Date(event.endAt.split('T')[0]);
-                                        const weekEndDay = [...week].reverse().find(d => d);
-                                        if (!weekEndDay) return false;
-                                        const weekEndDate = new Date(viewYear, viewMonth, weekEndDay);
+                        {viewMode === "month" && (
+                            <>
+                                <div className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2">
+                                    {weekdays.map((w) => (<div key={w} className="text-center">{w}</div>))}
+                                </div>
+                                <div className="grid grid-cols-1 border-l border-gray-200">
+                                    {matrix.map((week, weekIndex) => {
+                                        // 현재 주(week)에 걸쳐있는 모든 이벤트를 찾습니다.
+                                        const weekEvents = events.filter(event => {
+                                            const eventStart = new Date(event.startAt.split('T')[0]);
+                                            const weekStartDay = week.find(d => d);
+                                            if (!weekStartDay) return false;
+                                            const weekStartDate = new Date(viewYear, viewMonth, weekStartDay);
 
-                                        return eventStart <= weekEndDate && eventEnd >= weekStartDate;
-                                    });
+                                            const eventEnd = new Date(event.endAt.split('T')[0]);
+                                            const weekEndDay = [...week].reverse().find(d => d);
+                                            if (!weekEndDay) return false;
+                                            const weekEndDate = new Date(viewYear, viewMonth, weekEndDay);
 
-                                    return (
-                                        <div key={weekIndex} className="grid grid-cols-7 relative border-b border-gray-200">
-                                            {week.map((day, dayIndex) => {
-                                                if (!day) return <div key={`empty-${dayIndex}`} className="min-h-[120px] border-r border-gray-200 bg-gray-50"></div>;
+                                            return eventStart <= weekEndDate && eventEnd >= weekStartDate;
+                                        });
 
-                                                const dateKey = formatYMD(viewYear, viewMonth, day);
-                                                const isToday = dateKey === formatYMD(today.getFullYear(), today.getMonth(), today.getDate());
-                                                const dayMemos = memos.filter(m => m.memoDate === dateKey);
+                                        return (
+                                            <div key={weekIndex}
+                                                 className="grid grid-cols-7 relative border-b border-gray-200">
+                                                {week.map((day, dayIndex) => {
+                                                    if (!day) return <div key={`empty-${dayIndex}`}
+                                                                          className="min-h-[120px] border-r border-gray-200 bg-gray-50"></div>;
 
-                                                return (
-                                                    <div key={dateKey} className={`min-h-[120px] border-r border-gray-200 p-2 relative ${isToday ? 'bg-blue-50' : 'bg-white'}`}>
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-1">
-                                                                <div className={`text-sm font-medium cursor-pointer hover:text-blue-600 ${isToday ? 'text-blue-600 font-bold' : ''}`} onClick={() => handleMainDateClick(day)}>
-                                                                    {day}
-                                                                </div>
-                                                                <div className="flex items-center space-x-1">
-                                                                    {dayMemos.map(memo => <div key={memo.id} onClick={() => setSelectedMemo(memo)} className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer" title={memo.content} />)}
-                                                                </div>
-                                                            </div>
-                                                            <button onClick={() => handleOpenEventModal(dateKey)} className="w-5 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-full text-lg">+</button>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-
-                                            {/* 이벤트 띠 렌더링 영역 */}
-                                            <div className="absolute top-8 left-0 right-0 h-full">
-                                                {weekEvents.map((event, eventIndex) => {
-                                                    const eventStart = new Date(event.startAt.split('T')[0]);
-                                                    const eventEnd = new Date(event.endAt.split('T')[0]);
-
-                                                    let startCol = 0;
-                                                    let endCol = 6;
-                                                    let foundStart = false;
-
-                                                    for (let i = 0; i < 7; i++) {
-                                                        const dayInWeek = week[i];
-                                                        if (dayInWeek === null) continue;
-                                                        const currentWeekDate = new Date(viewYear, viewMonth, dayInWeek);
-
-                                                        if (eventStart.toDateString() === currentWeekDate.toDateString()) {
-                                                            startCol = i;
-                                                            foundStart = true;
-                                                        }
-                                                        if (eventEnd.toDateString() === currentWeekDate.toDateString()) {
-                                                            endCol = i;
-                                                        }
-                                                    }
-
-                                                    const span = endCol - startCol + 1;
-                                                    const showTitle = foundStart || (week[0] && new Date(viewYear, viewMonth, week[0]) > eventStart);
-
-                                                    // 띠의 둥근 모서리 스타일
-                                                    const roundedClass =
-                                                        (foundStart ? 'rounded-l ' : '') +
-                                                        (endCol < 6 || eventEnd.toDateString() === new Date(viewYear, viewMonth, week[endCol]!).toDateString() ? 'rounded-r' : '');
+                                                    const dateKey = formatYMD(viewYear, viewMonth, day);
+                                                    const isToday = dateKey === formatYMD(today.getFullYear(), today.getMonth(), today.getDate());
+                                                    const dayMemos = memos.filter(m => m.memoDate === dateKey);
 
                                                     return (
-                                                        <div
-                                                            key={event.id}
-                                                            className={`absolute h-5 px-2 text-xs text-white cursor-pointer truncate ${roundedClass}`}
-                                                            onClick={() => setSelectedEvent(event)}
-                                                            style={{
-                                                                backgroundColor: event.color,
-                                                                top: `${eventIndex * 22}px`, // 겹치는 이벤트를 위해 y축 위치 조절
-                                                                left: `calc(${(startCol / 7) * 100}% + 2px)`,
-                                                                width: `calc(${(span / 7) * 100}% - 4px)`,
-                                                            }}
-                                                        >
-                                                            {showTitle && event.title}
+                                                        <div key={dateKey}
+                                                             className={`min-h-[120px] border-r border-gray-200 p-2 relative ${isToday ? 'bg-blue-50' : 'bg-white'}`}>
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="flex items-center gap-1">
+                                                                    <div
+                                                                        className={`text-sm font-medium cursor-pointer hover:text-blue-600 ${isToday ? 'text-blue-600 font-bold' : ''}`}
+                                                                        onClick={() => handleMainDateClick(day)}>
+                                                                        {day}
+                                                                    </div>
+                                                                    <div className="flex items-center space-x-1">
+                                                                        {dayMemos.map(memo => <div key={memo.id}
+                                                                                                   onClick={() => setSelectedMemo(memo)}
+                                                                                                   className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
+                                                                                                   title={memo.content}/>)}
+                                                                    </div>
+                                                                </div>
+                                                                <button onClick={() => handleOpenEventModal(dateKey)}
+                                                                        className="w-5 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-full text-lg">+
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     );
                                                 })}
+
+                                                {/* 이벤트 띠 렌더링 영역 */}
+                                                <div className="absolute top-8 left-0 right-0 h-full">
+                                                    {weekEvents.map((event, eventIndex) => {
+                                                        const eventStart = new Date(event.startAt.split('T')[0]);
+                                                        const eventEnd = new Date(event.endAt.split('T')[0]);
+
+                                                        let startCol = 0;
+                                                        let endCol = 6;
+                                                        let foundStart = false;
+
+                                                        for (let i = 0; i < 7; i++) {
+                                                            const dayInWeek = week[i];
+                                                            if (dayInWeek === null) continue;
+                                                            const currentWeekDate = new Date(viewYear, viewMonth, dayInWeek);
+
+                                                            if (eventStart.toDateString() === currentWeekDate.toDateString()) {
+                                                                startCol = i;
+                                                                foundStart = true;
+                                                            }
+                                                            if (eventEnd.toDateString() === currentWeekDate.toDateString()) {
+                                                                endCol = i;
+                                                            }
+                                                        }
+
+                                                        const span = endCol - startCol + 1;
+                                                        const showTitle = foundStart || (week[0] && new Date(viewYear, viewMonth, week[0]) > eventStart);
+
+                                                        // 띠의 둥근 모서리 스타일
+                                                        const roundedClass =
+                                                            (foundStart ? 'rounded-l ' : '') +
+                                                            (endCol < 6 || eventEnd.toDateString() === new Date(viewYear, viewMonth, week[endCol]!).toDateString() ? 'rounded-r' : '');
+
+                                                        return (
+                                                            <div
+                                                                key={event.id}
+                                                                className={`absolute h-5 px-2 text-xs text-white cursor-pointer truncate ${roundedClass}`}
+                                                                onClick={() => setSelectedEvent(event)}
+                                                                style={{
+                                                                    backgroundColor: event.color,
+                                                                    top: `${eventIndex * 22}px`, // 겹치는 이벤트를 위해 y축 위치 조절
+                                                                    left: `calc(${(startCol / 7) * 100}% + 2px)`,
+                                                                    width: `calc(${(span / 7) * 100}% - 4px)`,
+                                                                }}
+                                                            >
+                                                                {showTitle && event.title}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </>
-                    )}
-                    {viewMode === "week" && <WeekView events={events} />}
-                    {viewMode === "day" && <DayView events={events} date={selectedDate} />}
-                </main>
-                {/* 오른쪽 사이드바 */}
-                <SidebarRight onOpenTeamModal={handleOpenTeamModal} onOpenEventModal={() => handleOpenEventModal()} onOpenSettingsModal={handleOpenProjectSettingsModal} />
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+                        {viewMode === "week" && <WeekView events={events}/>}
+                        {viewMode === "day" && <DayView events={events} date={selectedDate}/>}
+                    </main>
+                    {/* 오른쪽 사이드바 */}
+                    <SidebarRight onOpenTeamModal={handleOpenTeamModal} onOpenEventModal={() => handleOpenEventModal()}
+                                  onOpenSettingsModal={handleOpenProjectSettingsModal}/>
+                </div>
+                {/* 모달 렌더링 영역 */}
+                {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)}
+                                                    onEdit={handleEditEvent}/>}
+                {selectedMemo &&  <MemoDetailModal
+                    memo={selectedMemo}
+                    onClose={() => setSelectedMemo(null)}
+                    onEdit={(updatedMemo) => {
+                        // 수정된 내용 반영
+                        setMemos((prev) =>
+                            prev.map((m) => (m.id === updatedMemo.id ? updatedMemo : m))
+                        );
+                    }}
+                    onDelete={(id) => {
+                        // 삭제된 메모 제거
+                        setMemos((prev) => prev.filter((m) => m.id !== id));
+                        setSelectedMemo(null);
+                    }}
+                />}
+                {isEventModalOpen &&
+                    <EventModal onClose={handleCloseEventModal} onSave={handleSaveItem} initialDate={modalInitialDate}
+                                editEvent={eventToEdit} projectId={projectId}/>}
+                {isTeamModalOpen && (<TeamModal projectId={projectId} onClose={handleCloseTeamModal}/>)}
+                <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal}
+                                      apiEndpoints={API_ENDPOINTS}/>
+                {isProjectSettingsModalOpen &&
+                    <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId}
+                                   userId={user?.id || 0}/>}
             </div>
-            {/* 모달 렌더링 영역 */}
-            {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} onEdit={handleEditEvent} />}
-            {selectedMemo && <MemoDetailModal memo={selectedMemo} onClose={() => setSelectedMemo(null)} />}
-            {isEventModalOpen && <EventModal onClose={handleCloseEventModal} onSave={handleSaveItem} initialDate={modalInitialDate} editEvent={eventToEdit} projectId={projectId} />}
-            {isTeamModalOpen && (<TeamModal projectId={projectId} onClose={handleCloseTeamModal} />)}
-            <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} apiEndpoints={API_ENDPOINTS} />
-            {isProjectSettingsModalOpen && <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId} userId={user?.id || 0} />}
-        </div>
-    );
-}
+            );
+            }

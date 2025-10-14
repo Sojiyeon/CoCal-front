@@ -53,6 +53,7 @@ export const sampleMemos: DateMemo[] = [
     content: "test 임",
     createdAt: "2025-10-11T11:11:11.6262716",
     title: "메모 제목임",
+    url: "https://zoom.us/j/xxxx",
     author: [
     {userId: 2, name: "새 이름", email: "test@example.com", profileImageUrl: null}
         ]
