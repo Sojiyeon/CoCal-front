@@ -161,19 +161,6 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
     const dropdownRef = useRef<HTMLDivElement>(null);
     const isOwner = project.ownerId === currentUserId;
     const isMember = project.members.some(member => member.id === currentUserId);
-    const showDescription = !isOwner && isMember && project.description;
-
-/*
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-*/
 
     // 날짜 형식 YYYY.MM.DD로 변환
     const formatDates = (start: string, end: string) => {
@@ -219,11 +206,11 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
                                 <MoreVertical className="w-5 h-5" />
                             </button>
                         </div>
-                    ) : showDescription ? (
+                    ) : (  isMember && project.description ? (
                         <p className="text-xs text-gray-600 line-clamp-2 mt-1 w-24 text-right">
                             {project.description}
                         </p>
-                    ) : null}
+                    ) : null )}
                 </div>
             </div>
             <div className="flex items-center space-x-[-4px] pt-2 border-t border-gray-100">
