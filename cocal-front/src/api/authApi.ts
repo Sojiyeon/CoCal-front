@@ -25,12 +25,10 @@ export const authApi = {
             }
 
             const accessToken = data.data?.accessToken;
-            console.log('AccessToken: ', accessToken);
             if (!accessToken) throw new Error('accessToken이 응답에 없습니다.');
 
             // accessToken만 localStorage에 저장
             window.localStorage.setItem('accessToken', accessToken);
-            await new Promise(res => setTimeout(res, 100)); // 0.1초 대기
             // 저장 확인 로그
             const check = window.localStorage.getItem("accessToken");
             if (!check) throw new Error("localStorage 저장 확인 실패");
