@@ -322,6 +322,34 @@ export default function CalendarUI() {
             )
         );
     };
+    // To-do 내용(title) 수정 핸들러
+    const handleUpdateTodo = (todoId: number, newTitle: string) => {
+        // Public 할일 업데이트
+        setEvents(prev => prev.map(event => ({
+            ...event,
+            todos: (event.todos || []).map(todo =>
+                todo.id === todoId ? { ...todo, title: newTitle } : todo
+            )
+        })));
+        // Private 할일 업데이트
+        setPrivateTodos(prev => prev.map(todo =>
+            todo.id === todoId ? { ...todo, title: newTitle } : todo
+        ));
+    };
+
+    // [추가] To-do 삭제 핸들러
+    const handleDeleteTodo = (todoId: number, type: 'EVENT' | 'PRIVATE') => {
+        if (!window.confirm("정말로 이 할 일을 삭제하시겠습니까?")) return;
+
+        if (type === 'PRIVATE') {
+            setPrivateTodos(prev => prev.filter(todo => todo.id !== todoId));
+        } else { // 'EVENT'
+            setEvents(prev => prev.map(event => ({
+                ...event,
+                todos: (event.todos || []).filter(todo => todo.id !== todoId)
+            })));
+        }
+    };
 
     // 미니 캘린더 월 이동 함수
     function prevMiniMonth() {
@@ -399,6 +427,8 @@ export default function CalendarUI() {
                             email: user.email ?? '',
                             profileImageUrl: user.profileImageUrl
                         } : null}
+                        onUpdateTodo={handleUpdateTodo}
+                        onDeleteTodo={handleDeleteTodo}
                         handleToggleTodoStatus={handleToggleTodoStatus}
                     />
                 </div>

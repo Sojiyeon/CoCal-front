@@ -111,7 +111,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
         memoDate: "",
         content: "",
         color: "",
-        category: "Project 1",
+       // category: "Project 1",
     });
 
     useEffect(() => {
@@ -129,7 +129,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
                 memoDate: editEvent.startAt.split("T")[0],
                 content: editEvent.description || "", // 이벤트 수정 시에는 사용하지 않음
                 color: editEvent.color,
-                category: "Project 1", // 실제 데이터 구조에 맞게 수정 필요
+               // category: "Project 1", // 실제 데이터 구조에 맞게 수정 필요
             });
             // 수정 시에는 'Event' 탭이 기본으로 선택되도록 강제
             setActiveTab("Event");
@@ -307,10 +307,10 @@ export function EventModal({onClose, onSave, editEvent, initialDate }: Props) {
                                 </label>
                             </div>
                         </div>
-                        <div
-                            className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">
-                            <span>Category</span> <span>{formData.category}</span>
-                        </div>
+                        {/*<div*/}
+                        {/*    className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">*/}
+                        {/*    /!*<span>Category</span> <span>{formData.category}</span>*!/*/}
+                        {/*</div>*/}
 
                         <div
                             className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">
