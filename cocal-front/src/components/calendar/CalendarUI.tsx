@@ -1,7 +1,10 @@
 "use client";
 
+// React와 Next.js 관련 기능들을 가져옵니다.
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+
+// 하위 컴포넌트들을 가져옵니다.
 import WeekView from "./Week";
 import DayView from "./Day";
 import TaskProgress from "./TaskProgress";
@@ -9,23 +12,27 @@ import SidebarRight from "./SidebarRight";
 import { EventDetailModal } from "./modals/EventDetailModal";
 import ProfileDropdown from "./ProfileDropdown";
 import ProfileSettingsModal from "./modals/ProfileSettingModal";
-import {SettingsModal} from "./modals/SettingsModal";
+import { SettingsModal } from "./modals/SettingsModal";
 import { EventModal } from "./modals/EventModal";
 import { TeamModal } from "./modals/TeamModal";
 import { MemoDetailModal } from "./modals/MemoDetailModal";
+
+// 전역 사용자 정보와 타입 정의, 유틸 함수, 샘플 데이터를 가져옵니다.
 import { useUser } from "@/contexts/UserContext";
-import { CalendarEvent, EventTodo, Project, ModalFormData, DateMemo, UserSummary  } from "./types";
+import { CalendarEvent, EventTodo, Project, ModalFormData, DateMemo, UserSummary } from "./types";
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
-import { sampleEvents,sampleMemos  } from "./sampleData";
+import { sampleEvents, sampleMemos } from "./sampleData";
 
-
+// 사이드바의 'To do' 목록에 사용될 확장된 타입 정의
 interface SidebarTodo extends EventTodo {
     parentEventTitle: string;
     parentEventColor: string;
 }
 
+// 오늘 날짜를 저장하는 상수
 const today = new Date();
 
+// API 엔드포인트들을 정의하는 객체
 const BASE_URL = "https://cocal-server.onrender.com/api";
 const API_ENDPOINTS = {
     UPDATE_USER_NAME: `${BASE_URL}/users/edit-name`,
@@ -34,64 +41,74 @@ const API_ENDPOINTS = {
     DELETE_USER_PHOTO: `${BASE_URL}/users/profile-image`,
 };
 
+// 메인 캘린더 UI 컴포넌트
 export default function CalendarUI() {
+    // --- 훅(Hooks) 초기화 ---
+    // useUser: 전역 사용자 정보(user), 로그아웃 함수(logout) 등을 가져옵니다.
     const { user, logout, isLoading: isUserLoading } = useUser();
+    // useRouter: 페이지 이동(라우팅)을 위한 함수를 가져옵니다.
     const router = useRouter();
+    // useParams: URL 경로의 동적 파라미터(예: /calendar/[projectId])를 가져옵니다.
     const params = useParams();
 
-    const projectIdParam = Array.isArray(params?.projectId)
-        ? params.projectId[0]
-        : params?.projectId;
+    // URL에서 projectId를 추출하고 숫자로 변환합니다.
+    const projectIdParam = Array.isArray(params?.projectId) ? params.projectId[0] : params?.projectId;
     const projectId = projectIdParam ? Number(projectIdParam) : NaN;
 
-    // --- 상태 관리 ---
+    // --- 상태(State) 관리 ---
+    // 메인 캘린더의 연도와 월 상태
     const [viewYear, setViewYear] = useState(today.getFullYear());
     const [viewMonth, setViewMonth] = useState(today.getMonth());
+    // 왼쪽 사이드바 미니 캘린더의 연도와 월 상태
     const [miniYear, setMiniYear] = useState(today.getFullYear());
     const [miniMonth, setMiniMonth] = useState(today.getMonth());
 
+    // 전체 이벤트와 메모 데이터 상태
     const [events, setEvents] = useState<CalendarEvent[]>(sampleEvents);
-    // 메모 데이터를 관리
     const [memos, setMemos] = useState<DateMemo[]>(sampleMemos);
+
+    // 사용자가 클릭한 이벤트나 메모의 상세 정보를 저장하는 상태 (상세 모달 열기용)
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-    //  클릭된 메모 정보를 저장, 모달을 띄우는 역할
     const [selectedMemo, setSelectedMemo] = useState<DateMemo | null>(null);
+
+    // 현재 캘린더 뷰 모드 ('month', 'week', 'day') 상태
     const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month");
+    // 현재 보고 있는 프로젝트의 정보 상태
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
 
+    // 왼쪽 사이드바에 표시될 'To do' 목록과 선택된 날짜 상태
     const [sidebarTodos, setSidebarTodos] = useState<SidebarTodo[]>([]);
     const [selectedSidebarDate, setSelectedSidebarDate] = useState(today);
-    // Day 뷰에 표시할 특정 날짜를 관리
+    // 'Day' 뷰에 표시할 날짜 상태
     const [selectedDate, setSelectedDate] = useState(today);
+
+    // 각종 모달의 열림/닫힘 상태
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
     const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
-    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-    // 일반 SettingsModal
-    const [isProjectSettingsModalOpen, setIsProjectSettingsModalOpen] = useState(false);
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false); // 프로필 설정 모달
+    const [isProjectSettingsModalOpen, setIsProjectSettingsModalOpen] = useState(false); // 프로젝트 설정 모달
+
+    // 생성/수정 모달에 전달할 초기 데이터 상태
     const [modalInitialDate, setModalInitialDate] = useState<string | null>(null);
     const [eventToEdit, setEventToEdit] = useState<CalendarEvent | null>(null);
 
+    // --- useEffect 훅 ---
+    // 왼쪽 사이드바의 'To do' 목록을 업데이트하는 효과
     useEffect(() => {
         const selectedDateKey = formatYMD(selectedSidebarDate.getFullYear(), selectedSidebarDate.getMonth(), selectedSidebarDate.getDate());
         const selectedDaysEvents = events.filter(e => e.startAt.startsWith(selectedDateKey));
         const allTodos: SidebarTodo[] = selectedDaysEvents.flatMap(event => (event.todos || []).map(todo => ({ ...todo, parentEventTitle: event.title, parentEventColor: event.color })));
         setSidebarTodos(allTodos);
-    }, [events, selectedSidebarDate]);
+    }, [events, selectedSidebarDate]); // events나 selectedSidebarDate가 변경될 때마다 실행
 
+    // 페이지 로드 시 프로젝트 정보를 가져오는 효과 (현재는 임시 데이터 사용)
     useEffect(() => {
-        if (!user || !projectId) return; // user가 로딩 중이거나 projectId가 없으면 중단
-        // user가 문자열(string)로 들어올 수도 있고,
-        // 이미 객체(object)로 들어올 수도 있어서 안전하게 처리하기 위한 코드입니다.
-        const currentUser =
-            typeof user === "string"  // 👉 user의 타입이 문자열이면
-                ? JSON.parse(user)    // 문자열(JSON 형태)을 실제 객체로 변환
-                : user;               // 이미 객체라면 그대로 사용
-
+        // (API 연동 시 이 부분에 실제 fetch 로직이 들어갑니다)
         setTimeout(() => {
             const fetchedProjectData: Project = {
                 id: projectId,
-                name: currentUser.name, // 여기서 user의 name을 직접 참조
-                ownerId: Number(currentUser.id), // 필요하면 user.id도 사용
+                name: '프로젝트 이름', // 실제로는 API 응답에서 가져와야 함
+                ownerId: 1,
                 startDate: "2025-01-01",
                 endDate: "2025-12-31",
                 status: 'In Progress',
@@ -99,51 +116,62 @@ export default function CalendarUI() {
             };
             setCurrentProject(fetchedProjectData);
         }, 500);
-    }, [projectId, user]);
+    }, [projectId]);
 
-     //const miniMatrix = getMonthMatrix(miniYear, miniMonth);
+    // 현재 뷰의 연도와 월에 맞는 날짜 배열(매트릭스) 생성
     const matrix = getMonthMatrix(viewYear, viewMonth);
+   // const miniMatrix = getMonthMatrix(miniYear, miniMonth);
 
     // --- 이벤트 핸들러 함수들 ---
-// 1. 미니 캘린더 날짜 클릭 핸들러: 사이드바의 할일 목록만 업데이트
+
+    // 1. 미니 캘린더 날짜 클릭 핸들러: 사이드바의 'To do' 목록만 업데이트
     const handleSidebarDateSelect = (day: number) => {
         const newDate = new Date(miniYear, miniMonth, day);
         setSelectedSidebarDate(newDate);
     };
 
-    // 2. 메인 캘린더 날짜 클릭 핸들러: Day 뷰로 전환
+    // 2. 메인 캘린더 날짜 클릭 핸들러: 'Day' 뷰로 전환
     const handleMainDateClick = (day: number) => {
         const newDate = new Date(viewYear, viewMonth, day);
         setSelectedDate(newDate);
         setViewMode("day");
     };
+
+    // 이벤트 생성 모달 열기
     const handleOpenEventModal = (dateStr?: string) => {
         setModalInitialDate(dateStr || null);
-        setEventToEdit(null);
+        setEventToEdit(null); // '생성 모드'이므로 수정 데이터는 null로 설정
         setIsEventModalOpen(true);
     };
+
+    // 이벤트 생성/수정 모달 닫기
     const handleCloseEventModal = () => {
         setIsEventModalOpen(false);
-        setEventToEdit(null);
+        setEventToEdit(null); // 모달이 닫힐 때 수정 데이터 초기화
     };
 
+    // 팀 모달 열기/닫기
     const handleOpenTeamModal = () => setIsTeamModalOpen(true);
     const handleCloseTeamModal = () => setIsTeamModalOpen(false);
-   //ProfileSettingModal핸들러
+
+    // 프로필 설정 모달 열기/닫기
     const handleOpenSettingsModal = () => setIsSettingsModalOpen(true);
     const handleCloseSettingsModal = () => setIsSettingsModalOpen(false);
-    // 일반 SettingsModal 핸들러
+
+    // 프로젝트 설정 모달 열기/닫기
     const handleOpenProjectSettingsModal = () => setIsProjectSettingsModalOpen(true);
     const handleCloseProjectSettingsModal = () => setIsProjectSettingsModalOpen(false);
+
+    // 이벤트 '수정 모드'로 전환
     const handleEditEvent = (event: CalendarEvent) => {
-        setEventToEdit(event);
-        setIsEventModalOpen(true);
-        setSelectedEvent(null);
+        setSelectedEvent(null); // 상세 모달 닫기
+        setEventToEdit(event);   // 수정할 데이터를 상태에 저장
+        setIsEventModalOpen(true); // 수정 모달 열기
     };
 
-
+    // 이벤트/메모/할일 저장 핸들러
     const handleSaveItem = (itemData: ModalFormData, type: 'Event' | 'Todo' | 'Memo', id?: number) => {
-        // '수정' 로직
+        // '수정' 로직 (id가 있을 경우)
         if (id) {
             setEvents(prevEvents => prevEvents.map(event => {
                 if (event.id === id) {
@@ -158,6 +186,7 @@ export default function CalendarUI() {
             }));
             return;
         }
+        // '생성' 로직 (id가 없을 경우)
         if (type === 'Event') {
             const newEvent: CalendarEvent = {
                 id: Date.now(),
