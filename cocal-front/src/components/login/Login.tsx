@@ -37,6 +37,7 @@ const Login: React.FC = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
+                credentials: 'include', // 쿠키 전송을 허용
             });
 
             const data = await response.json();
@@ -51,7 +52,7 @@ const Login: React.FC = () => {
 
             if (typeof accessToken === 'string' && accessToken) {
                 localStorage.setItem('accessToken', accessToken);
-
+                await new Promise(res => setTimeout(res, 100)); // 0.1초 대기
                     if (refreshToken) {
                         localStorage.setItem('refreshToken', refreshToken);
                     } else {
