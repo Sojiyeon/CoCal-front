@@ -152,15 +152,18 @@ interface ProjectCardProps {
     currentUserId: number | null;
     onEdit: (project: Project) => void;
     onDelete: (projectId: number) => void;
+    isDropdownActive: boolean;
+    onToggleDropdown: (active: boolean) => void;
 }
 
-const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onDelete }) => {
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onDelete, isDropdownActive, onToggleDropdown }) => {
+    // const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const isOwner = project.ownerId === currentUserId;
     const isMember = project.members.some(member => member.id === currentUserId);
     const showDescription = !isOwner && isMember && project.description;
 
+/*
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -170,6 +173,7 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+*/
 
     // 날짜 형식 YYYY.MM.DD로 변환
     const formatDates = (start: string, end: string) => {
@@ -187,9 +191,10 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
     const MAX_VISIBLE_MEMBERS = 5; // 최대 5명 표시
     const visibleMembers = members.slice(0, MAX_VISIBLE_MEMBERS);
     const extraMembersCount = members.length - MAX_VISIBLE_MEMBERS;
+    const cardZIndex = isDropdownActive ? 'z-50' : 'z-10';
 
     return (
-        <div className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition duration-200 relative border border-gray-100">
+        <div className={`bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition duration-200 relative border border-gray-100 ${cardZIndex}`}>
             {/* 상단 (이름, 날짜, 드롭다운 버튼) */}
             <div className="flex justify-between items-start mb-4">
                 <div className="flex flex-col flex-grow min-w-0">
@@ -206,7 +211,8 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
                                 onClick={(e: React.MouseEvent) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    setIsDropdownOpen(!isDropdownOpen);
+                                    onToggleDropdown(!isDropdownActive);
+                                    // setIsDropdownOpen(!isDropdownOpen);
                                 }}
                                 className="p-1 text-gray-400 hover:text-gray-700 transition relative z-20"
                             >
@@ -238,11 +244,11 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
                 )}
             </div>
             {/* 드롭다운 메뉴 (Edit/Delete) */}
-            {isDropdownOpen && isOwner && (
+            {isDropdownActive && isOwner && (
                 <div
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute top-10 right-2 bg-gray-800 text-white rounded-lg shadow-xl z-30 w-28 overflow-hidden transform origin-top-right transition-all duration-150 ease-out"
-                    style={{ zIndex: 50 }}
+                    className="absolute top-10 right-2 bg-gray-800 text-white rounded-lg shadow-2xl z-[100] w-28 overflow-hidden transform origin-top-right transition-all duration-150 ease-out border border-gray-700"
+                    style={{ zIndex: 100 }}
                 >
                     {dropdownItems.map(item => (
                         <button
@@ -254,7 +260,7 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
                                 e.stopPropagation();
                                 console.log(`[Step 1] ${item.label} 버튼 클릭 성공! ID: ${project.id}`);
                                 item.action();
-                                setIsDropdownOpen(false);
+                                onToggleDropdown(false);
                             }}
                         >
                             {item.label}
@@ -408,6 +414,7 @@ const ProjectDashboardPage: React.FC = () => {
     // const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
     const [projects, setProjects] = useState<Project[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('All');
+    const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
     // --- 모달 상태 관리 ---
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -542,6 +549,7 @@ const ProjectDashboardPage: React.FC = () => {
     const handleCloseEditModal = () => {
         setIsEditModalOpen(false);
         setEditingProject(null); // 상태 초기화
+        setActiveDropdownId(null);
     };
 
     // 프로젝트 업데이트 API 로직 수정
@@ -612,9 +620,33 @@ const ProjectDashboardPage: React.FC = () => {
             } catch (error) {
                 console.error('프로젝트 삭제 중 네트워크 오류:', error);
                 alert('네트워크 오류로 프로젝트를 삭제할 수 없습니다.');
+            } finally {
+                setActiveDropdownId(null); // 드롭다운 닫기
             }
         }
     };
+
+    const handleToggleDropdown = (projectId: number, active: boolean) => {
+        // 이미 열려 있는 드롭다운이 있다면 닫고, 현재 드롭다운을 열거나 닫습니다.
+        setActiveDropdownId(active ? projectId : null);
+    };
+    // 🚩 외부 클릭 감지 로직 (드롭다운을 닫기 위해 필요)
+    const projectGridRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            // 프로젝트 그리드 영역 외부를 클릭하고, 활성화된 드롭다운이 있을 때
+            if (projectGridRef.current && !projectGridRef.current.contains(event.target as Node) && activeDropdownId !== null) {
+                setActiveDropdownId(null);
+            }
+        };
+
+        if (activeDropdownId !== null) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [activeDropdownId]);
 
     // 프로젝트 필터링 로직
     const filteredProjects = projects.filter(project => {
@@ -674,16 +706,20 @@ const ProjectDashboardPage: React.FC = () => {
                 ) : filteredProjects.length === 0 ? (
                     <EmptyState selectedCategory={selectedCategory} />
                 ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div ref={projectGridRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {projects.map(project => (
                             // <Link href={`/calendar/${project.id}`} key={project.id} onClick={(e) => e.preventDefault()}>
-                            <div key={project.id} onClick={() => router.push(`/calendar/${project.id}`)} className="cursor-pointer">
+                            <div key={project.id}
+                                 onClick={() => activeDropdownId === null && router.push(`/calendar/${project.id}`)}
+                                 className={activeDropdownId === null ? "cursor-pointer" : "cursor-default"}>
                             <ProjectCard
                                     project={project}
                                     currentUserId={user?.id || null}
                                     onEdit={handleOpenEditModal}
                                     onDelete={handleDeleteProject}
-                                />
+                                    isDropdownActive={activeDropdownId === project.id}
+                                    onToggleDropdown={(active) => handleToggleDropdown(project.id, active)}
+                            />
                             {/*// </Link>*/}
                             </div>
                         ))}
