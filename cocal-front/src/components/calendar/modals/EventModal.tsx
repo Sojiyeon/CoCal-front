@@ -123,7 +123,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
             setFormData({
                 title: editEvent.title,
                 description: editEvent.description || "",
-                url: "", // 실제 데이터 구조에 맞게 수정 필요
+                url: editEvent.url || "",
                 startAt: editEvent.startAt.slice(0, 16),
                 endAt: editEvent.endAt.slice(0, 16),
                 location: editEvent.location || "",

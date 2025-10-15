@@ -15,7 +15,7 @@ import { SettingsModal } from "./modals/SettingsModal";
 import { EventModal } from "./modals/EventModal";
 import { TeamModal } from "./modals/TeamModal";
 import { MemoDetailModal } from "./modals/MemoDetailModal";
-
+import { TodoEditModal } from "./modals/TodoEditModal";
 // 전역 사용자 정보와 타입 정의, 유틸 함수, 샘플 데이터
 import { useUser } from "@/contexts/UserContext";
 import { CalendarEvent, EventTodo, Project, ModalFormData, DateMemo, UserSummary, PrivateTodo, SidebarTodo } from "./types";
@@ -40,6 +40,7 @@ const API_ENDPOINTS = {
 export default function CalendarUI() {
     // --- 훅(Hooks) 초기화 ---
     const { user, logout, isLoading: isUserLoading } = useUser();
+
     const router = useRouter();
     const params = useParams();
 
@@ -81,7 +82,8 @@ export default function CalendarUI() {
     // 생성/수정 모달에 전달할 초기 데이터 상태
     const [modalInitialDate, setModalInitialDate] = useState<string | null>(null);
     const [eventToEdit, setEventToEdit] = useState<CalendarEvent | null>(null);
-
+    //  To-do 수정 모달을 제어하는 상태
+    const [todoToEdit, setTodoToEdit] = useState<SidebarTodo | null>(null);
 
     // --- useEffect 훅 ---
     // 왼쪽 사이드바의 'To do' 목록을 업데이트
@@ -112,6 +114,7 @@ export default function CalendarUI() {
                 urlId: 0,
                 authorId: todo.userId,
                 orderNo: 0,
+                url: todo.url ?? undefined
             }));
 
         // 3. Public과 Private 할일을 합쳐 사이드바 상태를 업데이트
@@ -228,7 +231,7 @@ export default function CalendarUI() {
         if (id) {
             setEvents(prevEvents => prevEvents.map(event => {
                 if (event.id === id) {
-                    return { ...event, ...itemData, description: itemData.content || itemData.description };
+                    return { ...event, ...itemData, description: itemData.content || itemData.description,url: itemData.url };
                 }
                 return event;
             }));
@@ -298,6 +301,7 @@ export default function CalendarUI() {
                     description: itemData.description,
                     status: 'IN_PROGRESS',
                     type: 'EVENT',
+                    url: itemData.url,
                     urlId: 0,
                     authorId: user?.id || 0,
                     orderNo: 0,
@@ -345,32 +349,125 @@ export default function CalendarUI() {
             )
         );
     };
-    // To-do 내용(title) 수정 핸들러
-    const handleUpdateTodo = (todoId: number, newTitle: string) => {
-        // Public 할일 업데이트
-        setEvents(prev => prev.map(event => ({
-            ...event,
-            todos: (event.todos || []).map(todo =>
-                todo.id === todoId ? { ...todo, title: newTitle } : todo
-            )
-        })));
-        // Private 할일 업데이트
-        setPrivateTodos(prev => prev.map(todo =>
-            todo.id === todoId ? { ...todo, title: newTitle } : todo
-        ));
+
+    const handleUpdateTodo = (todoId: number, newData: { title: string; description: string; visibility: 'PUBLIC' | 'PRIVATE'; url: string; }) => {
+        let originalTodo: (EventTodo & { parentEventId?: number }) | PrivateTodo | null = null;
+        let originalType: 'EVENT' | 'PRIVATE' | null = null;
+        let parentEvent: CalendarEvent | null = null;
+
+        // 먼저 events 배열(Public To-do)에서 To-do를 찾음
+        for (const event of events) {
+            const foundTodo = event.todos?.find(t => t.id === todoId);
+            if (foundTodo) {
+                originalTodo = { ...foundTodo, parentEventId: event.id };
+                originalType = 'EVENT';
+                parentEvent = event;
+                break;
+            }
+        }
+
+        // events 배열에 없으면 privateTodos 배열(Private To-do)에서 찾음
+        if (!originalTodo) {
+            const foundPrivateTodo = privateTodos.find(t => t.id === todoId);
+            if (foundPrivateTodo) {
+                originalTodo = foundPrivateTodo;
+                originalType = 'PRIVATE';
+            }
+        }
+
+        if (!originalTodo || !originalType) {
+            console.error("업데이트할 To-do를 찾지 못했습니다.");
+            return;
+        }
+
+        const newType = newData.visibility === 'PUBLIC' ? 'EVENT' : 'PRIVATE';
+
+        // Case 1: 공개 상태 변경 없음
+        if (originalType === newType) {
+            if (newType === 'PRIVATE') {
+                setPrivateTodos(prev => prev.map(todo =>
+                    todo.id === todoId ? { ...todo, title: newData.title, description: newData.description, url: newData.url } : todo
+                ));
+            } else { // EVENT (PUBLIC)
+                setEvents(prev => prev.map(event => ({
+                    ...event,
+                    todos: (event.todos || []).map(todo =>
+                        todo.id === todoId ? { ...todo, title: newData.title, description: newData.description, url: newData.url } : todo
+                    )
+                })));
+            }
+        }
+        // Case 2: PUBLIC -> PRIVATE 으로 변경
+        else if (originalType === 'EVENT' && newType === 'PRIVATE') {
+            const newPrivate: PrivateTodo = {
+                id: originalTodo.id,
+                projectId: projectId,
+                userId: user?.id || 0,
+                title: newData.title,
+                description: newData.description,
+                date: parentEvent!.startAt,
+                status: originalTodo.status,
+                type: 'PRIVATE',
+                url: newData.url,
+            };
+            setPrivateTodos(prev => [...prev, newPrivate]);
+
+            // 기존 Public To-do는 삭제 만약 부모 이벤트가 To-do 래퍼였다면 함께 삭제
+            setEvents(prev => prev
+                .map(event => {
+                    if (event.id === (originalTodo as EventTodo & { parentEventId: number }).parentEventId) {
+                        return { ...event, todos: event.todos?.filter(t => t.id !== todoId) };
+                    }
+                    return event;
+                })
+                .filter(event => !(event.title.startsWith('Todo:') && (!event.todos || event.todos.length === 0)))
+            );
+        }
+        // Case 3: PRIVATE -> PUBLIC 으로 변경
+        else if (originalType === 'PRIVATE' && newType === 'EVENT') {
+            setPrivateTodos(prev => prev.filter(todo => todo.id !== todoId));
+
+            const newPublicTodo: EventTodo = {
+                id: originalTodo.id,
+                eventId: Date.now(),
+                title: newData.title,
+                description: newData.description,
+                status: originalTodo.status,
+                type: 'EVENT',
+                url: newData.url, // url 추가
+                urlId: 0,
+                authorId: user?.id || 0,
+                orderNo: 0,
+            };
+
+            const wrapperEvent: CalendarEvent = {
+                id: newPublicTodo.eventId,
+                projectId: projectId,
+                title: `Todo: ${newData.title}`,
+                startAt: (originalTodo as PrivateTodo).date,
+                endAt: (originalTodo as PrivateTodo).date.replace('T00:00:00', 'T23:59:59'),
+                color: 'transparent',
+                todos: [newPublicTodo],
+                description: null,
+                location: null,
+                visibility: 'PRIVATE',
+                urlId: 0,
+                offsetMinutes: 0,
+                allDay: true,
+                authorId: user?.id || 0,
+            };
+            setEvents(prev => [...prev, wrapperEvent]);
+        }
     };
 
-    // [추가] To-do 삭제 핸들러
-    const handleDeleteTodo = (todoId: number, type: 'EVENT' | 'PRIVATE') => {
+    // To-do 삭제 핸들러
+    const handleDeleteTodo = (idToDelete: number, type: 'EVENT' | 'PRIVATE') => {
         if (!window.confirm("정말로 이 할 일을 삭제하시겠습니까?")) return;
 
         if (type === 'PRIVATE') {
-            setPrivateTodos(prev => prev.filter(todo => todo.id !== todoId));
+            setPrivateTodos(prev => prev.filter(todo => todo.id !== idToDelete));
         } else { // 'EVENT'
-            setEvents(prev => prev.map(event => ({
-                ...event,
-                todos: (event.todos || []).filter(todo => todo.id !== todoId)
-            })));
+            setEvents(prev => prev.filter(event => event.id !== idToDelete));
         }
     };
 
@@ -398,7 +495,7 @@ export default function CalendarUI() {
         const weekStart = new Date(viewYear, viewMonth, week.find(day => day !== null)!);
         const weekEnd = new Date(viewYear, viewMonth, week.filter(day => day !== null).pop()!);
 
-        // 해당 주에 걸쳐있는 모든 이벤트를 찾습니다.
+        // 해당 주에 걸쳐있는 모든 이벤트를 찾음
         return events.filter(event => {
             const eventStart = new Date(event.startAt.split('T')[0]);
             const eventEnd = new Date(event.endAt.split('T')[0]);
@@ -407,13 +504,18 @@ export default function CalendarUI() {
             return (eventStart <= weekEnd && eventEnd >= weekStart);
         });
     };
+
+    // To-do 수정 모달을 여는 핸들러
+    const handleOpenTodoEditModal = (todo: SidebarTodo) => {
+        setTodoToEdit(todo);
+    };
     return (
         <div className="h-screen w-screen flex flex-col bg-white">
             {/* 상단 헤더 */}
             <div className="flex items-center justify-between px-6 py-3 bg-white border-b">
                 <div className="flex items-center gap-3">
                     <button onClick={() => router.push("/dashboard")} className="p-1 rounded-full hover:bg-slate-100">
-                        <svg width="18" height="18" viewBox="0 0 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     </button>
                     <h1 className="text-xl font-medium">{currentProject ? currentProject.name : "Project"}</h1>
                     <div className="w-2 h-2 rounded-full bg-emerald-400 ml-2" />
@@ -450,9 +552,10 @@ export default function CalendarUI() {
                             email: user.email ?? '',
                             profileImageUrl: user.profileImageUrl
                         } : null}
-                        onUpdateTodo={handleUpdateTodo}
-                        onDeleteTodo={handleDeleteTodo}
                         handleToggleTodoStatus={handleToggleTodoStatus}
+
+                        onEditTodo={handleOpenTodoEditModal}
+
                     />
                 </div>
                     {/* 메인 캘린더 영역 */}
@@ -499,6 +602,10 @@ export default function CalendarUI() {
                                     {matrix.map((week, weekIndex) => {
                                         // 현재 주(week)에 걸쳐있는 모든 이벤트를 찾습니다.
                                         const weekEvents = events.filter(event => {
+                                            // ✨ FIX: 제목이 'Todo:'로 시작하는 이벤트는 캘린더에 표시하지 않음
+                                            if (event.title.startsWith('Todo:')) {
+                                                return false;
+                                            }
                                             const eventStart = new Date(event.startAt.split('T')[0]);
                                             const weekStartDay = week.find(d => d);
                                             if (!weekStartDay) return false;
@@ -511,6 +618,7 @@ export default function CalendarUI() {
 
                                             return eventStart <= weekEndDate && eventEnd >= weekStartDate;
                                         });
+
 
                                         return (
                                             <div key={weekIndex}
@@ -637,6 +745,15 @@ export default function CalendarUI() {
                 {isProjectSettingsModalOpen &&
                     <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId}
                                    userId={user?.id || 0}/>}
-            </div>
+                {todoToEdit && (
+                    <TodoEditModal
+                        todoToEdit={todoToEdit}
+                        onClose={() => setTodoToEdit(null)}
+                        onSave={handleUpdateTodo}
+                        onDelete={handleDeleteTodo}
+                    />
+                )}
+
+        </div>
             );
             }
