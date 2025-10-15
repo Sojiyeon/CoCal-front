@@ -143,7 +143,7 @@ export default function SidebarLeft({
                     )}
                 </div>
             </div>
-            <TaskProgress todos={sidebarTodos}/>
+
             <TaskProgress todos={sidebarTodos} projectStartDate={projectStartDate} projectEndDate={projectEndDate}/>
         </aside>
     );
