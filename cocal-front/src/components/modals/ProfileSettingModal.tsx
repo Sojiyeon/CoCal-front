@@ -3,107 +3,11 @@
 import React, { FC, useState, createContext, useContext, useEffect, useRef } from 'react';
 import { X, ChevronRight } from 'lucide-react';
 import { fetchWithAuth } from '@/utils/authService';
+import { useUser } from '@/contexts/UserContext';
 
-// --- Global Type Definitions ---
-interface User {
-    id: number | null;
-    email: string | null;
-    name: string | null;
-    profileImageUrl: string | null;
-}
-
-interface UserContextType {
-    user: User;
-    setUser: React.Dispatch<React.SetStateAction<User>>;
-    isLoading: boolean;
-    fetchUserProfile: (token: string) => Promise<void>;
-    logout: () => void;
-}
 const API = 'https://cocal-server.onrender.com';
-const API_ME_ENDPOINT = `${API}/api/users/me`;
-const API_LOGOUT_ENDPOINT = `${API}/api/auth/logout`;
+const API_ALL_LOGOUT_ENDPOINT = `${API}/api/auth/all-logout`;
 const API_DELETE_ENDPOINTS = `${API}/api/users/delete`;
-const initialUser: User = { id: null, email: null, name: null, profileImageUrl: null };
-const UserContext = createContext<UserContextType | undefined>(undefined);
-
-// --- User Context Hooks & Provider ---
-export const useUser = () => {
-    const context = useContext(UserContext);
-    if (context === undefined) {
-        throw new Error('useUser must be used within a UserProvider');
-    }
-    return context;
-};
-
-// UserProvider 컴포넌트 (모달 테스트를 위해 필요)
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<User>(initialUser);
-    const [isLoading, setIsLoading] = useState(true);
-
-    const fetchUserProfile = async (token: string) => {
-        setIsLoading(true);
-        try {
-            const response = await fetchWithAuth(API_ME_ENDPOINT, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                const data = result.data;
-                setUser({
-                    id: data.id || null,
-                    email: data.email || null,
-                    name: data.name || null,
-                    profileImageUrl: data.profileImageUrl || null
-                });
-                console.log('프로필 정보 불러오기 성공:', data);
-            } else {
-                const errorData = await response.json();
-                console.error(`프로필 로드 실패: ${errorData.message || response.statusText}`);
-            }
-        } catch (_error) {
-            console.error("네트워크 오류가 발생했습니다:", _error);
-        } finally {
-            setIsLoading(false); // 로딩 종료
-        }
-    };
-
-    const logout = async () => {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-            try {
-                await fetchWithAuth(API_LOGOUT_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ refreshToken }),
-                });
-            } catch (error) {
-                // 오류가 발생해도 클라이언트 측 정리는 계속 진행
-            }
-        }
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        setUser(initialUser);
-        // window.location.href = '/login'; // 실제 앱에서는 로그인 페이지로 리디렉션
-    };
-
-    useEffect(() => {
-        const token = localStorage.getItem('accessToken');
-        if (token) {
-            fetchUserProfile(token);
-        } else {
-            setIsLoading(false);
-        }
-    }, []);
-
-    return (
-        <UserContext.Provider value={{ user, setUser, isLoading, fetchUserProfile, logout }}>
-            {children}
-        </UserContext.Provider>
-    );
-};
-// --- END User Context ---
 
 interface ApiEndpoints {
     UPDATE_USER_NAME: string;
@@ -429,6 +333,48 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
         }
     };
 
+    const handleAllLogout = async () => {
+        const confirmLogout = window.confirm("모든 기기에서 로그아웃하시겠습니까? 다시 로그인해야 합니다.");
+        if (!confirmLogout) {
+            return;
+        }
+
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+            alert("인증 정보가 없습니다. 현재 기기에서 로그아웃합니다.");
+            logout();
+            return;
+        }
+        try {
+            console.log(`API 호출: ${API_ALL_LOGOUT_ENDPOINT}로 모든 기기 로그아웃 요청`);
+
+            // 이 요청은 AccessToken으로 해당 유저의 모든 Refresh Token을 무효화합니다.
+            const response = await fetchWithAuth(API_ALL_LOGOUT_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                // 이 API는 refreshToken을 body로 요구하지 않는다고 가정하고 Authorization 헤더만 사용합니다.
+            });
+
+            if (response.ok) {
+                alert("모든 기기에서 성공적으로 로그아웃되었습니다.");
+            } else {
+                const errorData = await response.json().catch(() => ({ message: '로그아웃 실패' }));
+                console.error('모든 기기 로그아웃 실패:', response.status, errorData.message);
+                alert(`로그아웃 실패: ${errorData.message || response.statusText}`);
+            }
+
+        } catch (_error) {
+            console.error("모든 기기 로그아웃 중 네트워크 오류:", _error);
+            alert("로그아웃 중 네트워크 오류가 발생했습니다.");
+        } finally {
+            // 서버 응답과 관계없이 클라이언트 측 토큰을 정리하고 리디렉션
+            logout(); // UserContext의 logout 함수를 재사용하여 토큰 정리 및 상태 초기화
+            window.location.href = '/'; // 홈 또는 로그인 페이지로 이동
+        }
+    };
+
     const handleDeleteAccount = async () => {
         const confirmDelete = window.confirm("정말 계정을 삭제하시겠습니까?");
         if (!confirmDelete) {
@@ -491,7 +437,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                         <img
                             src={user.profileImageUrl || 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User'}
                             alt="Profile"
-                            className="w-24 h-24 rounded-full object-cover mb-6 border-4 border-gray-100 shadow-md"
+                            className="w-24 h-24 rounded-full object-cover mb-2 border-4 border-gray-100 shadow-md" // 👈 mb-6 -> mb-2
                         />
                         <input
                             type="file"
@@ -500,7 +446,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                             accept="image/*" // 이미지 파일만 허용
                             style={{ display: 'none' }} // 화면에서 숨김
                         />
-                        <div className="flex items-center space-x-4 mt-3">
+                        <div className="flex items-center space-x-4 mt-6 mb-8">
                             <button
                                 onClick={handlePhotoClick}
                                 className="text-sm text-blue-600 hover:text-blue-700 font-medium transition"
@@ -540,10 +486,18 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                             />
                         </div>
 
+                        {/* 모든 기기 로그아웃 버튼 추가 */}
+                        <button
+                            onClick={handleAllLogout}
+                            className="mt-8 w-full py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
+                        >
+                            Logout from All Devices
+                        </button>
+
                         {/* 계정 삭제 버튼 */}
                         <button
                             onClick={handleDeleteAccount}
-                            className="mt-8 w-full py-3 border border-red-400 text-red-500 font-semibold rounded-lg hover:bg-red-50 transition"
+                            className="mt-3 w-full py-3 border border-red-400 text-red-500 font-semibold rounded-lg hover:bg-red-50 transition"
                         >
                             Delete Account
                         </button>

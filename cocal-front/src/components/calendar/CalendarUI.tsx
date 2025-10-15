@@ -17,6 +17,7 @@ import { EventModal } from "./modals/EventModal";
 import { TeamModal } from "./modals/TeamModal";
 import { MemoDetailModal } from "./modals/MemoDetailModal";
 import { TodoEditModal } from "./modals/TodoEditModal";
+import WeekViewMobile from "./WeekViewMobile";
 // 전역 사용자 정보와 타입 정의, 유틸 함수, 샘플 데이터
 import { useUser } from "@/contexts/UserContext";
 import { CalendarEvent, EventTodo, Project, ModalFormData, DateMemo, UserSummary, PrivateTodo, SidebarTodo } from "./types";
@@ -92,6 +93,25 @@ export default function CalendarUI() {
         // 모든 이벤트에서 todos 배열을 추출하여 하나의 배열로 합칩니다.
         return events.flatMap(event => event.todos || []);
     }, [events]);
+
+    //  [MOBILE WEEKVIEW] 모바일 여부 판단 state 추가
+    const [isMobile, setIsMobile] = useState(false);
+    //  [MOBILE WEEKVIEW] 주간 anchor 상태
+    const [weekMobileAnchor, setWeekMobileAnchor] = useState<Date>(today);
+
+    //  [MOBILE WEEKVIEW] WeekViewMobile 표시 제어 및 데이터 state 추가
+    const [isWeekMobileOpen, setIsWeekMobileOpen] = useState(false);
+    const [weekMobileData, setWeekMobileData] = useState<{
+        weekTitle: string;
+        projectName: string;
+        days: {
+            date: string;
+            weekday: string;
+            events: CalendarEvent[];
+            todos: { id: number; title: string; status: string }[];
+        }[];
+    } | null>(null);
+
     // --- useEffect 훅 ---
     // 왼쪽 사이드바의 'To do' 목록을 업데이트
     useEffect(() => {
@@ -138,6 +158,7 @@ export default function CalendarUI() {
                 if (json.success && json.data) {
                     // API에서 받은 이벤트와 메모로 상태 초기화
                     setEvents(json.data.events || []);
+                    // 메모 저장
                     setMemos(json.data.memos || []);
                 } else {
                     console.error("캘린더 데이터가 없습니다.");
@@ -181,6 +202,46 @@ export default function CalendarUI() {
 
         fetchProject();
     }, [projectId]);
+
+    //  [MOBILE WEEKVIEW] 모바일 뷰포트 감지 (클라이언트)
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 768);
+        check();
+        window.addEventListener("resize", check);
+        return () => window.removeEventListener("resize", check);
+    }, []);
+
+    //  [MOBILE WEEKVIEW] viewMode가 'week'로 바뀌면 모바일에선 WeekViewMobile을 띄우기
+    useEffect(() => {
+        if (!isMobile) {
+            setIsWeekMobileOpen(false);
+            return;
+        }
+        if (viewMode === "week") {
+            openWeekMobileForDate(selectedDate);
+        } else {
+            setIsWeekMobileOpen(false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [viewMode, isMobile]);
+    const shiftDays = (base: Date, delta: number) => {
+        const d = new Date(base);
+        d.setDate(d.getDate() + delta);
+        return d;
+    };
+
+    //week 이전/ 다음 주 이동 핸들러
+    const handlePrevMobileWeek = () => {
+        const prev = shiftDays(weekMobileAnchor, -7);
+        setWeekMobileAnchor(prev);
+        setWeekMobileData(buildWeekViewMobileData(prev));
+    };
+
+    const handleNextMobileWeek = () => {
+        const next = shiftDays(weekMobileAnchor, +7);
+        setWeekMobileAnchor(next);
+        setWeekMobileData(buildWeekViewMobileData(next));
+    };
 
 
     // 현재 뷰의 연도와 월에 맞는 날짜 배열(매트릭스) 생성
@@ -516,6 +577,66 @@ export default function CalendarUI() {
     const handleOpenTodoEditModal = (todo: SidebarTodo) => {
         setTodoToEdit(todo);
     };
+    const buildWeekViewMobileData = (baseDate: Date) => {
+        // 주 시작(일요일) 기준으로 7일 산출
+        const start = new Date(baseDate);
+        start.setHours(0, 0, 0, 0);
+        const day = start.getDay(); // 0(일)~6(토)
+        const sunday = new Date(start);
+        sunday.setDate(start.getDate() - day); // 일요일로 이동
+
+        const days = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(sunday);
+            d.setDate(sunday.getDate() + i);
+            const y = d.getFullYear();
+            const m = d.getMonth();
+            const dd = d.getDate();
+            const key = formatYMD(y, m, dd);
+            const weekday = d.toLocaleDateString("en-US", { weekday: "short" }); // "Mon" 등
+
+            // 해당 날짜와 겹치는 이벤트(하루라도 겹치면 포함)
+            const dayEvents = events.filter((ev) => {
+                const evStart = new Date(ev.startAt.split("T")[0]);
+                const evEnd = new Date(ev.endAt.split("T")[0]);
+                const cur = new Date(key);
+                return evStart <= cur && evEnd >= cur;
+            });
+
+            // 해당 날짜의 public todos만 모아 표시 (기능 변경 없이 표시만)
+            const dayTodos = events.flatMap((ev) => {
+                const evDateKey = ev.startAt.split("T")[0];
+                if (evDateKey !== key || !ev.todos) return [];
+                return ev.todos.map((t) => ({ id: t.id, title: t.title, status: t.status }));
+            });
+
+            return {
+                date: String(dd),
+                weekday,
+                events: dayEvents,
+                todos: dayTodos,
+            };
+        });
+
+        // 예) "Sep Week 1, 2025" 식의 타이틀
+        const monthLabel = sunday.toLocaleDateString("en-US", { month: "short" });
+        const weekNum = Math.ceil((sunday.getDate() - 1) / 7) + 1;
+        const yearLabel = sunday.getFullYear();
+        const weekTitle = `${monthLabel} Week ${weekNum}, ${yearLabel}`;
+
+        return {
+            weekTitle,
+            projectName: currentProject ? currentProject.name : "Project",
+            days,
+        };
+    };
+
+    //  [MOBILE WEEKVIEW] 특정 날짜 기준 주간 상세 열기
+    const openWeekMobileForDate = (date: Date) => {
+        setWeekMobileAnchor(date);
+        const data = buildWeekViewMobileData(date);
+        setWeekMobileData(data);
+        setIsWeekMobileOpen(true);
+    };
     return (
         <div className="h-screen w-screen flex flex-col bg-white">
             {/*  --- 데스크톱 헤더 ---  */}
@@ -528,7 +649,19 @@ export default function CalendarUI() {
                         </svg>
                     </button>
                     <h1 className="text-xl font-medium">{currentProject ? currentProject.name : "Project"}</h1>
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 ml-2"/>
+                    <div className="flex items-center space-x-[-4px]">
+                        {/*팀원 프로필 이미지*/}
+                        {currentProject?.members.map((member, index) => (
+                            <img
+                                key={member.userId || index}
+                                src={member.profileImageUrl || "https://placehold.co/100x100/A0BFFF/FFFFFF?text=User"}
+                                title={member.name}
+                                alt={member.name || 'Team member'}
+                                className="w-6 h-6 rounded-full object-cover border-2 border-white shadow-sm transition transform hover:scale-110"
+                                style={{zIndex: currentProject?.members.length - index}}
+                            />
+                        ))}
+                    </div>
                 </div>
                 {isUserLoading ? (
                     <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>) : user && user.id ? (
@@ -580,15 +713,16 @@ export default function CalendarUI() {
                     </div>)}
                 </div>
             </div>
-            {/* --- FIX: 모바일 TaskProgress 위치 이동 --- */}
-            {/* TaskProgress를 main 영역 밖, 모바일 헤더 바로 아래로 이동하여 이미지와 같은 레이아웃을 구현합니다. */}
-            <div className="px-4 pt-4 md:hidden">
-                <TaskProgress
-                    todos={allProjectTodos}
-                    projectStartDate={currentProject?.startDate ? new Date(currentProject.startDate) : undefined}
-                    projectEndDate={currentProject?.endDate ? new Date(currentProject.endDate) : undefined}
-                />
-            </div>
+            {/* ---  모바일 TaskProgress 위치  --- */}
+            {!(isMobile && viewMode === "week") && (
+                <div className="px-4 pt-4 md:hidden">
+                    <TaskProgress
+                        todos={allProjectTodos}
+                        projectStartDate={currentProject?.startDate ? new Date(currentProject.startDate) : undefined}
+                        projectEndDate={currentProject?.endDate ? new Date(currentProject.endDate) : undefined}
+                    />
+                </div>
+            )}
             {/* 메인 영역 */}
             <div className="flex flex-1 overflow-hidden">
                 {/*  --- 반응형 왼쪽 사이드바 ---  */}
@@ -632,9 +766,16 @@ export default function CalendarUI() {
                 <main className="flex-1 p-2 md:p-6 overflow-auto">
                     {/* 메인 캘린더 헤더 */}
                     <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-1 md:gap-6">
+                        {/* ← 왼쪽 블록: 항상 렌더. 모바일에서 week(또는 WeekViewMobile 열림)일 때만 invisible */}
+                        <div
+                            className={`flex items-center gap-1 md:gap-6 ${
+                                isMobile && (viewMode === "week" || isWeekMobileOpen) ? "invisible" : ""
+                            }`}
+                        >
                             <button onClick={prevMonth}
-                                    className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-lg md:text-xl p-2 rounded-full hover:bg-slate-100">&#x276E;</button>
+                                    className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-lg md:text-xl p-2 rounded-full hover:bg-slate-100">
+                                &#x276E;
+                            </button>
                             <h2 className="text-base md:text-lg font-semibold text-slate-800 text-center">
                                 {viewMode === 'day'
                                     ? selectedDate.toLocaleDateString('en-US', {
@@ -642,27 +783,24 @@ export default function CalendarUI() {
                                         day: 'numeric',
                                         year: 'numeric'
                                     })
-                                    : new Date(viewYear, viewMonth).toLocaleString("en-US", {
-                                        month: "long",
-                                        year: "numeric"
-                                    })
-                                }
+                                    : new Date(viewYear, viewMonth).toLocaleString('en-US', {
+                                        month: 'long',
+                                        year: 'numeric'
+                                    })}
                             </h2>
                             <button onClick={nextMonth}
-                                    className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-lg md:text-xl p-2 rounded-full hover:bg-slate-100">&#x276F;</button>
+                                    className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-lg md:text-xl p-2 rounded-full hover:bg-slate-100">
+                                &#x276F;
+                            </button>
                         </div>
-                        {/* 모바일 전용 TaskProgress 컴포넌트 */}
-                        {/*<div className="md:hidden mb-4">*/}
-                        {/*    <TaskProgress*/}
-                        {/*        todos={allProjectTodos}*/}
-                        {/*        projectStartDate={currentProject?.startDate ? new Date(currentProject.startDate) : undefined}*/}
-                        {/*        projectEndDate={currentProject?.endDate ? new Date(currentProject.endDate) : undefined}*/}
-                        {/*    />*/}
-                        {/*</div>*/}
+
+                        {/* → 오른쪽: 셀렉트 (그대로) */}
                         <div className="flex items-center gap-3">
-                            <select value={viewMode}
-                                    onChange={(e) => setViewMode(e.target.value as "day" | "week" | "month")}
-                                    className="border rounded px-3 py-1 text-sm">
+                            <select
+                                value={viewMode}
+                                onChange={(e) => setViewMode(e.target.value as "day" | "week" | "month")}
+                                className="border rounded px-3 py-1 text-sm"
+                            >
                                 <option value="month">Month</option>
                                 <option value="week">Week</option>
                                 <option value="day">Day</option>
@@ -670,117 +808,143 @@ export default function CalendarUI() {
                         </div>
                     </div>
 
-                    {viewMode === "month" && (
+                    {/*  [MOBILE WEEKVIEW] 모바일에서 WeekViewMobile 우선 표시 (week 선택 또는 이벤트 터치 시) */}
+                    {isMobile && isWeekMobileOpen ? (
+                        weekMobileData && (
+                            <WeekViewMobile
+                                weekTitle={weekMobileData.weekTitle}
+                                projectName={weekMobileData.projectName}
+                                days={weekMobileData.days}
+                                onPrevWeek={handlePrevMobileWeek}
+                                onNextWeek={handleNextMobileWeek}
+                            />
+                        )
+                    ) : (
                         <>
-                            <div className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2">
-                                {weekdays.map((w) => (<div key={w} className="text-center">{w.substring(0, 1)}</div>))}
-                            </div>
-                            <div className="grid grid-cols-1 border-l border-gray-200">
-                                {matrix.map((week, weekIndex) => {
-                                    const weekEvents = events.filter(event => {
-                                        if (event.title.startsWith('Todo:')) {
-                                            return false;
-                                        }
-                                        const eventStart = new Date(event.startAt.split('T')[0]);
-                                        const weekStartDay = week.find(d => d);
-                                        if (!weekStartDay) return false;
-                                        const weekStartDate = new Date(viewYear, viewMonth, weekStartDay);
+                            {viewMode === "month" && (
+                                <>
+                                    <div className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2">
+                                        {weekdays.map((w) => (
+                                            <div key={w} className="text-center">{w.substring(0, 1)}</div>))}
+                                    </div>
+                                    <div className="grid grid-cols-1 border-l border-gray-200">
+                                        {matrix.map((week, weekIndex) => {
+                                            const weekEvents = events.filter(event => {
+                                                if (event.title.startsWith('Todo:')) {
+                                                    return false;
+                                                }
+                                                const eventStart = new Date(event.startAt.split('T')[0]);
+                                                const weekStartDay = week.find(d => d);
+                                                if (!weekStartDay) return false;
+                                                const weekStartDate = new Date(viewYear, viewMonth, weekStartDay);
 
-                                        const eventEnd = new Date(event.endAt.split('T')[0]);
-                                        const weekEndDay = [...week].reverse().find(d => d);
-                                        if (!weekEndDay) return false;
-                                        const weekEndDate = new Date(viewYear, viewMonth, weekEndDay);
+                                                const eventEnd = new Date(event.endAt.split('T')[0]);
+                                                const weekEndDay = [...week].reverse().find(d => d);
+                                                if (!weekEndDay) return false;
+                                                const weekEndDate = new Date(viewYear, viewMonth, weekEndDay);
 
-                                        return eventStart <= weekEndDate && eventEnd >= weekStartDate;
-                                    });
+                                                return eventStart <= weekEndDate && eventEnd >= weekStartDate;
+                                            });
 
-                                    return (
-                                        <div key={weekIndex}
-                                             className="grid grid-cols-7 relative border-b border-gray-200">
-                                            {week.map((day, dayIndex) => {
-                                                if (!day) return <div key={`empty-${dayIndex}`}
-                                                                      className="min-h-[80px] md:min-h-[120px] border-r border-gray-200 bg-gray-50"></div>;
+                                            return (
+                                                <div key={weekIndex}
+                                                     className="grid grid-cols-7 relative border-b border-gray-200">
+                                                    {week.map((day, dayIndex) => {
+                                                        if (!day) return <div key={`empty-${dayIndex}`}
+                                                                              className="min-h-[80px] md:min-h-[120px] border-r border-gray-200 bg-gray-50"></div>;
 
-                                                const dateKey = formatYMD(viewYear, viewMonth, day);
-                                                const isToday = dateKey === formatYMD(today.getFullYear(), today.getMonth(), today.getDate());
-                                                const dayMemos = memos.filter(m => m.memoDate === dateKey);
+                                                        const dateKey = formatYMD(viewYear, viewMonth, day);
+                                                        const isToday = dateKey === formatYMD(today.getFullYear(), today.getMonth(), today.getDate());
+                                                        const dayMemos = memos.filter(m => m.memoDate === dateKey);
 
-                                                return (
-                                                    <div key={dateKey}
-                                                         className={`min-h-[80px] md:min-h-[120px] border-r border-gray-200 p-1 md:p-2 relative ${isToday ? 'bg-blue-50' : 'bg-white'}`}>
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-1">
-                                                                <div
-                                                                    className={`text-xs md:text-sm font-medium cursor-pointer hover:text-blue-600 ${isToday ? 'text-blue-600 font-bold' : ''}`}
-                                                                    onClick={() => handleMainDateClick(day)}>
-                                                                    {day}
-                                                                </div>
-                                                                <div className="hidden md:flex items-center space-x-1">
-                                                                    {dayMemos.map(memo => <div key={memo.id}
-                                                                                               onClick={() => setSelectedMemo(memo)}
-                                                                                               className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
-                                                                                               title={memo.content}/>)}
+                                                        return (
+                                                            <div key={dateKey}
+                                                                 className={`min-h-[80px] md:min-h-[120px] border-r border-gray-200 p-1 md:p-2 relative ${isToday ? 'bg-blue-50' : 'bg-white'}`}>
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center gap-1">
+                                                                        <div
+                                                                            className={`text-xs md:text-sm font-medium cursor-pointer hover:text-blue-600 ${isToday ? 'text-blue-600 font-bold' : ''}`}
+                                                                            onClick={() => handleMainDateClick(day)}>
+                                                                            {day}
+                                                                        </div>
+                                                                        <div
+                                                                            className="hidden md:flex items-center space-x-1">
+                                                                            {dayMemos.map(memo => <div key={memo.id}
+                                                                                                       onClick={() => setSelectedMemo(memo)}
+                                                                                                       className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
+                                                                                                       title={memo.content}/>)}
+                                                                        </div>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => handleOpenEventModal(dateKey)}
+                                                                        className="w-5 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-full text-lg">+
+                                                                    </button>
                                                                 </div>
                                                             </div>
-                                                            <button onClick={() => handleOpenEventModal(dateKey)}
-                                                                    className="w-5 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-full text-lg">+
-                                                            </button>
-                                                        </div>
+                                                        );
+                                                    })}
+
+                                                    <div className="absolute top-6 md:top-8 left-0 right-0 h-full">
+                                                        {weekEvents.map((event, eventIndex) => {
+                                                            const eventStart = new Date(event.startAt.split('T')[0]);
+                                                            const eventEnd = new Date(event.endAt.split('T')[0]);
+                                                            let startCol = 0;
+                                                            let endCol = 6;
+                                                            let foundStart = false;
+
+                                                            for (let i = 0; i < 7; i++) {
+                                                                const dayInWeek = week[i];
+                                                                if (dayInWeek === null) continue;
+                                                                const currentWeekDate = new Date(viewYear, viewMonth, dayInWeek);
+                                                                if (eventStart.toDateString() === currentWeekDate.toDateString()) {
+                                                                    startCol = i;
+                                                                    foundStart = true;
+                                                                }
+                                                                if (eventEnd.toDateString() === currentWeekDate.toDateString()) {
+                                                                    endCol = i;
+                                                                }
+                                                            }
+                                                            const span = endCol - startCol + 1;
+                                                            const showTitle = foundStart || (week[0] && new Date(viewYear, viewMonth, week[0]) > eventStart);
+                                                            const roundedClass =
+                                                                (foundStart ? 'rounded-l ' : '') +
+                                                                (endCol < 6 || eventEnd.toDateString() === new Date(viewYear, viewMonth, week[endCol]!).toDateString() ? 'rounded-r' : '');
+
+                                                            return (
+                                                                <div
+                                                                    key={event.id}
+                                                                    className={`absolute h-5 px-2 text-xs text-white cursor-pointer truncate ${roundedClass}`}
+                                                                    // ✅ [MOBILE WEEKVIEW] 모바일에선 이벤트 탭 시 WeekViewMobile 열기, 데스크톱은 기존 상세 모달
+                                                                    onClick={() => {
+                                                                        if (isMobile) {
+                                                                            const d = new Date(event.startAt);
+                                                                            openWeekMobileForDate(d);
+                                                                        } else {
+                                                                            setSelectedEvent(event);
+                                                                        }
+                                                                    }}
+                                                                    style={{
+                                                                        backgroundColor: event.color,
+                                                                        top: `${eventIndex * 22}px`,
+                                                                        left: `calc(${(startCol / 7) * 100}% + 2px)`,
+                                                                        width: `calc(${(span / 7) * 100}% - 4px)`,
+                                                                    }}
+                                                                >
+                                                                    {showTitle && event.title}
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
-                                                );
-                                            })}
-
-                                            <div className="absolute top-6 md:top-8 left-0 right-0 h-full">
-                                                {weekEvents.map((event, eventIndex) => {
-                                                    const eventStart = new Date(event.startAt.split('T')[0]);
-                                                    const eventEnd = new Date(event.endAt.split('T')[0]);
-                                                    let startCol = 0;
-                                                    let endCol = 6;
-                                                    let foundStart = false;
-
-                                                    for (let i = 0; i < 7; i++) {
-                                                        const dayInWeek = week[i];
-                                                        if (dayInWeek === null) continue;
-                                                        const currentWeekDate = new Date(viewYear, viewMonth, dayInWeek);
-                                                        if (eventStart.toDateString() === currentWeekDate.toDateString()) {
-                                                            startCol = i;
-                                                            foundStart = true;
-                                                        }
-                                                        if (eventEnd.toDateString() === currentWeekDate.toDateString()) {
-                                                            endCol = i;
-                                                        }
-                                                    }
-                                                    const span = endCol - startCol + 1;
-                                                    const showTitle = foundStart || (week[0] && new Date(viewYear, viewMonth, week[0]) > eventStart);
-                                                    const roundedClass =
-                                                        (foundStart ? 'rounded-l ' : '') +
-                                                        (endCol < 6 || eventEnd.toDateString() === new Date(viewYear, viewMonth, week[endCol]!).toDateString() ? 'rounded-r' : '');
-
-                                                    return (
-                                                        <div
-                                                            key={event.id}
-                                                            className={`absolute h-5 px-2 text-xs text-white cursor-pointer truncate ${roundedClass}`}
-                                                            onClick={() => setSelectedEvent(event)}
-                                                            style={{
-                                                                backgroundColor: event.color,
-                                                                top: `${eventIndex * 22}px`,
-                                                                left: `calc(${(startCol / 7) * 100}% + 2px)`,
-                                                                width: `calc(${(span / 7) * 100}% - 4px)`,
-                                                            }}
-                                                        >
-                                                            {showTitle && event.title}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            )}
+                            {viewMode === "week" && <WeekView events={events}/>}
+                            {viewMode === "day" && <DayView events={events} date={selectedDate}/>}
                         </>
                     )}
-                    {viewMode === "week" && <WeekView events={events}/>}
-                    {viewMode === "day" && <DayView events={events} date={selectedDate}/>}
                 </main>
 
                 {/* --- 오른쪽 사이드바는 lg(1024px) 이상에서만 보이도록 수정 ---  */}
@@ -791,8 +955,13 @@ export default function CalendarUI() {
             </div>
 
             {/* 모달 렌더링 영역 */}
-            {selectedEvent && <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)}
-                                                onEdit={handleEditEvent}/>}
+            {selectedEvent &&
+                <EventDetailModal
+                    event={selectedEvent}
+                    onClose={() => setSelectedEvent(null)}
+                     onEdit={handleEditEvent}
+                    members={currentProject?.members ?? []}/>}
+
             {selectedMemo && <MemoDetailModal
                 memo={selectedMemo}
                 projectId={projectId}   // ← 필수 prop 추가

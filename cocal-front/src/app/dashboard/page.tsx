@@ -26,8 +26,3 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
-
-/*
-export default function DashboardPage() {
-    return <Dashboard />;
-}*/
