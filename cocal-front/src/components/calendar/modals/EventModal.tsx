@@ -22,7 +22,7 @@ interface ColorPaletteProps {
 
 function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProps) {
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-//버튼 요소에 접근하기 위한 ref
+//버튼 요소에 접근하기 위한  ref
     const buttonRef = useRef<HTMLButtonElement>(null);
 
     // 팔레트의 위치를 저장할 상태
@@ -123,7 +123,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
             setFormData({
                 title: editEvent.title,
                 description: editEvent.description || "",
-                url: "", // 실제 데이터 구조에 맞게 수정 필요
+                url: editEvent.url || "",
                 startAt: editEvent.startAt.slice(0, 16),
                 endAt: editEvent.endAt.slice(0, 16),
                 location: editEvent.location || "",

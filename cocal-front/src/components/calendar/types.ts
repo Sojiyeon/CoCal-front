@@ -17,6 +17,7 @@ export type EventTodo = {
     authorId: number | null;
     orderNo: number;
     type: 'EVENT' | 'PRIVATE'; // [수정] 'PRIVATE'도 허용하도록 확장
+    url?: string;
 };
 // 사이드바의 'To do' 목록에 사용될 확장된 타입 정의
 export interface SidebarTodo extends EventTodo {
@@ -27,9 +28,10 @@ export interface SidebarTodo extends EventTodo {
     parentEventTitle: string;
     parentEventColor: string;
     authorId: number | null;
+    url?: string;
 }
 
-// 이벤트 데이터 타입 (events 테이블)
+// 이벤트 데이터 타입  (events 테이블)
 export type CalendarEvent = {
     id: number;
     projectId: number;
@@ -47,6 +49,7 @@ export type CalendarEvent = {
 //    name: string;
     todos?: EventTodo[];
     memo?: DateMemo[];
+    url?: string;
 };
 
 // 개인 할 일 타입 (private_todos 테이블)
