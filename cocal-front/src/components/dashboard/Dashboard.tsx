@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
 import EditProjectModal from '@/components/modals/EditProjectModal';
-import ProfileSettingsModal, { useUser } from '@/components/modals/ProfileSettingModal';
+import ProfileSettingsModal from '@/components/modals/ProfileSettingModal';
+import { useUser } from '@/contexts/UserContext';
 import { fetchWithAuth } from '@/utils/authService';
 
 const API_BASE_URL = 'https://cocal-server.onrender.com';

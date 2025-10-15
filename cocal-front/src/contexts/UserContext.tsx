@@ -40,20 +40,19 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
 
     const logout = useCallback(async () => {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
+        const accessToken = localStorage.getItem('accessToken');
+        if (accessToken) {
             try {
                 await fetch(API_LOGOUT_ENDPOINT, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ refreshToken }),
+                    headers: { 'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`},
                 });
             } catch (_error) {
 
             }
         }
         localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
         localStorage.removeItem('userProfile');
         setUser(initialUser);
         window.location.href = '/'; // 로그인 페이지로 리디렉션
