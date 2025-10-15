@@ -18,7 +18,17 @@ import { MemoDetailModal } from "./modals/MemoDetailModal";
 
 // 전역 사용자 정보와 타입 정의, 유틸 함수, 샘플 데이터
 import { useUser } from "@/contexts/UserContext";
-import { CalendarEvent, EventTodo, Project, ModalFormData, DateMemo, UserSummary, PrivateTodo, SidebarTodo } from "./types";
+import {
+    CalendarEvent,
+    EventTodo,
+    Project,
+    ModalFormData,
+    DateMemo,
+    UserSummary,
+    PrivateTodo,
+    SidebarTodo,
+    ProjectMember
+} from "./types";
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
 import { sampleEvents, sampleMemos } from "./sampleData";
 import {api} from "@/components/calendar/utils/api";
@@ -64,7 +74,7 @@ export default function CalendarUI() {
 
     // 현재 캘린더 뷰 모드 ('month', 'week', 'day') 상태
     const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month");
-    // 현재 보고 있는 프로젝트의 정보 상태
+    // 현재 보고 있는 프로젝트의 정보 상태(안에 팀원 정보도 있음.)
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
 
     // 왼쪽 사이드바에 표시될 'To do' 목록과 선택된 날짜 상태
@@ -151,6 +161,7 @@ export default function CalendarUI() {
                 // api.get은 이미 accessToken을 Authorization 헤더에 붙여서 호출함
                 if (json.success && json.data) {
                     setCurrentProject(json.data);
+                    console.log("json.data: ", json.data);
                 } else {
                     throw new Error("프로젝트 데이터가 없습니다.");
                 }
@@ -413,25 +424,43 @@ export default function CalendarUI() {
             <div className="flex items-center justify-between px-6 py-3 bg-white border-b">
                 <div className="flex items-center gap-3">
                     <button onClick={() => router.push("/dashboard")} className="p-1 rounded-full hover:bg-slate-100">
-                        <svg width="18" height="18" viewBox="0 0 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        <svg width="18" height="18" viewBox="0 0 24" fill="none">
+                            <path d="M15 18l-6-6 6-6" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round"
+                                  strokeLinejoin="round"/>
+                        </svg>
                     </button>
                     <h1 className="text-xl font-medium">{currentProject ? currentProject.name : "Project"}</h1>
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 ml-2" />
+                        <div className="flex items-center space-x-[-4px]">
+                            {/*팀원 프로필 이미지*/}
+                            {currentProject?.members.map((member, index) => (
+                                <img
+                                    key={member.userId || index}
+                                    src={member.profileImageUrl || "https://placehold.co/100x100/A0BFFF/FFFFFF?text=User"}
+                                    title={member.name}
+                                    alt={member.name || 'Team member'}
+                                    className="w-6 h-6 rounded-full object-cover border-2 border-white shadow-sm transition transform hover:scale-110"
+                                    style={{zIndex: currentProject?.members.length - index}}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                    {isUserLoading ? (
+                        <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>) : user && user.id ? (
+                        <ProfileDropdown
+                            user={{
+                                name: user.name || "User",
+                                email: user.email || "No email",
+                                imageUrl: user.profileImageUrl || "https://placehold.co/100x100/A0BFFF/FFFFFF?text=User",
+                            }}
+                            onOpenSettings={handleOpenSettingsModal}
+                            onLogout={logout}
+                        />
+                    ) : (<div>
+                        <button onClick={() => router.push("/")}>Login</button>
+                    </div>)}
                 </div>
-                {isUserLoading ? (<div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>) : user && user.id ? (
-                    <ProfileDropdown
-                        user={{
-                            name: user.name || "User",
-                            email: user.email || "No email",
-                            imageUrl: user.profileImageUrl || "https://placehold.co/100x100/A0BFFF/FFFFFF?text=User",
-                        }}
-                        onOpenSettings={handleOpenSettingsModal}
-                        onLogout={logout}
-                    />
-                ) : ( <div><button onClick={() => router.push("/")}>Login</button></div>)}
-            </div>
-            {/* 메인 영역 */}
-            <div className="flex flex-1 overflow-hidden">
+                {/* 메인 영역 */}
+                <div className="flex flex-1 overflow-hidden">
                 <div className="mt-9">
                     {/* 왼쪽 사이드바:자식 컴포넌트로 분리하여 렌더링 */}
                     <SidebarLeft
