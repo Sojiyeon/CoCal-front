@@ -53,7 +53,7 @@ export default function SidebarLeft({
                 </div>
             </div>
 
-            {/* 1. 미니 캘린더 섹션 */}
+            {/* 1. 미니 캘린더  섹션 */}
             <div className="mb-6">
                 <div className="flex items-center justify-between">
                     <button onClick={prevMiniMonth} className="text-xs">&#x276E;</button>

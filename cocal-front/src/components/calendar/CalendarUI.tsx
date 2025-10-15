@@ -479,7 +479,7 @@ export default function CalendarUI() {
         if (miniMonth === 11) { setMiniMonth(0); setMiniYear(y => y + 1); } else setMiniMonth(m => m + 1);
     }
 
-    // 메인 캘린더 월 이동 함수
+    // 메인 캘린더 월 이동  함수
     function prevMonth() {
         setViewMonth(viewMonth === 0 ? 11 : viewMonth - 1);
         setViewYear(viewMonth === 0 ? viewYear - 1 : viewYear);

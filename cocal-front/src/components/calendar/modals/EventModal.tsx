@@ -22,7 +22,7 @@ interface ColorPaletteProps {
 
 function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProps) {
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-//버튼 요소에 접근하기 위한 ref
+//버튼 요소에 접근하기 위한  ref
     const buttonRef = useRef<HTMLButtonElement>(null);
 
     // 팔레트의 위치를 저장할 상태

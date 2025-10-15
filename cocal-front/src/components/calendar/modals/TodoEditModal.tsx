@@ -35,7 +35,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit }: Props) 
             return;
         }
         setIsLoading(true);
-        // onSave 콜백에 모든 수정된 데이터를 객체 형태로 전달합니다.
+        // onSave 콜백에 모든 수정된 데이터를 객체 형태로  전달합니다.
         onSave(todoToEdit.id, {
             title: title.trim(),
             description: description.trim(),

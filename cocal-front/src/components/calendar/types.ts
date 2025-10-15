@@ -31,7 +31,7 @@ export interface SidebarTodo extends EventTodo {
     url?: string;
 }
 
-// 이벤트 데이터 타입 (events 테이블)
+// 이벤트 데이터 타입  (events 테이블)
 export type CalendarEvent = {
     id: number;
     projectId: number;
