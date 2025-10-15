@@ -53,6 +53,7 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
             }
         }
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('accessTokenExpiresAt');
         localStorage.removeItem('userProfile');
         setUser(initialUser);
         window.location.href = '/'; // 로그인 페이지로 리디렉션
