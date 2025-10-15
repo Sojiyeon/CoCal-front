@@ -16,13 +16,15 @@ interface SidebarLeftProps {
     selectedSidebarDate: Date;
     handleSidebarDateSelect: (day: number) => void;
     sidebarTodos: SidebarTodo[];
+    projectStartDate: Date |undefined;
+    projectEndDate: Date | undefined;
     user: UserSummary | null;
     handleToggleTodoStatus: (id: number) => void;
     onUpdateTodo: (id: number, newTitle: string) => void; // 할 일 내용(title) 수정 함수
     onDeleteTodo: (id: number, type: 'EVENT' | 'PRIVATE') => void; // 할 일 삭제 함수
 }
 
-export default function SidebarLeft({
+export default function     SidebarLeft({
                                         miniYear,
                                         miniMonth,
                                         prevMiniMonth,
@@ -31,6 +33,8 @@ export default function SidebarLeft({
                                         selectedSidebarDate,
                                         handleSidebarDateSelect,
                                         sidebarTodos,
+                                        projectStartDate,
+                                        projectEndDate,
                                         user,
                                         handleToggleTodoStatus,
                                         onUpdateTodo,
@@ -177,7 +181,7 @@ export default function SidebarLeft({
                     )}
                 </div>
             </div>
-            <TaskProgress todos={sidebarTodos} />
+            <TaskProgress todos={sidebarTodos} projectStartDate={projectStartDate} projectEndDate={projectEndDate}/>
         </aside>
     );
 }
