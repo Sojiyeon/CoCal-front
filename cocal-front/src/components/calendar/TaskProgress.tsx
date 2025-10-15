@@ -50,7 +50,8 @@ export default function TaskProgress({ todos, projectStartDate, projectEndDate }
             {/* 진행률 & 통계 묶음 */}
             <div className="w-[120%] relative left-[-10%]">
                 {/* 진행률 바 */}
-                <div className="bg-gray-200 rounded-full h-2 mb-4">
+                {/*  데스크톱에서만 하단 여백(mb-4)이 적용되도록 수정 */}
+                <div className="bg-gray-200 rounded-full h-2 md:mb-4">
                     <div
                         className="bg-blue-900 h-2 rounded-full"
                         style={{ width: `${stats.percent}%` }}
@@ -58,7 +59,8 @@ export default function TaskProgress({ todos, projectStartDate, projectEndDate }
                 </div>
 
                 {/* 완료 / 해야할 것 / 전체 개수 */}
-                <div className="flex">
+                {/* 모바일에서는 숨기고(hidden), 데스크톱에서는 보이도록(md:flex) 수정 */}
+                <div className="hidden md:flex">
                     <div className="flex-1 text-left">
                         <p className="text-1xl font-bold">{stats.completed}</p>
                         <p className="text-gray-600">Completed</p>
