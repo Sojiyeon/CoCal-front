@@ -449,7 +449,12 @@ const ProjectDashboardPage: React.FC = () => {
                 console.error('프로젝트 목록 로드 실패:', response.status);
             }
         } catch (_error) {
-            console.error("프로젝트 목록 로드 중 네트워크 오류:", _error);
+            if (_error instanceof Error && _error.message === "SESSION_EXPIRED: Refresh token is invalid or missing. Must log out.") {
+                console.error("세션 만료 감지. 강제 로그아웃 및 홈 리디렉션 처리.");
+                await handleLogout(); // handleLogout이 router.push('/')를 포함하고 있습니다.
+            } else {
+                console.error("프로젝트 목록 로드 중 네트워크 오류 또는 알 수 없는 오류:", _error);
+            }
         } finally {
             setIsLoadingProjects(false);
         }
@@ -522,8 +527,13 @@ const ProjectDashboardPage: React.FC = () => {
                 alert("프로젝트 생성에 실패했습니다. 다시 시도해 주세요.");
             }
         } catch (error) {
-            console.error("프로젝트 생성 중 네트워크 오류:", error);
-            alert("네트워크 연결에 문제가 발생했습니다.");
+            if (error instanceof Error && error.message === "SESSION_EXPIRED: Refresh token is invalid or missing. Must log out.") {
+                console.error("세션 만료 감지. 강제 로그아웃 및 홈 리디렉션 처리.");
+                await handleLogout();
+            } else {
+                console.error("프로젝트 생성 중 네트워크 오류 또는 알 수 없는 오류:", error);
+                alert("네트워크 연결에 문제가 발생했습니다.");
+            }
         }
     };
 
