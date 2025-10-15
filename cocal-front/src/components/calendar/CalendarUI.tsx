@@ -794,6 +794,7 @@ export default function CalendarUI() {
                                                 onEdit={handleEditEvent}/>}
             {selectedMemo && <MemoDetailModal
                 memo={selectedMemo}
+                projectId={projectId}   // ← 필수 prop 추가
                 onClose={() => setSelectedMemo(null)}
                 onEdit={(updatedMemo) => {
                     setMemos((prev) =>
