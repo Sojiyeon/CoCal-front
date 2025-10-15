@@ -19,7 +19,7 @@ const DashboardPage = () => {
     // 3. 인증된 상태일 때 정상적으로 대시보드 내용 렌더링
     return (
         <main>
-            <h1>My Dashboard</h1>
+            <Dashboard />
             {/* 실제 대시보드 내용 (Event, Project 관련 컴포넌트) */}
         </main>
     );
