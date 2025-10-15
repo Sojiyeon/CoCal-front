@@ -440,7 +440,6 @@ const ProjectDashboardPage: React.FC = () => {
                     startDate: item.startDate,
                     endDate: item.endDate,
                     ownerId: item.ownerId,
-                    // status: calculateProjectStatus(item.startDate, item.endDate),
                     status: item.status,
                     members: Array.isArray(item.members) ?
                         item.members.map((member: ServerMember): TeamMemberForCard => ({
@@ -495,9 +494,8 @@ const ProjectDashboardPage: React.FC = () => {
             });
             if (response.ok) {
                 const result = await response.json();
-                const responseData = result.data as any; // 임시로 any를 사용하여 유연하게 처리
-                const serverProject: ServerProjectItem | undefined = responseData.content || responseData;
-
+                const responseData: { content?: ServerProjectItem } | ServerProjectItem = result.data;
+                const serverProject = (responseData as { content?: ServerProjectItem }).content || (responseData as ServerProjectItem);
                 if (!serverProject || !serverProject.id) {
                     console.error("프로젝트 생성 성공 응답에 필수 ID 필드가 누락되었습니다.", serverProject);
                     alert("프로젝트 생성에는 성공했으나, 목록 조회 오류로 표시되지 않습니다. 새로고침해보세요.");
@@ -726,7 +724,6 @@ const ProjectDashboardPage: React.FC = () => {
                 ) : (
                     <div ref={projectGridRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {filteredProjects.map(project => (
-                            // <Link href={`/calendar/${project.id}`} key={project.id} onClick={(e) => e.preventDefault()}>
                             <div key={project.id}
                                  onClick={() => activeDropdownId === null && router.push(`/calendar/${project.id}`)}
                                  className={activeDropdownId === null ? "cursor-pointer" : "cursor-default"}>
@@ -739,7 +736,6 @@ const ProjectDashboardPage: React.FC = () => {
                                     onToggleDropdown={(active) => handleToggleDropdown(project.id, active)}
                                     status={mapServerStatusToUI(project.status)}
                             />
-                            {/*// </Link>*/}
                             </div>
                         ))}
                     </div>
