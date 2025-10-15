@@ -546,6 +546,9 @@ export default function CalendarUI() {
                         selectedSidebarDate={selectedSidebarDate}
                         handleSidebarDateSelect={handleSidebarDateSelect}
                         sidebarTodos={sidebarTodos}
+                        // String -> Date 변환해서 전달
+                        projectStartDate={currentProject?.startDate ? new Date(currentProject.startDate) : undefined}
+                        projectEndDate={currentProject?.endDate ? new Date(currentProject.endDate) : undefined}
                         user={(user && user.id) ? { // user와 user.id가 모두 유효한 값일 때만 객체 생성
                             userId: user.id,
                             name: user.name ?? 'User',

@@ -7,18 +7,35 @@ import { EventTodo } from "./types";
 
 interface TaskProgressProps {
     todos: EventTodo[];
+    projectStartDate?: Date | undefined;
+    projectEndDate?: Date | undefined;
 }
 
-export default function TaskProgress({ todos }: TaskProgressProps) {
+export default function TaskProgress({ todos, projectStartDate, projectEndDate }: TaskProgressProps) {
 
     const stats = useMemo(() => {
         const all = todos.length;
         const completed = todos.filter(t => t.status === 'DONE').length;
         const todo = all - completed;
-        const percent = all > 0 ? Math.round((completed / all) * 100) : 0;
 
-        return { completed, todo, all, percent };
-    }, [todos]);
+        const now = new Date();
+        let timePercent = 0;
+        // 프로젝트 기간 퍼센트 계산
+        if (projectStartDate && projectEndDate) {
+            const total = projectEndDate.getTime() - projectStartDate.getTime();
+            const elapsed = now.getTime() - projectStartDate.getTime();
+
+            if (total > 0) {
+                timePercent = Math.min(Math.max((elapsed / total) * 100, 0), 100);
+            }
+        }
+        return {
+            completed,
+            todo,
+            all,
+            percent: Math.round(timePercent)
+        };
+    }, [todos, projectStartDate, projectEndDate]);
 
     return (
         <div className="p-6 max-w-md mx-auto">
