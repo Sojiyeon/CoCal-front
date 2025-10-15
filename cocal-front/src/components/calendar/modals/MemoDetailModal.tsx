@@ -4,52 +4,82 @@
 
 import React, { useState, useEffect  }  from "react";
 import { DateMemo } from "../types";
-import { Pencil, Trash2 } from "lucide-react"; // 아이콘 추가
+import { Pencil, Trash2 } from "lucide-react";
+import {deleteMemo, updateMemo} from "@/api/memoApi"; // 아이콘 추가
 
 interface Props {
     memo: DateMemo;
+    projectId: number;
     onClose: () => void;
     onEdit: (memo: DateMemo) => void;   // 수정 핸들러
     onDelete: (id: number) => void;     // 삭제 핸들러
 }
 
-export function MemoDetailModal({ memo, onClose, onEdit, onDelete }: Props) {
+export function MemoDetailModal({ memo, projectId, onClose, onEdit, onDelete }: Props) {
+    const [isLoading, setIsLoading] = useState(false);
 
     const author = memo.author?.[0];
     const [isEditing, setIsEditing] = useState(false);
+    const [editTitle, setEditTitle] = useState(memo.title || "");
     const [editContent, setEditContent] = useState(memo.content);
     const [editUrl, setEditUrl] = useState(memo.url || "");
 
     // 메모가 바뀔 때마다 수정창 내용 동기화
     useEffect(() => {
+        setEditTitle(memo.title);
         setEditContent(memo.content);
         setEditUrl(memo.url || "");
     }, [memo]);
 
     const handleEditClick = () => setIsEditing(true);
-    const handleSaveEdit = () => {
-        const updatedMemo = { ...memo, content: editContent, url: editUrl };
-        onEdit(updatedMemo);  // 부모에게 즉시 반영
-        setIsEditing(false);
-        //내부 상태도 즉시 반영
-        setEditContent(editContent);
-        setEditUrl(editUrl);
-        setIsEditing(false);
-    };
-
-    const handleDeleteClick = () => {
-        if (confirm("이 메모를 삭제하시겠습니까?")) {
-            onDelete(memo.id);
-            onClose();
+    // 메모 수정
+    const handleSaveEdit = async () => {
+        if (!memo.id) return;
+        try {
+            setIsLoading(true);
+            const updatedData = {
+                title: editTitle,
+                content: editContent,
+                url: editUrl,
+                memoDate: memo.memoDate
+            };
+            const updatedMemo = await updateMemo(projectId, memo.id, updatedData);
+            onEdit(updatedMemo); // 부모 상태 반영
+            setIsEditing(false);
+        } catch (err) {
+            alert("수정 중 오류 발생");
+            console.error(err);
+        } finally {
+            setIsLoading(false);
         }
     };
+    console.log("editUrl", editUrl);
+
+    // 메모 삭제
+    const handleDeleteClick = async () => {
+        if (!memo || !memo.id) return; // 삭제할 메모 없으면 종료
+        const confirmDelete = confirm("정말 메모를 삭제하시겠습니까?");
+        if (!confirmDelete) return;
+
+        try {
+            setIsLoading(true);
+            await deleteMemo(projectId, memo.id); // memoApi 이용
+            onDelete(memo.id); // 부모 컴포넌트에서 메모 리스트 갱신
+            onClose(); // 모달 닫기
+        } catch (err) {
+            alert("삭제 중 오류 발생");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
             <div className="bg-white rounded-2xl shadow-lg w-[400px] p-6">
                 {/* 상단 헤더 */}
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center space-x-2">
-                        <h2 className="text-lg font-bold text-slate-800">메모 상세</h2>
+                        <h2 className="text-lg font-bold text-slate-800">{memo.title || "title"}</h2>
                         {/* 작성일 표시 */}
                         <span className="text-xs text-slate-400">
                             {new Date(memo.createdAt).toLocaleDateString("ko-KR")}
@@ -69,6 +99,7 @@ export function MemoDetailModal({ memo, onClose, onEdit, onDelete }: Props) {
                             onClick={handleDeleteClick}
                             className="text-slate-400 hover:text-red-500"
                             title="삭제"
+                            disabled={isLoading}
                         >
                             <Trash2 size={18} />
                         </button>

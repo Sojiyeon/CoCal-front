@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef  } from "react";
 import { CalendarEvent, ModalFormData } from "../types";
 import { HexColorPicker } from "react-colorful";
-import {api} from "@/components/calendar/utils/api";
+import {createMemo} from "@/api/memoApi";
+
 type ActiveTab = "Event" | "Todo" | "Memo";
 
 const palettes = [
@@ -119,7 +120,6 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
     useEffect(() => {
         // '수정 모드'일 경우 (editEvent prop이 있을 때)
         if (editEvent) {
-
             setFormData({
                 title: editEvent.title,
                 description: editEvent.description || "",
@@ -178,9 +178,10 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
                     memoDate: formData.memoDate,
                 };
                 // projectId를 props에서 가져와 사용
-                const response = await api.post(`/projects/${projectId}/memos`, memoData);
+                const response = await createMemo(projectId, memoData);
+
                 // 부모 컴포넌트로 새 메모 전달
-                onSave(response.data, activeTab);
+                onSave(response, activeTab);
                 console.log("메모 저장 완료");
             } else {
                 onSave(formData, activeTab, editEvent ? editEvent.id : undefined);
