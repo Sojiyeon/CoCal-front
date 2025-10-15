@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef  } from "react";
 import { CalendarEvent, ModalFormData } from "../types";
 import { HexColorPicker } from "react-colorful";
 import {createMemo} from "@/api/memoApi";
+import {createTodo} from "@/api/todoApi";
 
 type ActiveTab = "Event" | "Todo" | "Memo";
 
@@ -20,6 +21,36 @@ interface ColorPaletteProps {
     onColorChange: (color: string) => void;
 }
 
+interface EventFormData {
+    title: string;
+    description: string;
+    url: string;
+    startAt: string;
+    endAt: string;
+    location: string;
+    visibility: "PUBLIC" | "PRIVATE";
+    memoDate: string;
+    content: string;
+    color: string;
+}
+
+interface TodoFormData {
+    title: string;
+    description: string;
+    url: string;
+    type: "EVENT" | "PRIVATE";
+    date: string;
+    offsetMinutes: number;
+    projectId: number;
+    eventId?: number; // 이벤트에 종속될 경우
+}
+
+interface MemoFormData {
+    title: string;
+    memoDate: string;
+    content: string;
+    url: string;
+}
 
 function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProps) {
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
@@ -103,7 +134,9 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
     const [isLoading, setIsLoading] = useState(false);
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<
+        EventFormData & Partial<TodoFormData> & Partial<MemoFormData>
+    >({
         title: "",
         description: "",
         url: "",
@@ -114,7 +147,12 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
         memoDate: "",
         content: "",
         color: "",
-       // category: "Project 1",
+        // Todo 전용
+        type: "PRIVATE",
+        offsetMinutes: 15,
+        date: "",
+        projectId: projectId,
+        eventId: undefined, // 아직 연결된 이벤트 없으면 undefined
     });
 
     useEffect(() => {
@@ -165,13 +203,17 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
     const handleVisibilityChange = (visibility: "PUBLIC" | "PRIVATE") => {
         setFormData((prev) => ({ ...prev, visibility }));
     };
+    // todo type 정의
+    const handleTypeChange = (type: "EVENT" | "PRIVATE") => {
+        setFormData((prev) => ({ ...prev, type }));
+    };
 
     // 생성 시 db에 저장
     const handleSave = async () => {
         setIsLoading(true);
         try {
             if (activeTab === "Memo") {
-                const memoData = {
+                const memoData: MemoFormData = {
                     title: formData.title,
                     content: formData.content,
                     url: formData.url,
@@ -179,10 +221,21 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
                 };
                 // projectId를 props에서 가져와 사용
                 const response = await createMemo(projectId, memoData);
-
                 // 부모 컴포넌트로 새 메모 전달
                 onSave(response, activeTab);
-                console.log("메모 저장 완료");
+            } else if (activeTab === "Todo") {
+                const todoData: TodoFormData = {
+                    title: formData.title,
+                    description: formData.description,
+                    url: formData.url,
+                    type: formData.type!, // 반드시 EVENT 또는 PRIVATE
+                    date: formData.startAt, // Todo 날짜
+                    offsetMinutes: formData.offsetMinutes!, // undefined 방지
+                    projectId,
+                    eventId: formData.eventId // 이벤트 종속
+                };
+                const response = await createTodo(projectId, todoData);
+                onSave(response, activeTab);
             } else {
                 onSave(formData, activeTab, editEvent ? editEvent.id : undefined);
             }
@@ -306,18 +359,18 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
                             <div className="flex gap-4 mt-2">
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
-                                        type="radio" name="visibility" value="PUBLIC"
-                                        checked={formData.visibility === "PUBLIC"}
-                                        onChange={() => handleVisibilityChange("PUBLIC")}
+                                        type="radio" name="type" value="EVENT"
+                                        checked={formData.type === "EVENT"}
+                                        onChange={() => handleTypeChange("EVENT")}
                                         className="form-radio h-4 w-4 text-blue-600"
                                     />
                                     <span className="text-sm">Public</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
-                                        type="radio" name="visibility" value="PRIVATE"
-                                        checked={formData.visibility === "PRIVATE"}
-                                        onChange={() => handleVisibilityChange("PRIVATE")}
+                                        type="radio" name="type" value="PRIVATE"
+                                        checked={formData.type === "PRIVATE"}
+                                        onChange={() => handleTypeChange("PRIVATE")}
                                         className="form-radio h-4 w-4 text-blue-600"
                                     />
                                     <span className="text-sm">Private</span>
