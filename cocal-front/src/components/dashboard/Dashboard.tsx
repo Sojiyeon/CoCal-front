@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
@@ -21,7 +20,10 @@ const API_ENDPOINTS = {
 
 // --- DUMMY DATA & TYPES ---
 
+// UI에 표시 및 필터링에 사용할 상태 타입
 type ProjectCategory = 'All' | 'In Progress' | 'Completed';
+// 서버에서 내려주는 상태 타입
+type ServerProjectStatus = 'IN_PROGRESS' | 'COMPLETED';
 
 interface TeamMemberForCard {
     id: number;
@@ -37,27 +39,23 @@ interface ServerMember {
 interface ServerProjectItem {
     id: number;
     name: string;
-    description: string;
+    description: string | null;
     startDate: string;
     endDate: string;
     ownerId: number;
     members: ServerMember[]; // 타입 안정성 확보
-    status: string; // 서버 응답에 status 포함
+    status: ServerProjectStatus; // 서버 응답에 status 포함
 }
-//any에러
+
 interface Project {
     id: number;
     name: string;
     description?: string;
     startDate: string;
     endDate: string;
-    status: 'In Progress' | 'Completed';
+    status: ServerProjectStatus; // 서버 상태 그대로 저장
     members: TeamMemberForCard[];
     ownerId: number;
-}
-
-interface ServerProjectResponse {
-    content: ServerProjectItem[] | ServerProjectItem;
 }
 
 interface CurrentUser {
@@ -82,25 +80,40 @@ interface ExpectedApiEndpoints {
     UPDATE_USER_PHOTO: string;
     DELETE_USER_PHOTO: string;
 }
+
 interface ProfileSettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    // currentUser: CurrentUser;
     apiEndpoints: ExpectedApiEndpoints;
 }
 
 // ProfileSettingsModal의 prop 타입 오류 방지를 위해 임시 타입 정의 사용
 const ProfileSettingsModalTyped: FC<ProfileSettingsModalProps> = ProfileSettingsModal;
 
-// 초기 더미 프로젝트 데이터
-const INITIAL_PROJECTS: Project[] = [
-    { id: 1, name: 'Owner Project', startDate: '2025-09-22', endDate: '2025-12-31', status: 'In Progress', ownerId: 12, members: [{ id: 12, name: 'Me', imageUrl: 'https://placehold.co/100x100/4F46E5/FFFFFF?text=A' }] },
-    { id: 2, name: 'Member Project', description: 'This is a project I am only a member of.', startDate: '2025-08-22', endDate: '2025-12-31', status: 'In Progress', ownerId: 99, members: [{ id: 99, name: 'Owner', imageUrl: 'https://placehold.co/100x100/F59E0B/FFFFFF?text=C' }, { id: 12, name: 'Me', imageUrl: 'https://placehold.co/100x100/F59E0B/FFFFFF?text=C' }] },
-    { id: 3, name: 'Completed Project', startDate: '2025-09-22', endDate: '2025-10-10', status: 'Completed', ownerId: 12, members: [{ id: 12, name: 'Me', imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF?text=B' }] },
-    { id: 4, name: 'No Member Project', startDate: '2025-09-22', endDate: '2025-12-31', status: 'In Progress', ownerId: 100, members: [] },
-    { id: 5, name: 'Completed No Desc', startDate: '2025-08-22', endDate: '2025-10-15', status: 'Completed', ownerId: 10, members: [{ id: 12, name: 'Me', imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF?text=B' }] },
-];
+// --- 헬퍼 함수: 서버 상태를 UI 표시용으로 변환 ---
+const mapServerStatusToUI = (serverStatus: ServerProjectStatus): 'In Progress' | 'Completed' => {
+    switch (serverStatus) {
+        case 'IN_PROGRESS':
+            return 'In Progress';
+        case 'COMPLETED':
+            return 'Completed';
+        default:
+            console.warn("Unexpected project status received:", serverStatus);
+            return 'In Progress';
+    }
+};
 
+// --- ProjectCard Component (생략) ---
+interface ProjectCardProps {
+    project: Project;
+    currentUserId: number | null;
+    onEdit: (project: Project) => void;
+    onDelete: (projectId: number) => void;
+    isDropdownActive: boolean;
+    onToggleDropdown: (active: boolean) => void;
+    // UI에서 사용할 status를 prop으로 받습니다.
+    status: 'In Progress' | 'Completed';
+}
 
 // --- ProjectCategoryFilter Component (Inline) ---
 interface ProjectCategoryFilterProps {
@@ -146,18 +159,7 @@ const ProjectCategoryFilter: FC<ProjectCategoryFilterProps> = ({
     );
 };
 
-// --- ProjectCard Component (생략) ---
-interface ProjectCardProps {
-    project: Project;
-    currentUserId: number | null;
-    onEdit: (project: Project) => void;
-    onDelete: (projectId: number) => void;
-    isDropdownActive: boolean;
-    onToggleDropdown: (active: boolean) => void;
-}
-
-const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onDelete, isDropdownActive, onToggleDropdown }) => {
-    // const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onDelete, isDropdownActive, onToggleDropdown, status }) => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const isOwner = project.ownerId === currentUserId;
     const isMember = project.members.some(member => member.id === currentUserId);
@@ -199,7 +201,6 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
                                     e.preventDefault();
                                     e.stopPropagation();
                                     onToggleDropdown(!isDropdownActive);
-                                    // setIsDropdownOpen(!isDropdownOpen);
                                 }}
                                 className="p-1 text-gray-400 hover:text-gray-700 transition relative z-20"
                             >
@@ -213,6 +214,16 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
                     ) : null )}
                 </div>
             </div>
+
+            {/* 상태 태그 표시 (status prop 사용) */}
+            <div className="mb-4">
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full 
+                    ${status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`
+                }>
+                    {status}
+                </span>
+            </div>
+
             <div className="flex items-center space-x-[-4px] pt-2 border-t border-gray-100">
                 {visibleMembers.map((member, index) => (
                     <img
@@ -258,7 +269,6 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
         </div>
     );
 };
-
 
 // --- Empty State Component (Inline) ---
 const EmptyState: FC<{ selectedCategory: ProjectCategory }> = ({ selectedCategory }) => (
@@ -379,6 +389,7 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
 };
 
 // --- Main Dashboard Page ---
+/*
 const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In Progress' | 'Completed' => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -393,12 +404,11 @@ const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In P
     }
     return 'In Progress';
 };
-
+*/
 const ProjectDashboardPage: React.FC = () => {
     const router = useRouter();
     const { user, isLoading: isLoadingUser, logout } = useUser();
     const [isLoadingProjects, setIsLoadingProjects] = useState(false);
-    // const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
     const [projects, setProjects] = useState<Project[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('All');
     const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
@@ -414,27 +424,26 @@ const ProjectDashboardPage: React.FC = () => {
     }, [logout, router]);
 
     const fetchProjects = useCallback(async () => {
+        // ... (API 호출 및 응답 처리 로직은 그대로 유지)
         setIsLoadingProjects(true);
         try {
             console.log(`API 호출: ${API_PROJECTS_ENDPOINT}로 프로젝트 목록 조회 요청`);
-            const response = await fetchWithAuth(API_PROJECTS_ENDPOINT, {
-                method: 'GET',
-            });
+            const response = await fetchWithAuth(API_PROJECTS_ENDPOINT, { method: 'GET' });
             if (response.ok) {
                 const result = await response.json();
                 const rawData = (result.data as { content: ServerProjectItem[] | ServerProjectItem })?.content;
                 const rawDataArray = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
-
                 const projectsData: Project[] = rawDataArray.map((item: ServerProjectItem) => ({
                     id: item.id,
                     name: item.name,
-                    description: item.description,
+                    description: item.description || undefined,
                     startDate: item.startDate,
                     endDate: item.endDate,
                     ownerId: item.ownerId,
-                    status: calculateProjectStatus(item.startDate, item.endDate),
+                    // status: calculateProjectStatus(item.startDate, item.endDate),
+                    status: item.status,
                     members: Array.isArray(item.members) ?
-                        item.members.map((member: ServerMember): TeamMemberForCard => ({ // member에 타입 명시
+                        item.members.map((member: ServerMember): TeamMemberForCard => ({
                             id: member.userId,
                             name: member.name,
                             imageUrl: member.profileImageUrl || 'default_url',
@@ -486,7 +495,9 @@ const ProjectDashboardPage: React.FC = () => {
             });
             if (response.ok) {
                 const result = await response.json();
-                const serverProject = (result.data as { content: ServerProjectItem })?.content;
+                const responseData = result.data as any; // 임시로 any를 사용하여 유연하게 처리
+                const serverProject: ServerProjectItem | undefined = responseData.content || responseData;
+
                 if (!serverProject || !serverProject.id) {
                     console.error("프로젝트 생성 성공 응답에 필수 ID 필드가 누락되었습니다.", serverProject);
                     alert("프로젝트 생성에는 성공했으나, 목록 조회 오류로 표시되지 않습니다. 새로고침해보세요.");
@@ -498,15 +509,15 @@ const ProjectDashboardPage: React.FC = () => {
                     name: user.name || 'Owner',
                     imageUrl: user.profileImageUrl || DEFAULT_USER.imageUrl,
                 };
-                const calculatedStatus = calculateProjectStatus(serverProject.startDate || data.startDate, serverProject.endDate || data.endDate);
+
                 const createdProject: Project = {
                     id: serverProject.id,
                     name: serverProject.name || data.name,
-                    description: serverProject.description,
+                    description: serverProject.description || data.description,
                     startDate: serverProject.startDate || data.startDate,
                     endDate: serverProject.endDate || data.endDate,
                     ownerId: serverProject.ownerId || user.id || 0,
-                    status: calculatedStatus,
+                    status: serverProject.status as ServerProjectStatus,
                     members: Array.isArray(serverProject.members)
                         ? serverProject.members.map((m: ServerMember): TeamMemberForCard => ({
                             id: m.userId,
@@ -543,6 +554,7 @@ const ProjectDashboardPage: React.FC = () => {
         setIsEditModalOpen(true);   // 모달 열기
         console.log('[Step 3] setEditingProject 및 setIsEditModalOpen 호출 완료.');
     };
+
     const handleCloseEditModal = () => {
         setIsEditModalOpen(false);
         setEditingProject(null); // 상태 초기화
@@ -581,10 +593,13 @@ const ProjectDashboardPage: React.FC = () => {
                         startDate: updatedServerProject.startDate || data.startDate,
                         endDate: updatedServerProject.endDate || data.endDate,
                         // 서버 응답의 날짜를 사용하여 상태 재계산
+                        /*
                         status: calculateProjectStatus(
                             updatedServerProject.startDate || data.startDate,
                             updatedServerProject.endDate || data.endDate
                         ),
+*/
+                        status: updatedServerProject.status as ServerProjectStatus,
                     };
                     return updatedProject;
                 }));
@@ -627,7 +642,8 @@ const ProjectDashboardPage: React.FC = () => {
         // 이미 열려 있는 드롭다운이 있다면 닫고, 현재 드롭다운을 열거나 닫습니다.
         setActiveDropdownId(active ? projectId : null);
     };
-    // 🚩 외부 클릭 감지 로직 (드롭다운을 닫기 위해 필요)
+
+    // 외부 클릭 감지 로직 (드롭다운을 닫기 위해 필요)
     const projectGridRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -645,11 +661,16 @@ const ProjectDashboardPage: React.FC = () => {
         };
     }, [activeDropdownId]);
 
-    // 프로젝트 필터링 로직
-    const filteredProjects = projects.filter(project => {
-        if (selectedCategory === 'All') return true;
-        return project.status === selectedCategory;
-    });
+    // 프로젝트 필터링 로직을 useMemo로 구현
+    const filteredProjects = useMemo(() => {
+        return projects.filter(project => {
+            if (selectedCategory === 'All') {
+                return true;
+            }
+            // 서버 상태를 UI 상태로 변환하여 현재 선택된 카테고리(activeCategory)와 비교
+            return mapServerStatusToUI(project.status) === selectedCategory;
+        });
+    }, [projects, selectedCategory]);
 
     const handleOpenSettingsModal = () => setIsSettingsModalOpen(true);
     const handleCloseSettingsModal = () => setIsSettingsModalOpen(false);
@@ -704,18 +725,19 @@ const ProjectDashboardPage: React.FC = () => {
                     <EmptyState selectedCategory={selectedCategory} />
                 ) : (
                     <div ref={projectGridRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {projects.map(project => (
+                        {filteredProjects.map(project => (
                             // <Link href={`/calendar/${project.id}`} key={project.id} onClick={(e) => e.preventDefault()}>
                             <div key={project.id}
                                  onClick={() => activeDropdownId === null && router.push(`/calendar/${project.id}`)}
                                  className={activeDropdownId === null ? "cursor-pointer" : "cursor-default"}>
-                            <ProjectCard
+                                <ProjectCard
                                     project={project}
                                     currentUserId={user?.id || null}
                                     onEdit={handleOpenEditModal}
                                     onDelete={handleDeleteProject}
                                     isDropdownActive={activeDropdownId === project.id}
                                     onToggleDropdown={(active) => handleToggleDropdown(project.id, active)}
+                                    status={mapServerStatusToUI(project.status)}
                             />
                             {/*// </Link>*/}
                             </div>
