@@ -158,6 +158,7 @@ export default function CalendarUI() {
                 if (json.success && json.data) {
                     // API에서 받은 이벤트와 메모로 상태 초기화
                     setEvents(json.data.events || []);
+                    // 메모 저장
                     setMemos(json.data.memos || []);
                 } else {
                     console.error("캘린더 데이터가 없습니다.");
@@ -648,7 +649,19 @@ export default function CalendarUI() {
                         </svg>
                     </button>
                     <h1 className="text-xl font-medium">{currentProject ? currentProject.name : "Project"}</h1>
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 ml-2"/>
+                    <div className="flex items-center space-x-[-4px]">
+                        {/*팀원 프로필 이미지*/}
+                        {currentProject?.members.map((member, index) => (
+                            <img
+                                key={member.userId || index}
+                                src={member.profileImageUrl || "https://placehold.co/100x100/A0BFFF/FFFFFF?text=User"}
+                                title={member.name}
+                                alt={member.name || 'Team member'}
+                                className="w-6 h-6 rounded-full object-cover border-2 border-white shadow-sm transition transform hover:scale-110"
+                                style={{zIndex: currentProject?.members.length - index}}
+                            />
+                        ))}
+                    </div>
                 </div>
                 {isUserLoading ? (
                     <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>) : user && user.id ? (
