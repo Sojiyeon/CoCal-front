@@ -1,4 +1,4 @@
-// src/hooks/useAuthRedirect.js
+// src/hooks/useAuthRedirect.ts
 
 'use client';
 
