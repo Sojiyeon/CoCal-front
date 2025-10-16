@@ -7,7 +7,7 @@ import { SidebarTodo, UserSummary } from "./types";
 // 오늘 날짜를 저장하는 상수
 const today = new Date();
 
-// ✨ FIX: CalendarUI로부터 더 많은 함수를 받기 위해 props 타입을 확장합니다.
+//  CalendarUI로부터 더 많은 함수를 받기 위해 props 타입을 확장합니다.
 interface SidebarLeftProps {
     miniYear: number;
     miniMonth: number;
@@ -29,7 +29,7 @@ interface SidebarLeftProps {
     projectEndDate?: Date;
 }
 
-// ✨ FIX: 모바일 기능 목록을 위한 버튼 컴포넌트를 정의합니다.
+//  모바일 기능 목록을 위한 버튼 컴포넌트를 정의합니다.
 const ActionButton = ({ icon, text, onClick }: { icon: string; text: string; onClick: () => void }) => (
     <button onClick={onClick} className="flex items-center w-full p-3 text-left text-slate-700 hover:bg-slate-100 rounded-lg">
         <span className="text-2xl w-8 mr-4 text-center">{icon}</span>
@@ -160,9 +160,11 @@ export default function SidebarLeft({
                                 <div className="flex-1 min-w-0 cursor-pointer" onDoubleClick={() => onEditTodo(todo)}>
                                     <div
                                         className={`font-medium truncate ${todo.status === "DONE" ? "line-through text-slate-400" : ""}`}>{todo.title}</div>
+
                                     <div className="text-xs text-slate-400 truncate">
                                         {todo.type === 'PRIVATE' ? (todo.description || 'No description') : `${user?.name || 'Unassigned'} - ${todo.description || ''}`}
                                     </div>
+
                                 </div>
                                 <button onClick={() => handleToggleTodoStatus(todo.id)}
                                         className="w-5 h-5 border-2 rounded-full flex-shrink-0 flex items-center justify-center cursor-pointer">

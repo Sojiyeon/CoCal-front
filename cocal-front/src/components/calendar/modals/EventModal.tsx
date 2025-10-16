@@ -1,12 +1,29 @@
 "use client";
 
 import React, { useState, useEffect, useRef  } from "react";
-import { CalendarEvent, ModalFormData } from "../types";
+import { CalendarEvent, ModalFormData, ProjectMember,  } from "../types";
 import { HexColorPicker } from "react-colorful";
 import {createMemo} from "@/api/memoApi";
+import {InviteesList} from "../shared/InviteesList";
+import { ReminderPicker } from "../shared/ReminderPicker";
 
 type ActiveTab = "Event" | "Todo" | "Memo";
 
+type EventForm = {
+    title: string;
+    description: string;
+    url: string;
+    startAt: string;
+    endAt: string;
+    location: string;
+    visibility: 'PUBLIC' | 'PRIVATE';
+    memoDate: string;
+    content: string;
+    color: string;
+    category: string;
+    offsetMinutes: number | null;
+    eventId?: number | null;
+};
 const palettes = [
     ["#19183B", "#708993", "#A1C2BD", "#E7F2EF"],
     ["#F8FAFC", "#D9EAFD", "#BCCCDC", "#9AA6B2"],
@@ -23,14 +40,12 @@ interface ColorPaletteProps {
 
 function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProps) {
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-//버튼 요소에 접근하기 위한  ref
+    //버튼 요소에 접근하기 위한  ref
     const buttonRef = useRef<HTMLButtonElement>(null);
-
     // 팔레트의 위치를 저장할 상태
     const [paletteStyle, setPaletteStyle] = useState({});
     const handleColorSelect = (color: string) => {
         onColorChange(color);
-      //  setIsPaletteOpen(false);
     };
     // 팔레트를 열고 닫는 토글 함수
     const togglePalette = () => {
@@ -97,24 +112,29 @@ interface Props {
     initialDate?: string | null;
     editEvent: CalendarEvent | null;
     projectId: number;
+    members?: ProjectMember[];
+    events?: CalendarEvent[];
 }
 
-export function EventModal({onClose, onSave, editEvent, initialDate, projectId }: Props) {
+export function EventModal({onClose, onSave, editEvent, initialDate, projectId, members = [], events = [] }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
     const [isLoading, setIsLoading] = useState(false);
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<EventForm>({
         title: "",
         description: "",
         url: "",
         startAt: "",
         endAt: "",
         location: "",
-        visibility: "PUBLIC" as "PUBLIC" | "PRIVATE",
+        visibility: "PUBLIC",
         memoDate: "",
         content: "",
-        color: "",
-       // category: "Project 1",
+        color: "#3b82f6",
+        category: "Project 1",
+        offsetMinutes: 15,
+        eventId: null,
+
     });
 
     useEffect(() => {
@@ -131,16 +151,24 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
                 memoDate: editEvent.startAt.split("T")[0],
                 content: editEvent.description || "", // 이벤트 수정 시에는 사용하지 않음
                 color: editEvent.color,
-               // category: "Project 1", // 실제 데이터 구조에 맞게 수정 필요
+                category: "Project 1", // 실제 데이터 구조에 맞게 수정 필요
+                offsetMinutes:
+                    typeof (editEvent as any).offsetMinutes === "number"
+                        ? (editEvent as any).offsetMinutes
+                        : 15,
             });
             // 수정 시에는 'Event' 탭이 기본으로 선택되도록 강제
             setActiveTab("Event");
         } else {
             // '생성 모드'일 경우 (editEvent prop이 없을 때) - 기존 로직
             const date = initialDate ? new Date(initialDate) : new Date();
-            const startDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            const startDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+                .toISOString()
+                .slice(0, 16);
             date.setHours(date.getHours() + 1);
-            const endDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            const endDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+                .toISOString()
+                .slice(0, 16);
             const justDate = startDateTime.split("T")[0];
 
             setFormData((prev) => ({
@@ -148,6 +176,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
                 startAt: startDateTime,
                 endAt: endDateTime,
                 memoDate: justDate,
+                // reminderMinutes는 기본 15 유지
             }));
         }
     }, [initialDate, editEvent]);
@@ -238,6 +267,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
                             className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                             rows={4} // 원하는 높이로 조절
                         />
+
                         <div className="flex gap-2 items-center">
                             <input
                                 type="datetime-local"
@@ -256,11 +286,11 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
                             />
                         </div>
 
-                        <div
-                            className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">
-                            <span>Reminder</span> <span>15min ago</span>
-                        </div>
-
+                        <ReminderPicker
+                            value={formData.offsetMinutes}
+                            onChange={(val) => setFormData((prev) => ({ ...prev, offsetMinutes: val }))}
+                            label="Reminder"
+                        />
                         <input
                             type="text"
                             name="url"
@@ -270,8 +300,12 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
                             className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
 
-                        <div className="w-full border rounded-md px-3 py-2 text-sm text-slate-400">
-                            Invitees
+                        <div className="w-full border rounded-md p-3">
+                            {/* 제목 라벨 */}
+                            <p className="text-xs font-semibold text-slate-500 mb-2">Invitees</p>
+
+                            {/*  팀원 목록  */}
+                            <InviteesList members={members}/>
                         </div>
 
                         <ColorPaletteSelector
@@ -324,15 +358,37 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId }
                                 </label>
                             </div>
                         </div>
-                        {/*<div*/}
-                        {/*    className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">*/}
-                        {/*    /!*<span>Category</span> <span>{formData.category}</span>*!/*/}
-                        {/*</div>*/}
 
-                        <div
-                            className="w-full border rounded-md px-3 py-2 text-sm text-slate-400 flex justify-between items-center">
-                            <span>Reminder</span> <span>🔔</span>
-                        </div>
+                        {/* Public일 때만 카테고리(이벤트) 선택창 표시 */}
+                        {formData.visibility === 'PUBLIC' && (
+                            <div>
+                                <label htmlFor="parentEvent" className="text-sm font-medium text-slate-600">Category (Event)</label>
+                                <select
+                                    id="parentEvent"
+                                    name="eventId"
+                                    value={formData.eventId ?? ''}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, eventId: e.target.value ? Number(e.target.value) : null }))}
+                                    className="w-full mt-2 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                >
+                                    <option value="">-- Select an event --</option>
+                                    {/* '할일:'로 시작하는 래퍼 이벤트는 제외하고 진짜 이벤트만 표시 */}
+                                    {events.filter(event => !event.title.startsWith('Todo:')).map(event => (
+                                        <option key={event.id} value={event.id}>
+                                            {event.title}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {/* Private일 때만 ReminderPicker 표시 */}
+                        {formData.visibility === 'PRIVATE' && (
+                            <ReminderPicker
+                                value={formData.offsetMinutes}
+                                onChange={(val) => setFormData((prev) => ({ ...prev, offsetMinutes: val }))}
+                                label="Reminder"
+                            />
+                        )}
                         <div className="relative">
                             <input
                                 type="text"

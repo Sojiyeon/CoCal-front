@@ -29,6 +29,7 @@ export interface SidebarTodo extends EventTodo {
     parentEventColor: string;
     authorId: number | null;
     url?: string;
+    eventId: number;
 }
 
 // 이벤트 데이터 타입  (events 테이블)
@@ -44,12 +45,13 @@ export type CalendarEvent = {
     visibility: 'PRIVATE' | 'PUBLIC';
     authorId: number;
     location: string | null;
-    offsetMinutes: number;
+    offsetMinutes: number | null;
     color: string;
 //    name: string;
     todos?: EventTodo[];
     memo?: DateMemo[];
     url?: string;
+
 };
 
 // 개인 할 일 타입 (private_todos 테이블)
@@ -65,11 +67,12 @@ export interface PrivateTodo {
     projectId: number;
     userId: number;
     url?: string | null;
+    offsetMinutes?: number | null;
 }
 
 // [수정] 날짜 메모 타입 (memos 테이블)
 export type DateMemo = {
-    id: number; // [수정] number -> string
+    id: number; //
     projectId: number;
     memoDate: string;
     content: string;
@@ -137,7 +140,9 @@ export interface ModalFormData {
     visibility: 'PUBLIC' | 'PRIVATE';
     memoDate: string;
     content: string;
-    //category: string;
+    category: string;
     color: string;
+    offsetMinutes?: number | null;
+    eventId?: number | null;
 }
 

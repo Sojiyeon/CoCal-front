@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { CalendarEvent, EventTodo, ProjectMember } from "../types";
-
+import { getReminderLabel } from "../utils/reminderUtils";
 
 interface Props {
     event: CalendarEvent;
@@ -12,6 +12,7 @@ interface Props {
     onEditTodo?: (todo: EventTodo) => void;
     onDeleteTodo?: (todoId: number, type: "EVENT" | "PRIVATE") => void;
     members?: ProjectMember[];
+
 }
 
 // /** 레거시 호환: event.eventTodos / event.publicTodos를 허용 */
@@ -67,8 +68,7 @@ const TodoListTab = ({ event, onToggleTodo, onEditTodo, onDeleteTodo }: Props) =
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <button onClick={() => onEditTodo?.(todo)} className="text-slate-400 hover:text-slate-700">✏️</button>
-                        <button onClick={() => onDeleteTodo?.(todo.id, "EVENT")} className="text-slate-400 hover:text-red-600">🗑️</button>
+                        <button onClick={() => onDeleteTodo?.(todo.id, "EVENT")} className="text-slate-400 hover:text-red-600">Delete</button>
                     </div>
                 </div>
             ))}
@@ -156,7 +156,7 @@ export function EventDetailModal({
             <div className="flex items-center">
                 <span className="w-24 text-slate-500">Team</span>
                 {members && members.length > 0 ? (
-                    <TeamAvatars list={members} />
+                    <TeamAvatars list={members}/>
                 ) : (
                     <span className="text-slate-400">No members</span>
                 )}
@@ -174,17 +174,16 @@ export function EventDetailModal({
                 </div>
             </div>
 
+
             <div className="flex items-center">
-                <span className="w-24 text-slate-500">URL</span>
+                <span className="w-24 text-slate-500">Reminder</span>
+                <span className="text-slate-800">{getReminderLabel(event.offsetMinutes)}</span>
+            </div>
+
+            <div className="flex items-center"><span className="w-24 text-slate-500">URL</span>
                 {event.url ? (
-                    <a
-                        href={event.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 truncate hover:underline"
-                    >
-                        {event.url}
-                    </a>
+                    <a href={event.url} target="_blank" rel="noopener noreferrer"
+                       className="text-blue-600 truncate hover:underline">{event.url}</a>
                 ) : (
                     <span>-</span>
                 )}
@@ -193,7 +192,7 @@ export function EventDetailModal({
     );
 
     ///** 탭 버튼 공통 컴포넌트 */
-    const TabButton = ({ tabName }: { tabName: ActiveTab }) => (
+    const TabButton = ({tabName}: { tabName: ActiveTab }) => (
         <button
             onClick={() => setActiveTab(tabName)}
             className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
