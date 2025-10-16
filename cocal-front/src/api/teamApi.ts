@@ -1,6 +1,7 @@
 "use client"
 
 import {fetchJsonWithAuth} from "@/utils/authService";
+import {ApiResponse} from "@/components/calendar/types"
 export type MemberRole = "OWNER" | "ADMIN" | "MEMBER";
 export type MemberStatus = "ACTIVE" | "LEFT" | "KICKED";
 export type InviteStatus = "PENDING" | "ACCEPTED" | "DECLINED" | "EXPIRED";
@@ -24,14 +25,6 @@ export interface TeamInvite {
     status: InviteStatus;
     createdAt: string;  // ISO
     expiresAt: string;  // ISO
-}
-// 서버 공통 응답 확인
-interface ApiResponse<T> {
-    success: boolean;
-    data: T;
-    error: { message?: string } | null;
-    serverTime: string;
-    path: string;
 }
 export interface TeamListData {
     members: TeamMember[];
