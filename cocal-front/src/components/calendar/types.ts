@@ -156,3 +156,65 @@ export interface ApiResponse<T> {
     path: string;
 }
 
+// 이벤트 생성 응답 형식(memberUserIds: number[] 사용)
+export interface EventCreateResponse {
+    id: number;
+    projectId: number;
+    title: string;
+    description: string;
+    startAt: string;
+    endAt: string;
+    allDay: boolean;
+    visibility: 'PUBLIC' | 'PRIVATE';
+    location: string | null;
+    url: string | null;
+    creatorId: number;
+    createdAt: string;
+    offsetMinutes: number;
+    color: string;
+    urls: EventUrl[];
+    memberUserIds: number[];
+}
+// 이벤트 생성/수정 요청 형식
+export type EventRequest = {
+    projectId: number;
+    title: string;
+    startDate: string;
+    startTime: string;
+    endDate: string;
+    endTime: string;
+    allDay?: boolean;
+    visibility?: 'PUBLIC' | 'PRIVATE';
+    description?: string;
+    location?: string | null;
+    offsetMinutes?: number;
+    color?: string;
+    urls?: string[];
+    memberUserIds?: number[];
+};
+// 이벤트 응답 형식(members:ProjectMember[] 사용)
+export interface EventData {
+    id: number;
+    projectId: number;
+    title: string;
+    description: string;
+    startAt: string;
+    endAt: string;
+    allDay: boolean;
+    visibility: 'PUBLIC' | 'PRIVATE';
+    location: string | null;
+    url: string | null;
+    creatorId: number;
+    createdAt: string;
+    offsetMinutes: number;
+    color: string;
+    urls: EventUrl[];
+    members: ProjectMember[];
+}
+// 이벤트 url 응답 형식
+export interface EventUrl {
+    id: number;
+    url: string;
+    orderNo: number;
+}
+
