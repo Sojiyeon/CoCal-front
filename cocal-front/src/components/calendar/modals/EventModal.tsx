@@ -233,17 +233,22 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                 onSave(response, activeTab);
 
             } else if (activeTab === "Todo") {
-                const hasParentEvent =
-                    typeof formData.eventId === "number" && Number.isFinite(formData.eventId);
-                const isPublic = formData.type === "EVENT" && hasParentEvent;
+                // --- 유효성 검사 로직 추가 ---
+                const hasParentEvent = typeof formData.eventId === "number" && Number.isFinite(formData.eventId);
 
-                // 1) 부모 이벤트/날짜 먼저 계산
-                const selectedEvent = isPublic ? events.find(e => e.id === formData.eventId) : undefined;
-                // date가 비어 있으면(Private에서 입력 안 했을 때 대비) startAt(혹은 memoDate)로 폴백
+                // 사용자가 "Public"을 의도했지만 부모 이벤트를 선택하지 않은 경우
+                if (formData.type === "EVENT" && !hasParentEvent) {
+                    alert("Please select a parent event for the public todo.");
+                    setIsLoading(false); // 로딩 상태 해제
+                    return; // 저장 프로세스 중단
+                }
+
+                // --- 서버에 보낼 데이터 재구성 ---
+                const isPublicType = formData.type === 'EVENT';
+                const selectedEvent = isPublicType ? events.find(e => e.id === formData.eventId) : undefined;
                 const safeDate = formData.date || formData.startAt || `${formData.memoDate}T00:00`;
-                const dateForTodo = isPublic ? (selectedEvent?.startAt ?? safeDate) : safeDate;
+                const dateForTodo = isPublicType ? (selectedEvent?.startAt ?? safeDate) : safeDate;
 
-                // 2) 서버에 보낼 페이로드 (API 스키마만 충족; API 코드는 건드리지 않음)
                 const serverPayload = {
                     title: formData.title,
                     description: formData.description,
@@ -251,26 +256,22 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                     date: dateForTodo,
                     offsetMinutes: typeof formData.offsetMinutes === "number" ? formData.offsetMinutes : 15,
                     projectId,
-                    type: isPublic ? ("EVENT" as "EVENT") : ("PRIVATE" as "PRIVATE"),
-                    ...(isPublic ? { eventId: formData.eventId! } : {}),
+                    type: formData.type, // 사용자의 선택을 그대로 반영
+                    // Public 타입일 때만 eventId를 포함
+                    ...(isPublicType && { eventId: formData.eventId! }),
                 };
 
-                // 3) 부모(CalendarUI)가 이해할 수 있도록 visibility를 덧붙인 정규화 객체
+                // --- 부모 컴포넌트에 전달할 데이터 (기존 로직 유지) ---
                 const normalizedForParent = {
                     ...serverPayload,
-                    visibility: (isPublic ? "PUBLIC" : "PRIVATE") as "PUBLIC" | "PRIVATE",
-
+                    visibility: formData.type === "EVENT" ? "PUBLIC" : "PRIVATE",
                 };
 
-                // 4) API 호출과 onSave는 한 번만!
                 await createTodo(projectId, serverPayload);
                 onSave(normalizedForParent as any, "Todo");
+                onClose(); // 성공 후 모달 닫기
 
-                onClose();
-                return;
-            }
-            //  추가: Event 저장 처리 (로컬 또는 상위 전달용)
-            else if (activeTab === "Event") {
+            } else if (activeTab === "Event") { //  추가: Event 저장 처리 (로컬 또는 상위 전달용)
                 const eventData = {
                     title: formData.title,
                     description: formData.description,
