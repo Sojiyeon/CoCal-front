@@ -38,6 +38,26 @@ const ActionButton = ({ icon, text, onClick }: { icon: string; text: string; onC
     </button>
 );
 
+interface EventTodoResponse {
+    id: number;
+    eventId: number;
+    urlId: number;
+    title: string;
+    description: string | null;
+    status: "IN_PROGRESS" | "DONE";
+    authorId: number | null;
+    orderNo: number;
+    eventColor: string;
+}
+
+interface PrivateTodoResponse {
+    id: number;
+    title: string;
+    description: string | null;
+    status: "IN_PROGRESS" | "DONE";
+    projectId: number;
+    userId: number;
+}
 
 export default function SidebarLeft({
     projectId,
@@ -83,28 +103,40 @@ export default function SidebarLeft({
             );
 
             // 안전하게 items 접근 (API가 빈 배열 반환 가능)
-            const eventItems = eventData?.data?.items || [];
-            const privateItems = privateData?.data?.items || [];
+            const eventItems = (eventData?.data?.items as EventTodoResponse[]) || [];
+            const privateItems = (privateData?.data?.items as PrivateTodoResponse[]) || [];
 
-            // combined
             const combinedTodos: SidebarTodo[] = [
-                ...eventItems.map((item: any) => ({
+                ...eventItems.map((item) => ({
                     id: item.id,
+                    eventId: item.eventId,
+                    urlId: item.urlId,
                     title: item.title,
-                    type: "EVENT",
-                    status: item.status,
-                    parentEventColor: item.eventColor,
                     description: item.description,
+                    status: item.status,
+                    authorId: item.authorId,
+                    orderNo: item.orderNo,
+                    type: "EVENT" as const,
+                    parentEventTitle: item.title, // 이벤트 이름
+                    parentEventColor: item.eventColor, // 색상 (이벤트 기반)
+                    url: undefined,
                 })),
-                ...privateItems.map((item: any) => ({
+                ...privateItems.map((item) => ({
                     id: item.id,
+                    eventId: 0,
+                    urlId: 0,
                     title: item.title,
-                    type: "PRIVATE",
-                    status: item.status,
-                    parentEventColor: "#ccc",
                     description: item.description,
+                    status: item.status,
+                    authorId: item.userId,
+                    orderNo: 0,
+                    type: "PRIVATE" as const,
+                    parentEventTitle: "Private Todo",
+                    parentEventColor: "#ccc",
+                    url: undefined,
                 })),
             ];
+
             console.log(combinedTodos)
 
             // 상태 업데이트
