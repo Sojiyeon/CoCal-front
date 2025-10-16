@@ -1024,11 +1024,13 @@ export default function CalendarUI() {
 
             {isTeamModalOpen && (<TeamModal projectId={projectId} onClose={handleCloseTeamModal}/>)}
             <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} apiEndpoints={API_ENDPOINTS}/>
+
+
+            {/*{isTeamModalOpen && (<TeamModal projectId={projectId} onClose={handleCloseTeamModal}/>)}*/}
+            {/*<ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} apiEndpoints={API_ENDPOINTS}/>*/}
             {isProjectSettingsModalOpen && <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId} userId={user?.id || 0}/>}
             <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal}
                                   apiEndpoints={API_ENDPOINTS}/>
-            {isProjectSettingsModalOpen &&
-                <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId}/>}
             {todoToEdit && (
                 <TodoEditModal
                     todoToEdit={todoToEdit}

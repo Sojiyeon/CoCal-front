@@ -143,8 +143,8 @@ export interface ModalFormData {
     content: string;
     category: string;
     color: string;
-    offsetMinutes?: number | null;
-    eventId?: number | null;
+    offsetMinutes?: number;
+    eventId?: number;
 }
 
 // 서버 공통 응답 형식
