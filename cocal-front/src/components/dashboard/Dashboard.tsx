@@ -746,7 +746,7 @@ const ProjectDashboardPage: React.FC = () => {
             {/* 모바일용 Floating Action Button (FAB) 추가 */}
             <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="fixed bottom-6 right-6 z-50 bg-blue-600 text-white rounded-full p-4 shadow-xl transition duration-200 hover:bg-blue-700 active:bg-blue-800 md:hidden"
+                className="fixed bottom-6 right-6 z-50 bg-gray-800 hover:bg-gray-700 text-white rounded-full p-4 shadow-xl transition duration-200 active:bg-gray-800 md:hidden"
                 aria-label="프로젝트 생성"
             > <Plus className="w-6 h-6" />
             </button>
