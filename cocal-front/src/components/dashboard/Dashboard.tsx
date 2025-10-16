@@ -2,10 +2,11 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Folder, MoreVertical, Moon, Settings, LogOut } from 'lucide-react';
+import { Folder, MoreVertical, Moon, Settings, LogOut, Plus } from 'lucide-react';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
 import EditProjectModal from '@/components/modals/EditProjectModal';
-import ProfileSettingsModal, { useUser } from '@/components/modals/ProfileSettingModal';
+import ProfileSettingsModal from '@/components/modals/ProfileSettingModal';
+import { useUser } from '@/contexts/UserContext';
 import { fetchWithAuth } from '@/utils/authService';
 
 const API_BASE_URL = 'https://cocal-server.onrender.com';
@@ -150,7 +151,7 @@ const ProjectCategoryFilter: FC<ProjectCategoryFilterProps> = ({
 
             <button
                 type="button"
-                className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg shadow-md transition duration-200"
+                className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg shadow-md transition duration-200 hidden md:block"
                 onClick={onOpenCreateModal}
             >
                 Create
@@ -741,6 +742,14 @@ const ProjectDashboardPage: React.FC = () => {
                     </div>
                 )}
             </main>
+
+            {/* 모바일용 Floating Action Button (FAB) 추가 */}
+            <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="fixed bottom-6 right-6 z-50 bg-gray-800 hover:bg-gray-700 text-white rounded-full p-4 shadow-xl transition duration-200 active:bg-gray-800 md:hidden"
+                aria-label="프로젝트 생성"
+            > <Plus className="w-6 h-6" />
+            </button>
 
             {/* 모달 렌더링 */}
             <CreateProjectModal

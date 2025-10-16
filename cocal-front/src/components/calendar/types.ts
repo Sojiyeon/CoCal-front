@@ -88,8 +88,8 @@ export interface ProjectMember {
     name: string;
     email: string;
     profileImageUrl: string | null;
-
 }
+// 프로젝트 타입
 export interface Project {
     id: number;
     name: string;
@@ -102,7 +102,8 @@ export interface Project {
    // colorTags: string[]; // 색상 태그
 }
 
-
+// 뷰 타입
+export type DefaultView = 'MONTH' | 'WEEK' | 'DAY';
 
 // TeamModal에서 사용할 팀 멤버 상세 타입을 API 응답에 맞춰 정의
 export interface TeamMemberDetail extends ProjectMember {
@@ -144,5 +145,14 @@ export interface ModalFormData {
     color: string;
     offsetMinutes?: number | null;
     eventId?: number | null;
+}
+
+// 서버 공통 응답 형식
+export interface ApiResponse<T> {
+    success: boolean;
+    data: T;
+    error: { message?: string } | null;
+    serverTime: string;
+    path: string;
 }
 

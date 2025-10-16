@@ -205,7 +205,7 @@ export default function CalendarUI() {
         };
 
         fetchProject();
-    }, [projectId]);
+    }, [projectId, isProjectSettingsModalOpen]);
 
     //  [MOBILE WEEKVIEW] 모바일 뷰포트 감지 (클라이언트)
     useEffect(() => {
@@ -561,6 +561,7 @@ export default function CalendarUI() {
             setSelectedEventId(null);
         }
     };
+
     // 미니 캘린더 월 이동 함수
     function prevMiniMonth() {
         if (miniMonth === 0) { setMiniMonth(11); setMiniYear(y => y - 1); } else setMiniMonth(m => m - 1);
@@ -760,6 +761,7 @@ export default function CalendarUI() {
                 <div
                     className={`fixed inset-y-0 left-0 z-30 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:mt-9 bg-white`}>
                     <SidebarLeft
+                        projectId={currentProject?.id ?? 0} // 필수!
                         onClose={() => setIsSidebarOpen(false)} // 닫기 함수 전달
                         miniYear={miniYear}
                         miniMonth={miniMonth}
@@ -1023,6 +1025,10 @@ export default function CalendarUI() {
             {isTeamModalOpen && (<TeamModal projectId={projectId} onClose={handleCloseTeamModal}/>)}
             <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} apiEndpoints={API_ENDPOINTS}/>
             {isProjectSettingsModalOpen && <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId} userId={user?.id || 0}/>}
+            <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal}
+                                  apiEndpoints={API_ENDPOINTS}/>
+            {isProjectSettingsModalOpen &&
+                <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId}/>}
             {todoToEdit && (
                 <TodoEditModal
                     todoToEdit={todoToEdit}
@@ -1031,6 +1037,7 @@ export default function CalendarUI() {
                     onDelete={handleDeleteTodo}
                 />
             )}
+
         </div>
     );
 }
