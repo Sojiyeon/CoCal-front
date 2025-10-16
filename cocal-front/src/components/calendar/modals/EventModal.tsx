@@ -32,7 +32,7 @@ type FormState = {
     category: string;
 
     // ReminderPicker와 호환 (null 가능)
-   // offsetMinutes: number | null;
+    // offsetMinutes: number | null;
     offsetMinutes?: number | null;
     // Todo 관련
     type: "EVENT" | "PRIVATE";
@@ -51,7 +51,7 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
     //버튼 요소에 접근하기 위한  ref
     const buttonRef = useRef<HTMLButtonElement>(null);
     // 팔레트의 위치를 저장할 상태
-    const [paletteStyle, setPaletteStyle] = useState({});
+    const [paletteStyle] = useState({});
     const handleColorSelect = (color: string) => {
         onColorChange(color);
     };
@@ -173,7 +173,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
             }));
             setActiveTab("Event");
 
-    } else {
+        } else {
             // '생성 모드'일 경우 (editEvent prop이 없을 때) - 기존 로직
             const date = initialDate ? new Date(initialDate) : new Date();
             const startDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
@@ -205,9 +205,9 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
     const handleColorChange = (newColor: string) => {
         setFormData(prev => ({ ...prev, color: newColor }));
     };
-    const handleVisibilityChange = (visibility: "PUBLIC" | "PRIVATE") => {
-        setFormData((prev) => ({ ...prev, visibility }));
-    };
+    // const handleVisibilityChange = (visibility: "PUBLIC" | "PRIVATE") => {
+    //     setFormData((prev) => ({ ...prev, visibility }));
+    // };
     // todo type 정의
     const handleTypeChange = (type: "EVENT" | "PRIVATE") => {
         setFormData((prev) => ({ ...prev,
@@ -262,17 +262,27 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                 };
 
                 // --- 부모 컴포넌트에 전달할 데이터 (기존 로직 유지) ---
-                const normalizedForParent = {
-                    ...serverPayload,
-                    visibility: formData.type === "EVENT" ? "PUBLIC" : "PRIVATE",
+                const normalizedForParent: ModalFormData = {
+                    title: formData.title,
+                    description: formData.description || "",
+                    url: formData.url || "",
+                    startAt: dateForTodo,
+                    endAt: dateForTodo,
+                    location: "",
+                    visibility: isPublicType ? "PUBLIC" : "PRIVATE",
+                    memoDate: (dateForTodo || "").split("T")[0] || formData.memoDate,
+                    content: formData.description || "",
+                    category: "Todo",
+                    color: formData.color || "#3b82f6",
+                    ...(typeof formData.offsetMinutes === "number"
+                        ? { offsetMinutes: formData.offsetMinutes }
+                        : {}),
+                    ...(isPublicType && formData.eventId !== undefined
+                        ? { eventId: formData.eventId }
+                        : {}),
                 };
 
-                await createTodo(projectId, serverPayload);
-                onSave(normalizedForParent as any, "Todo");
-                onClose(); // 성공 후 모달 닫기
-
-                onClose();
-                return;
+                onSave(normalizedForParent, "Todo");
             } else {
                 const eventPayload: ModalFormData = {
                     title: formData.title,
@@ -287,9 +297,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                     category: formData.category,
                     color: formData.color,
                     // null이면 빼고, number면 그대로 (undefined만 허용)
-                    ...(formData.offsetMinutes !== null
-                        ? { offsetMinutes: formData.offsetMinutes }
-                        : {}),
+                    ...(formData.offsetMinutes !== null ? { offsetMinutes: formData.offsetMinutes } : {}),
                     // undefined만 넣기
                     ...(formData.eventId !== undefined ? { eventId: formData.eventId } : {}),
                 };
@@ -299,12 +307,13 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
 
             onClose();
         } catch (err) {
+            // ✅ err 미사용 경고 제거
+            console.error("Save error in EventModal:", err);
             alert("저장 중 오류 발생");
         } finally {
             setIsLoading(false);
         }
     };
-
 
     const TabButton = ({ tabName }: { tabName: ActiveTab }) => (
         <button
@@ -482,11 +491,11 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                                     onChange={handleInputChange}
                                     className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                 />
-                            <ReminderPicker
-                                value={formData.offsetMinutes ?? null}
-                                onChange={(val) => setFormData((prev) => ({ ...prev, offsetMinutes: val }))}
-                                label="Reminder"
-                            />
+                                <ReminderPicker
+                                    value={formData.offsetMinutes ?? null}
+                                    onChange={(val) => setFormData((prev) => ({ ...prev, offsetMinutes: val }))}
+                                    label="Reminder"
+                                />
                             </div>
                         )}
                         <div className="relative">
@@ -575,16 +584,16 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                 </div>
 
                 <div className="mt-6 flex justify-end">
-                <button
-                            onClick={handleSave}
-                            disabled={isLoading}
-                            className="w-full px-6 py-2.5 bg-slate-800 text-white rounded-lg text-sm font-semibold hover:bg-slate-900 disabled:bg-slate-400"
-                        >
-                            {isLoading ? "Saving..." : "Save"}
-                        </button>
-                    </div>
+                    <button
+                        onClick={handleSave}
+                        disabled={isLoading}
+                        className="w-full px-6 py-2.5 bg-slate-800 text-white rounded-lg text-sm font-semibold hover:bg-slate-900 disabled:bg-slate-400"
+                    >
+                        {isLoading ? "Saving..." : "Save"}
+                    </button>
                 </div>
             </div>
-        );
-    }
+        </div>
+    );
+}
 
