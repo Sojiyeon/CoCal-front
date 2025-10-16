@@ -771,6 +771,7 @@ export default function CalendarUI() {
                         selectedSidebarDate={selectedSidebarDate}
                         handleSidebarDateSelect={handleSidebarDateSelect}
                         sidebarTodos={sidebarTodos}
+
                         projectStartDate={currentProject?.startDate ? new Date(currentProject.startDate) : undefined}
                         projectEndDate={currentProject?.endDate ? new Date(currentProject.endDate) : undefined}
                         onOpenEventModal={handleOpenEventModal}

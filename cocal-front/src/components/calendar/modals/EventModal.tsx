@@ -231,33 +231,47 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                 const response = await createMemo(projectId, memoData);
                 // 부모 컴포넌트로 새 메모 전달
                 onSave(response, activeTab);
+
             } else if (activeTab === "Todo") {
                 const hasParentEvent =
                     typeof formData.eventId === "number" && Number.isFinite(formData.eventId);
                 const isPublic = formData.type === "EVENT" && hasParentEvent;
 
-                const offset =
-                    typeof formData.offsetMinutes === "number" ? formData.offsetMinutes : 15;
+                // 1) 부모 이벤트/날짜 먼저 계산
+                const selectedEvent = isPublic ? events.find(e => e.id === formData.eventId) : undefined;
+                // date가 비어 있으면(Private에서 입력 안 했을 때 대비) startAt(혹은 memoDate)로 폴백
+                const safeDate = formData.date || formData.startAt || `${formData.memoDate}T00:00`;
+                const dateForTodo = isPublic ? (selectedEvent?.startAt ?? safeDate) : safeDate;
 
-                const base = {
+                // 2) 서버에 보낼 페이로드 (API 스키마만 충족; API 코드는 건드리지 않음)
+                const serverPayload = {
                     title: formData.title,
                     description: formData.description,
                     url: formData.url,
-                    date: formData.date,          // (서버 스펙이 startAt이면 바꿔줘)
-                    offsetMinutes: offset,
+                    date: dateForTodo,
+                    offsetMinutes: typeof formData.offsetMinutes === "number" ? formData.offsetMinutes : 15,
                     projectId,
+                    type: isPublic ? ("EVENT" as "EVENT") : ("PRIVATE" as "PRIVATE"),
+                    ...(isPublic ? { eventId: formData.eventId! } : {}),
                 };
 
-                //  PRIVATE이면 절대 eventId를 넣지 않음
-                const todoData = isPublic
-                    ? { ...base, type: "EVENT" as const, eventId: formData.eventId! }
-                    : { ...base, type: "PRIVATE" as const };
+                // 3) 부모(CalendarUI)가 이해할 수 있도록 visibility를 덧붙인 정규화 객체
+                const normalizedForParent = {
+                    ...serverPayload,
+                    visibility: (isPublic ? "PUBLIC" : "PRIVATE") as "PUBLIC" | "PRIVATE",
 
-                const response = await createTodo(projectId, todoData);
-                onSave(response, activeTab);
+                };
+
+                // 4) API 호출과 onSave는 한 번만!
+                await createTodo(projectId, serverPayload);
+                onSave(normalizedForParent as any, "Todo");
+
+                onClose();
+                return;
             }
-            else {
-                const eventPayload: ModalFormData = {
+            //  추가: Event 저장 처리 (로컬 또는 상위 전달용)
+            else if (activeTab === "Event") {
+                const eventData = {
                     title: formData.title,
                     description: formData.description,
                     url: formData.url,
@@ -265,20 +279,14 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                     endAt: formData.endAt,
                     location: formData.location,
                     visibility: formData.visibility,
-                    memoDate: formData.memoDate,
-                    content: formData.content,
-                    category: formData.category,
                     color: formData.color,
-                    //  null이면 빼고, number면 그대로 (undefined만 허용)
-                    ...(formData.offsetMinutes !== null ? { offsetMinutes: formData.offsetMinutes } : {}),
-                    //  undefined만 넣기
-                    ...(formData.eventId !== undefined ? { eventId: formData.eventId } : {}),
+                    projectId,
                 };
-
-                onSave(eventPayload, activeTab, editEvent ? editEvent.id : undefined);
-
+                // API 호출이 없다면 onSave만 수행
+                onSave(eventData as any, "Event");
+                onClose();
+                return;
             }
-            onClose();
         } catch (err) {
             alert("저장 중 오류 발생");
         } finally {

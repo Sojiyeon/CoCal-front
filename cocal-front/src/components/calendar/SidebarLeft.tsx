@@ -74,7 +74,7 @@ export default function SidebarLeft({
     onOpenTeamModal,
     onOpenSettingsModal,
     projectStartDate,
-    projectEndDate
+    projectEndDate,
     }: { projectId: number; user: UserSummary | null } & SidebarLeftProps) {
     const [sidebarTodos, setSidebarTodos] = useState<SidebarTodo[]>([]);
     const [todoFilter, setTodoFilter] = useState('ALL');
