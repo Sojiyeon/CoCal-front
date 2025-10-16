@@ -268,10 +268,8 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
 
                 onClose();
                 return;
-            }
-            //  추가: Event 저장 처리 (로컬 또는 상위 전달용)
-            else if (activeTab === "Event") {
-                const eventData = {
+            } else {
+                const eventPayload: ModalFormData = {
                     title: formData.title,
                     description: formData.description,
                     url: formData.url,
@@ -279,20 +277,29 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                     endAt: formData.endAt,
                     location: formData.location,
                     visibility: formData.visibility,
+                    memoDate: formData.memoDate,
+                    content: formData.content,
+                    category: formData.category,
                     color: formData.color,
-                    projectId,
+                    // null이면 빼고, number면 그대로 (undefined만 허용)
+                    ...(formData.offsetMinutes !== null
+                        ? { offsetMinutes: formData.offsetMinutes }
+                        : {}),
+                    // undefined만 넣기
+                    ...(formData.eventId !== undefined ? { eventId: formData.eventId } : {}),
                 };
-                // API 호출이 없다면 onSave만 수행
-                onSave(eventData as any, "Event");
-                onClose();
-                return;
+
+                onSave(eventPayload, activeTab, editEvent ? editEvent.id : undefined);
             }
+
+            onClose();
         } catch (err) {
             alert("저장 중 오류 발생");
         } finally {
             setIsLoading(false);
         }
     };
+
 
     const TabButton = ({ tabName }: { tabName: ActiveTab }) => (
         <button
