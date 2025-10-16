@@ -45,7 +45,7 @@ export type CalendarEvent = {
     visibility: 'PRIVATE' | 'PUBLIC';
     authorId: number;
     location: string | null;
-    offsetMinutes: number | null;
+    offsetMinutes?: number | null;
     color: string;
 //    name: string;
     todos?: EventTodo[];
@@ -143,7 +143,7 @@ export interface ModalFormData {
     content: string;
     category: string;
     color: string;
-    offsetMinutes?: number;
+    offsetMinutes?: number | null;
     eventId?: number;
 }
 

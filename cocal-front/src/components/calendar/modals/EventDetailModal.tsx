@@ -177,7 +177,7 @@ export function EventDetailModal({
 
             <div className="flex items-center">
                 <span className="w-24 text-slate-500">Reminder</span>
-                <span className="text-slate-800">{getReminderLabel(event.offsetMinutes)}</span>
+                <span className="text-slate-800">{getReminderLabel(event.offsetMinutes ?? null)}</span>
             </div>
 
             <div className="flex items-center"><span className="w-24 text-slate-500">URL</span>

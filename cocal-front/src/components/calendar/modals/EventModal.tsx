@@ -32,8 +32,8 @@ type FormState = {
     category: string;
 
     // ReminderPicker와 호환 (null 가능)
-    offsetMinutes: number | null;
-
+   // offsetMinutes: number | null;
+    offsetMinutes?: number | null;
     // Todo 관련
     type: "EVENT" | "PRIVATE";
     date: string;
@@ -127,7 +127,13 @@ interface Props {
 export function EventModal({onClose, onSave, editEvent, initialDate, projectId, members = [], events = [] }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
     const [isLoading, setIsLoading] = useState(false);
-
+    function pickOffsetMinutes(e: unknown): number {
+        if (e && typeof e === "object" && "offsetMinutes" in e) {
+            const v = (e as { offsetMinutes?: unknown }).offsetMinutes;
+            return typeof v === "number" ? v : 15;
+        }
+        return 15;
+    }
 
     const [formData, setFormData] = useState<FormState>({
         title: "",
@@ -151,7 +157,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
         // '수정 모드'일 경우 (editEvent prop이 있을 때)
         if (editEvent) {
             setFormData(prev => ({
-                ...prev, // ✅ 빠지는 필드를 prev에서 유지(type/date/projectId/eventId 등)
+                ...prev, //  빠지는 필드를 prev에서 유지(type/date/projectId/eventId 등)
                 title: editEvent.title,
                 description: editEvent.description || "",
                 url: editEvent.url || "",
@@ -163,10 +169,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                 content: editEvent.description || "",
                 color: editEvent.color,
                 category: "Project 1",
-                offsetMinutes:
-                    typeof (editEvent as any).offsetMinutes === "number"
-                        ? (editEvent as any).offsetMinutes
-                        : 15,
+                offsetMinutes: pickOffsetMinutes(editEvent),
             }));
             setActiveTab("Event");
 
@@ -229,33 +232,31 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                 // 부모 컴포넌트로 새 메모 전달
                 onSave(response, activeTab);
             } else if (activeTab === "Todo") {
-                const isPublic = formData.type === "EVENT";
-                // const hasParentEvent = typeof formData.eventId === "number" && !Number.isNaN(formData.eventId);
-                //
-                // if (isPublic && !hasParentEvent) {
-                //     alert("Please select a parent event for the public todo.");
-                //     setIsLoading(false);
-                //     return;
-                // }
+                const hasParentEvent =
+                    typeof formData.eventId === "number" && Number.isFinite(formData.eventId);
+                const isPublic = formData.type === "EVENT" && hasParentEvent;
 
-                const offset = typeof formData.offsetMinutes === "number" ? formData.offsetMinutes : 15;
+                const offset =
+                    typeof formData.offsetMinutes === "number" ? formData.offsetMinutes : 15;
 
-                const todoData = {
+                const base = {
                     title: formData.title,
                     description: formData.description,
                     url: formData.url,
-                    type: formData.type, // "EVENT" | "PRIVATE"
-                    date: formData.date,
-                    //date: formData.startAt,
+                    date: formData.date,          // (서버 스펙이 startAt이면 바꿔줘)
                     offsetMinutes: offset,
                     projectId,
-                    ...(isPublic ? { eventId: formData.eventId } : {}), // PRIVATE이면 절대 안 넣음
                 };
+
+                //  PRIVATE이면 절대 eventId를 넣지 않음
+                const todoData = isPublic
+                    ? { ...base, type: "EVENT" as const, eventId: formData.eventId! }
+                    : { ...base, type: "PRIVATE" as const };
 
                 const response = await createTodo(projectId, todoData);
                 onSave(response, activeTab);
-
-            } else {
+            }
+            else {
                 const eventPayload: ModalFormData = {
                     title: formData.title,
                     description: formData.description,
@@ -268,9 +269,9 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                     content: formData.content,
                     category: formData.category,
                     color: formData.color,
-                    // ✅ null이면 빼고, number면 그대로 (undefined만 허용)
+                    //  null이면 빼고, number면 그대로 (undefined만 허용)
                     ...(formData.offsetMinutes !== null ? { offsetMinutes: formData.offsetMinutes } : {}),
-                    // ✅ undefined만 넣기
+                    //  undefined만 넣기
                     ...(formData.eventId !== undefined ? { eventId: formData.eventId } : {}),
                 };
 
@@ -349,7 +350,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                         </div>
 
                         <ReminderPicker
-                            value={formData.offsetMinutes}
+                            value={formData.offsetMinutes ?? null}
                             onChange={(val) => setFormData((prev) => ({ ...prev, offsetMinutes: val }))}
                             label="Reminder"
                         />
@@ -462,7 +463,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                                     className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                                 />
                             <ReminderPicker
-                                value={formData.offsetMinutes}
+                                value={formData.offsetMinutes ?? null}
                                 onChange={(val) => setFormData((prev) => ({ ...prev, offsetMinutes: val }))}
                                 label="Reminder"
                             />
