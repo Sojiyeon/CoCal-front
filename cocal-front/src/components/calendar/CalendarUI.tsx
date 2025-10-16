@@ -173,7 +173,7 @@ export default function CalendarUI() {
         };
 
         fetchCalendarData();
-    }, [projectId]);
+    }, [projectId, isEventModalOpen]);
 
 
     // 페이지 로드 시 프로젝트 정보를 가져오는 효과
@@ -1016,7 +1016,7 @@ export default function CalendarUI() {
                     onClose={handleCloseEventModal}
                     onSave={handleSaveItem}
                     initialDate={modalInitialDate}
-                    editEvent={eventToEdit}
+                    editEventId={eventToEdit?.id ?? null}
                     projectId={projectId}
                     members={currentProject?.members ?? []}
                     events={events}

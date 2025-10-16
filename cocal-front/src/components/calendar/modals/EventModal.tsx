@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef  } from "react";
-import { CalendarEvent, ModalFormData, ProjectMember,  } from "../types";
+import {CalendarEvent, ProjectMember, EventData, EventRequest, ModalFormData} from "../types";
 import { HexColorPicker } from "react-colorful";
 import {createMemo} from "@/api/memoApi";
 import {InviteesList} from "../shared/InviteesList";
 import { ReminderPicker } from "../shared/ReminderPicker";
 import {createTodo} from "@/api/todoApi";
+import {getEvent, createEvent, updateEvent} from "@/api/eventApi";
 
 type ActiveTab = "Event" | "Todo" | "Memo";
 
@@ -22,6 +23,7 @@ type FormState = {
     title: string;
     description: string;
     url: string;
+    urls: string[];
     startAt: string;
     endAt: string;
     location: string;
@@ -30,6 +32,7 @@ type FormState = {
     content: string;
     color: string;
     category: string;
+    memberUserIds: number[];
 
     // ReminderPicker와 호환 (null 가능)
     // offsetMinutes: number | null;
@@ -45,7 +48,7 @@ interface ColorPaletteProps {
     selectedColor: string;
     onColorChange: (color: string) => void;
 }
-
+// 컬러팔레트
 function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProps) {
     const [isPaletteOpen, setIsPaletteOpen] = useState(false);
     //버튼 요소에 접근하기 위한  ref
@@ -118,13 +121,13 @@ interface Props {
     onClose: () => void;
     onSave: (itemData: ModalFormData, type: ActiveTab, id?: number) => void;
     initialDate?: string | null;
-    editEvent: CalendarEvent | null;
+    editEventId: number | null;
     projectId: number;
     members?: ProjectMember[];
     events?: CalendarEvent[];
 }
-
-export function EventModal({onClose, onSave, editEvent, initialDate, projectId, members = [], events = [] }: Props) {
+// 모달창
+export function EventModal({onClose, onSave, editEventId, initialDate, projectId, members = [], events = [] }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
     const [isLoading, setIsLoading] = useState(false);
     function pickOffsetMinutes(e: unknown): number {
@@ -135,10 +138,49 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
         return 15;
     }
 
+    // =====eventUrl관련=======
+    // eventUrl 입력 핸들러
+    const handleUrlChange = (index: number, value: string) => {
+        setFormData((prev) => {
+            const updated = [...prev.urls];
+            updated[index] = value;
+            return { ...prev, urls: updated };
+        });
+    };
+    // eventUrl 필드 추가/삭제
+    const addUrlField = () =>
+        setFormData((prev) => ({ ...prev, urls: [...prev.urls, ""] }));
+    const removeUrlField = (index: number) =>
+        setFormData((prev) => ({
+            ...prev,
+            urls: prev.urls.filter((_, i) => i !== index),
+        }));
+    // ======================
+    // =======멤버 선택 관련========
+    // 선택된 멤버
+    const [selectedSet, setSelectedSet] = useState<Set<number>>(new Set());
+    // number[]로 저장
+    const selectedUserIds = [...selectedSet];
+    // 멤버 선택 핸들러
+    const handleSelect = (userId: number) => {
+        setSelectedSet(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(userId)) {
+                newSet.delete(userId);   // 이미 선택된 경우 해제
+            } else {
+                newSet.add(userId);      // 선택 추가
+            }
+            return newSet;
+        });
+    };
+    // ===================
+
+
     const [formData, setFormData] = useState<FormState>({
         title: "",
         description: "",
         url: "",
+        urls: [],
         startAt: "",
         endAt: "",
         location: "",
@@ -152,39 +194,60 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
         date: "",
         projectId,
         eventId: undefined,
+        memberUserIds: [],
     });
-    useEffect(() => {
-        // '수정 모드'일 경우 (editEvent prop이 있을 때)
-        if (editEvent) {
-            setFormData(prev => ({
-                ...prev, //  빠지는 필드를 prev에서 유지(type/date/projectId/eventId 등)
-                title: editEvent.title,
-                description: editEvent.description || "",
-                url: editEvent.url || "",
-                startAt: editEvent.startAt.slice(0, 16),
-                endAt: editEvent.endAt.slice(0, 16),
-                location: editEvent.location || "",
-                visibility: editEvent.visibility,
-                memoDate: editEvent.startAt.split("T")[0],
-                content: editEvent.description || "",
-                color: editEvent.color,
-                category: "Project 1",
-                offsetMinutes: pickOffsetMinutes(editEvent),
-            }));
-            setActiveTab("Event");
 
+    // 수정인지 생성인지 확인
+    useEffect(() => {
+        console.log("editEventId: ", editEventId);
+        // '수정 모드'일 경우 (editEventId prop이 있을 때) 이벤트 정보 조회
+        if (editEventId) {
+            (async () => {
+                try {
+                    setIsLoading(true);
+                    // api 호출
+                    // 이벤트 조회(members:ProjectMember[] 사용)
+                    const eventData:EventData = await getEvent(projectId, editEventId);
+                    console.log('이벤트 조회 성공:', eventData);
+                    // 공통 상태 저장
+                    setFormData(prev => ({
+                        ...prev,
+                        title: eventData.title,
+                        description: eventData.description,
+                        startAt: eventData.startAt,
+                        endAt: eventData.endAt,
+                        location: eventData.location ?? "",
+                        visibility: eventData.visibility,
+                        color: eventData.color ?? "",
+                        offsetMinutes: eventData.offsetMinutes ?? null,
+                        projectId: eventData.projectId,
+                        eventId: eventData.id,
+                        urls: eventData.urls?.map(u => u.url) ?? [],  // EventUrl[] → string[]
+                    }));
+                } catch (err: unknown) {
+                    console.error('이벤트 정보 로드 실패:', err);
+                } finally {
+                    setIsLoading(false);
+                };
+                setActiveTab("Event");
+            })();
         } else {
             // '생성 모드'일 경우 (editEvent prop이 없을 때) - 기존 로직
             const date = initialDate ? new Date(initialDate) : new Date();
+            // 지금 시간 계산 YYYY-MM-DDTHH:mm
             const startDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
                 .toISOString()
                 .slice(0, 16);
+            // 한 시간 뒤의 시간 계산 YYYY-MM-DDTHH:mm
             date.setHours(date.getHours() + 1);
+            // 끝나는 시간을 한 시간 뒤로 계산
             const endDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
                 .toISOString()
                 .slice(0, 16);
+            // memo 저장의 위해 "YYYY-MM-DDTHH:mm" -> "YYYY-MM-DD"만 남김
             const justDate = startDateTime.split("T")[0];
 
+            // 공통 상태 저장
             setFormData((prev) => ({
                 ...prev,
                 startAt: startDateTime,
@@ -193,7 +256,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                 date: startDateTime,
             }));
         }
-    }, [initialDate, editEvent]);
+    }, [initialDate, editEventId]);
 
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -218,6 +281,8 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
 
     // 생성 시 db에 저장
     const handleSave = async () => {
+        console.log("저장 클릭");
+        console.log("activeTab: ", activeTab);
         setIsLoading(true);
         try {
             if (activeTab === "Memo") {
@@ -283,7 +348,59 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                 };
 
                 onSave(normalizedForParent, "Todo");
-            } else {
+            } else if (activeTab === "Event") {
+                // 날짜 넘어가는 이벤트인지 확인
+                const start = new Date(formData.startAt);
+                const end = new Date(formData.endAt);
+                const allDay:boolean = start.toDateString() !== end.toDateString();
+                // Date/time 으로 분리
+                const [startDate, startTime] = formData.startAt.split("T");
+                const [endDate, endTime] = formData.endAt.split("T");
+
+                // 생성/수정할 이벤트 정보
+                const requestEvent: EventRequest = {
+                    projectId: projectId,
+                    title: formData.title,
+                    startDate: startDate,
+                    startTime: startTime,
+                    endDate: endDate,
+                    endTime: endTime,
+                    allDay: allDay,
+                    visibility: formData.visibility,
+                    description: formData.description,
+                    location: formData.location,
+                    //  null이면 빼고, number면 그대로 (undefined만 허용)
+                    ...(formData.offsetMinutes !== null ? { offsetMinutes: formData.offsetMinutes } : {}),
+                    color: formData.color,
+                    urls: formData.urls ?? [],
+                    memberUserIds: selectedUserIds,
+                };
+                console.log("requestEvent: ", requestEvent);
+                (async () => {
+                    try {
+                        setIsLoading(true);
+                        let savedEvent;
+                        // 이벤트 수정이면
+                        if (editEventId != null) {
+                            savedEvent = await updateEvent(projectId, editEventId, requestEvent);
+                            window.alert("이벤트가 수정되었습니다.");
+                            console.log("수정된 이벤트: ", savedEvent);
+                        } else {
+                            // 이벤트 생성이면
+                            savedEvent = await createEvent(projectId, requestEvent);
+                            window.alert("이벤트가 저장되었습니다.");
+                            console.log("생성된 이벤트: ", savedEvent);
+                        }
+                        // 성공 후 닫기
+                        onClose();
+                    } catch (err) {
+                        console.error("이벤트 저장/수정 실패:", err);
+                    } finally {
+                        setIsLoading(false);
+                    }
+                })();
+                // ㄹㅇ 어디부터 손 봐야할지 모를정도로 노답인 CalendarEvent 타입 관련된 녀석.
+                // 나도 모르겠다 걍 둘게.
                 const eventPayload: ModalFormData = {
                     title: formData.title,
                     description: formData.description,
@@ -301,8 +418,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                     // undefined만 넣기
                     ...(formData.eventId !== undefined ? { eventId: formData.eventId } : {}),
                 };
-
-                onSave(eventPayload, activeTab, editEvent ? editEvent.id : undefined);
+                onSave(eventPayload, activeTab, editEventId ? editEventId : undefined);
             }
 
             onClose();
@@ -330,6 +446,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
 
     const renderForm = () => {
         switch (activeTab) {
+            // 이벤트 UI
             case "Event":
                 return (
                     <div className="space-y-4">
@@ -352,9 +469,9 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                         />
                         {/* 이벤트 탭에 메모를 입력할 수 있는 textarea 추가 */}
                         <textarea
-                            name="content" // formData의 'content'와 연결
-                            placeholder="Write a memo for this event..."
-                            value={formData.content}
+                            name="description" // formData의 'content'와 연결
+                            placeholder="Write a description for this event..."
+                            value={formData.description}
                             onChange={handleInputChange}
                             className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                             rows={4} // 원하는 높이로 조절
@@ -380,24 +497,54 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
 
                         <ReminderPicker
                             value={formData.offsetMinutes ?? null}
-                            onChange={(val) => setFormData((prev) => ({ ...prev, offsetMinutes: val }))}
+                            onChange={(val) => setFormData((prev) => ({...prev, offsetMinutes: val}))}
                             label="Reminder"
                         />
-                        <input
-                            type="text"
-                            name="url"
-                            placeholder="URL"
-                            value={formData.url}
-                            onChange={handleInputChange}
-                            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
+                        {/*url 필드*/}
+                        <div className="space-y-2">
+                            {formData.urls.map((url, index) => (
+                                <div key={index} className="flex items-center space-x-2">
+                                    <input
+                                        type="url"
+                                        placeholder={`URL ${index + 1}`}
+                                        value={url}
+                                        onChange={(e) => handleUrlChange(index, e.target.value)}
+                                        className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    />
+                                    {formData.urls.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeUrlField(index)}
+                                            className="px-2 py-1 text-red-500 hover:text-red-700"
+                                        >
+                                            🗑️
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            {/*url 추가 버튼*/}
+                            <button
+                                type="button"
+                                onClick={addUrlField}
+                                className="text-blue-600 text-sm hover:underline mt-1"
+                            >
+                                + URL
+                            </button>
+                        </div>
 
                         <div className="w-full border rounded-md p-3">
                             {/* 제목 라벨 */}
                             <p className="text-xs font-semibold text-slate-500 mb-2">Invitees</p>
-
                             {/*  팀원 목록  */}
-                            <InviteesList members={members}/>
+                            <InviteesList
+                                members={members}
+                                onSelectAction={handleSelect}
+                                selectedIds={[...selectedSet]} // 중복 클릭 막을 상태 전달
+                            />
+                            {/* 디버깅용 표시 */}
+                            <div className="mt-2 text-xs text-slate-500">
+                                선택된 ID: {[...selectedSet].join(", ") || "-"}
+                            </div>
                         </div>
 
                         <ColorPaletteSelector
@@ -565,7 +712,7 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
             <div className="bg-white rounded-xl shadow-lg p-6 w-[500px]">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold text-slate-800">{editEvent ? "Edit Event" : "New"}</h2>
+                    <h2 className="text-lg font-bold text-slate-800">{editEventId ? "Edit Event" : "New"}</h2>
 
                     <button
                         onClick={onClose}
@@ -576,8 +723,8 @@ export function EventModal({onClose, onSave, editEvent, initialDate, projectId, 
                 </div>
                 <div className="flex items-center gap-2 mb-6 border-b pb-2">
                     <TabButton tabName="Event"/>
-                    {!editEvent && <TabButton tabName="Todo"/>}
-                    {!editEvent && <TabButton tabName="Memo"/>}
+                    {!editEventId && <TabButton tabName="Todo"/>}
+                    {!editEventId && <TabButton tabName="Memo"/>}
                 </div>
                 <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden pr-3">
                     {renderForm()}
