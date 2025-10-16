@@ -178,7 +178,7 @@ export default function SidebarLeft({
             <div className={`${mobileView === 'calendar' ? 'block' : 'hidden'} md:block`}>
                 <div className="mb-4 hidden md:block">
                     <div
-                        className="w-full px-6 py-1.5 rounded-full border border-slate-300 text-sm font-medium text-slate-800 text-center">
+                        className="w-full px-6 py-1.5 rounded-full border border-slate-300 text-lg font-bold text-slate-800 text-center">
                         To do
                     </div>
                 </div>

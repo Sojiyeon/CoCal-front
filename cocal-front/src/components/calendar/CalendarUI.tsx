@@ -759,7 +759,7 @@ export default function CalendarUI() {
                     ></div>
                 )}
                 <div
-                    className={`fixed inset-y-0 left-0 z-30 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:mt-9 bg-white`}>
+                    className={`fixed inset-y-0 left-0 z-30 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:mt-3 bg-white`}>
                     <SidebarLeft
                         projectId={currentProject?.id ?? 0} // 필수!
                         onClose={() => setIsSidebarOpen(false)} // 닫기 함수 전달
