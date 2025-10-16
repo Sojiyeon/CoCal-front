@@ -446,7 +446,8 @@ const ProjectDashboardPage: React.FC = () => {
                         item.members.map((member: ServerMember): TeamMemberForCard => ({
                             id: member.userId,
                             name: member.name,
-                            imageUrl: member.profileImageUrl || 'default_url',
+                            // 'default_url' 대신 DEFAULT_USER.imageUrl을 사용
+                            imageUrl: member.profileImageUrl || DEFAULT_USER.imageUrl,
                         })) : [],
                 }));
                 setProjects(projectsData);
