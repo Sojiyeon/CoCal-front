@@ -8,6 +8,24 @@ import {api} from "@/components/calendar/utils/api";
 // 오늘 날짜를 저장하는 상수
 const today = new Date();
 
+// Public 할 일 (이벤트 할 일)의 최종 API 응답 타입
+interface ApiEventTodo {
+    id: number;
+    title: string;
+    description: string;
+    status: 'DONE' | 'IN_PROGRESS';
+    eventTitle: string;
+    eventColor: string;
+}
+
+// Private 할 일 (개인 할 일)의 API 응답 타입 (기존과 동일)
+interface ApiPrivateTodo {
+    id: number;
+    title: string;
+    description: string;
+    status: 'DONE' | 'IN_PROGRESS';
+}
+
 // ✨ FIX: CalendarUI로부터 더 많은 함수를 받기 위해 props 타입을 확장합니다.
 interface SidebarLeftProps {
     miniYear: number;
@@ -38,27 +56,6 @@ const ActionButton = ({ icon, text, onClick }: { icon: string; text: string; onC
     </button>
 );
 
-interface EventTodoResponse {
-    id: number;
-    eventId: number;
-    urlId: number;
-    title: string;
-    description: string | null;
-    status: "IN_PROGRESS" | "DONE";
-    authorId: number | null;
-    orderNo: number;
-    eventColor: string;
-}
-
-interface PrivateTodoResponse {
-    id: number;
-    title: string;
-    description: string | null;
-    status: "IN_PROGRESS" | "DONE";
-    projectId: number;
-    userId: number;
-}
-
 export default function SidebarLeft({
     projectId,
     user,
@@ -82,72 +79,61 @@ export default function SidebarLeft({
     const [todoFilter, setTodoFilter] = useState('ALL');
     const [mobileView, setMobileView] = useState<'actions' | 'calendar'>('actions');
 
-
     const handleDateClick = async (day: number) => {
-        // 선택 날짜 업데이트
         handleSidebarDateSelect(day);
         const selectedDate = new Date(miniYear, miniMonth, day);
-        // YYYY-MM-DD 형식, 로컬 시간 기준
-        const formattedDate = `${selectedDate.getFullYear()}-${(selectedDate.getMonth()+1).toString().padStart(2,'0')}-${selectedDate.getDate().toString().padStart(2,'0')}`;
-
+        const formattedDate = `${selectedDate.getFullYear()}-${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}-${selectedDate.getDate().toString().padStart(2, '0')}`;
 
         try {
-            // 이벤트 TODO 가져오기
-            const eventData = await api.get(
-                `/projects/${projectId}/events/todos?date=${formattedDate}`
-            );
+            const eventData = await api.get(`/projects/${projectId}/events/todos?date=${formattedDate}`);
+            const privateData = await api.get(`/projects/${projectId}/todos?date=${formattedDate}`);
 
-            // 개인 TODO 가져오기
-            const privateData = await api.get(
-                `/projects/${projectId}/todos?date=${formattedDate}`
-            );
-
-            // 안전하게 items 접근 (API가 빈 배열 반환 가능)
-            const eventItems = (eventData?.data?.items as EventTodoResponse[]) || [];
-            const privateItems = (privateData?.data?.items as PrivateTodoResponse[]) || [];
+            const eventItems: ApiEventTodo[] = eventData?.data?.items || [];
+            const privateItems: ApiPrivateTodo[] = privateData?.data?.items || [];
 
             const combinedTodos: SidebarTodo[] = [
-                ...eventItems.map((item) => ({
+                // --- ✨ Public Todo 매핑 최종 수정 ---
+                ...eventItems.map((item: ApiEventTodo) => ({
                     id: item.id,
-                    eventId: item.eventId,
-                    urlId: item.urlId,
                     title: item.title,
-                    description: item.description,
-                    status: item.status,
-                    authorId: item.authorId,
-                    orderNo: item.orderNo,
                     type: "EVENT" as const,
-                    parentEventTitle: item.title, // 이벤트 이름
-                    parentEventColor: item.eventColor, // 색상 (이벤트 기반)
-                    url: undefined,
-                })),
-                ...privateItems.map((item) => ({
-                    id: item.id,
+                    parentEventColor: item.eventColor,
+                    parentEventTitle: item.eventTitle,
+
+                    // --- ✅ API에서 직접 받은 데이터 사용으로 변경 ---
+                    status: item.status,
+                    description: item.description,
+
+                    // 나머지 필드는 여전히 API가 제공하지 않으므로 기본값 유지
                     eventId: 0,
+                    authorId: 0,
+                    url: undefined,
                     urlId: 0,
+                    orderNo: 0,
+                })),
+                // --- Private Todo 매핑 (기존과 동일) ---
+                ...privateItems.map((item: ApiPrivateTodo) => ({
+                    id: item.id,
                     title: item.title,
                     description: item.description,
                     status: item.status,
-                    authorId: item.userId,
-                    orderNo: 0,
                     type: "PRIVATE" as const,
-                    parentEventTitle: "Private Todo",
-                    parentEventColor: "#ccc",
+                    parentEventColor: "#A0AEC0",
+                    parentEventTitle: 'Private',
+                    eventId: 0,
+                    authorId: user?.userId || 0,
                     url: undefined,
+                    urlId: 0,
+                    orderNo: 0,
                 })),
             ];
 
-            console.log(combinedTodos)
-
-            // 상태 업데이트
             setSidebarTodos(combinedTodos);
         } catch (error) {
             console.error("API 요청 실패:", error);
-            // 실패 시 빈 배열로 초기화
             setSidebarTodos([]);
         }
     };
-
 
     const filteredSidebarTodos = sidebarTodos.filter(todo => {
         if (todoFilter === 'ALL') return true;
