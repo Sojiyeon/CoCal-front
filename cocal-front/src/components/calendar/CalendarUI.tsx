@@ -201,7 +201,7 @@ export default function CalendarUI() {
         };
 
         fetchProject();
-    }, [projectId]);
+    }, [projectId, isProjectSettingsModalOpen]);
 
     //  [MOBILE WEEKVIEW] 모바일 뷰포트 감지 (클라이언트)
     useEffect(() => {
@@ -983,8 +983,7 @@ export default function CalendarUI() {
             <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal}
                                   apiEndpoints={API_ENDPOINTS}/>
             {isProjectSettingsModalOpen &&
-                <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId}
-                               userId={user?.id || 0}/>}
+                <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId}/>}
             {todoToEdit && (
                 <TodoEditModal
                     todoToEdit={todoToEdit}
