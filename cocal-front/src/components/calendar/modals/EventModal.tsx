@@ -294,8 +294,11 @@ export function EventModal({onClose, onSave, editEventId, initialDate, projectId
                 };
                 // projectId를 props에서 가져와 사용
                 const response = await createMemo(projectId, memoData);
+                window.alert("메모가 저장되었습니다.");
                 // 부모 컴포넌트로 새 메모 전달
                 onSave(response, activeTab);
+                // 모달 닫기
+                onClose();
 
             } else if (activeTab === "Todo") {
                 // --- 유효성 검사 로직 추가 ---
@@ -347,7 +350,10 @@ export function EventModal({onClose, onSave, editEventId, initialDate, projectId
                         : {}),
                 };
 
+                await createTodo(projectId, serverPayload);
                 onSave(normalizedForParent, "Todo");
+
+                onClose(); // 성공 후 모달 닫기
             } else if (activeTab === "Event") {
                 // 날짜 넘어가는 이벤트인지 확인
                 const start = new Date(formData.startAt);
@@ -420,10 +426,8 @@ export function EventModal({onClose, onSave, editEventId, initialDate, projectId
                 };
                 onSave(eventPayload, activeTab, editEventId ? editEventId : undefined);
             }
-
-            onClose();
-        } catch (err) {
-            // ✅ err 미사용 경고 제거
+        } catch (err:unknown) {
+            // err 미사용 경고 제거
             console.error("Save error in EventModal:", err);
             alert("저장 중 오류 발생");
         } finally {
