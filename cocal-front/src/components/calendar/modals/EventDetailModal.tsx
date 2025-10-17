@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState,useEffect } from "react";
-import { CalendarEvent, EventTodo, ProjectMember } from "../types";
+import {CalendarEvent, EventData, EventTodo, ProjectMember} from "../types";
 import { getReminderLabel } from "../utils/reminderUtils";
+import {getEvent} from "@/api/eventApi";
 
 interface Props {
     event: CalendarEvent;
@@ -183,6 +184,7 @@ const TeamAvatars = ({ list }: { list: ProjectMember[] }) => {
     );
 };
 
+// 이벤트 ui
 export function EventDetailModal({
                                      event,
                                      onClose,
@@ -194,6 +196,10 @@ export function EventDetailModal({
                                  }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
     const [currentTodoIndex, setCurrentTodoIndex] = useState(0);
+    // 이벤트 정보 담는 상태
+    const [eventData, setEventData] = useState<EventData | null>(null);
+    // 이벤트 멤버 담는 상태
+    const [eventMembers, setEventMembers] = useState<ProjectMember[]>([]);
     const formatTime = (dateString: string) => {
         return new Date(dateString).toLocaleTimeString("ko-KR", {
             hour: "2-digit",
@@ -201,6 +207,17 @@ export function EventDetailModal({
             hour12: false,
         });
     };
+    // 2025-10-11 11:00 형식
+    const formatISO = (dateString: string) => {
+        const date = new Date(dateString);
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        const h = String(date.getHours()).padStart(2, "0");
+        const min = String(date.getMinutes()).padStart(2, "0");
+        return `${y}.${m}.${d} ${h}:${min}`;
+    };
+
     const handleMainEditClick = () => {
         if (activeTab === "Event") {
             onEdit(event);
@@ -214,21 +231,44 @@ export function EventDetailModal({
             }
         }
     };
+
+    // 이벤트 정보 조회
+    useEffect(() => {
+        (async () => {
+            try {
+                // api 호출
+                // 이벤트 조회(members:ProjectMember[] 사용)
+                const data: EventData = await getEvent(event.projectId, event.id);
+                // 이벤트멤버 저장
+                setEventMembers(data.members);
+                console.log("이벤트 조회 성공:", data);
+                if (!data) {
+                    window.alert("이벤트 정보를 가져오지 못했습니다.");
+                    return;
+                }
+                setEventData(data);
+            } catch (err: unknown) {
+                console.error('이벤트 정보 로드 실패:', err);
+            } finally {
+            }
+        })();
+    }, [event]);
+
    // /** Event 탭 콘텐츠 */
     const EventContent = () => (
         <div className="space-y-4 text-sm p-1">
             <div className="flex items-center">
                 <span className="w-24 text-slate-500">Time</span>
                 <span className="text-slate-800 font-medium">
-          {`${formatTime(event.startAt)} - ${formatTime(event.endAt)}`}
+          {`${formatISO(eventData?.startAt ?? "")} ~ ${formatISO(eventData?.endAt ?? "")}`}
         </span>
             </div>
 
             {/*  Team: 실제 멤버 표시 */}
             <div className="flex items-center">
                 <span className="w-24 text-slate-500">Team</span>
-                {members && members.length > 0 ? (
-                    <TeamAvatars list={members}/>
+                {eventMembers && eventMembers.length > 0 ? (
+                    <TeamAvatars list={eventMembers}/>
                 ) : (
                     <span className="text-slate-400">No members</span>
                 )}
@@ -236,29 +276,41 @@ export function EventDetailModal({
 
             <div className="flex items-center">
                 <span className="w-24 text-slate-500">Location</span>
-                <span className="text-slate-800">{event.location || "Not specified"}</span>
+                <span className="text-slate-800">{eventData?.location || "Not specified"}</span>
             </div>
 
             <div className="flex items-start">
                 <span className="w-24 text-slate-500 pt-1">Memo</span>
                 <div className="flex-1 text-slate-800 bg-slate-50 p-2 rounded-md text-xs min-h-[4rem]">
-                    {event.description || "작성된 메모가 없습니다."}
+                    {eventData?.description || "작성된 설명이 없습니다."}
                 </div>
             </div>
 
 
             <div className="flex items-center">
                 <span className="w-24 text-slate-500">Reminder</span>
-                <span className="text-slate-800">{getReminderLabel(event.offsetMinutes ?? null)}</span>
+                <span className="text-slate-800">{getReminderLabel(eventData?.offsetMinutes ?? null)}</span>
             </div>
 
-            <div className="flex items-center"><span className="w-24 text-slate-500">URL</span>
-                {event.url ? (
-                    <a href={event.url} target="_blank" rel="noopener noreferrer"
-                       className="text-blue-600 truncate hover:underline">{event.url}</a>
-                ) : (
-                    <span>-</span>
-                )}
+            <div className="flex items-start">
+                <span className="w-24 text-slate-500 mt-1">URL</span>
+                <div className="flex flex-col gap-1">
+                    {eventData?.urls && eventData.urls.length > 0 ? (
+                        eventData.urls.map((urlObj, index) => (
+                            <a
+                                key={index}
+                                href={typeof urlObj === "string" ? urlObj : urlObj.url} // EventUrl[] 형태면 .url 접근
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 truncate hover:underline"
+                            >
+                                {typeof urlObj === "string" ? urlObj : urlObj.url}
+                            </a>
+                        ))
+                    ) : (
+                        <span>-</span>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -285,8 +337,8 @@ export function EventDetailModal({
                 <div className="p-4 border-b sticky top-0 bg-white z-10">
                     <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">
-                            <div className="w-2.5 h-10 rounded-full" style={{backgroundColor: event.color}}></div>
-                            <h2 className="text-xl font-bold text-slate-800 truncate">{event.title}</h2>
+                            <div className="w-2.5 h-10 rounded-full" style={{backgroundColor: eventData?.color}}></div>
+                            <h2 className="text-xl font-bold text-slate-800 truncate">{eventData?.title}</h2>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                             {/* --- START: 수정된 부분 --- */}

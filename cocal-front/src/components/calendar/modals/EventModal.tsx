@@ -160,8 +160,6 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
     // =======멤버 선택 관련========
     // 선택된 멤버
     const [selectedSet, setSelectedSet] = useState<Set<number>>(new Set());
-    // number[]로 저장
-    const selectedUserIds = [...selectedSet];
     // 멤버 선택 핸들러
     const handleSelect = (userId: number) => {
         setSelectedSet(prev => {
@@ -174,6 +172,8 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
             return newSet;
         });
     };
+    // 이벤트 수정 시 이미 참여된 멤버 상태
+    const [alreadyMember, setAlreadyMember] = useState<number[]>([]);
     // ===================
 
 
@@ -238,6 +238,13 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
                         eventId: eventData.id,
                         urls: eventData.urls?.map(u => u.url) ?? [],  // EventUrl[] → string[]
                     }));
+                    // 멤버 → id 배열
+                    const ids: number[] = (eventData.members ?? [])
+                        .map(m => (m).userId ?? (m).userId) // 서버 응답 키가 userId가 아닐 수도 있어 안전 처리
+                        .filter((v): v is number => typeof v === "number");
+
+                    setAlreadyMember(ids);          // (표시용)
+                    setSelectedSet(new Set(ids));   // 선택의 단일 소스 초기화
                 } catch (err: unknown) {
                     console.error('이벤트 정보 로드 실패:', err);
                 } finally {
@@ -393,10 +400,9 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
                     ...(formData.offsetMinutes !== null ? { offsetMinutes: formData.offsetMinutes } : {}),
                     color: formData.color,
                     urls: formData.urls ?? [],
-                    memberUserIds: selectedUserIds,
+                    memberUserIds: [...selectedSet],
                 };
-                console.log("requestEvent: ", requestEvent);
-                (async () => {
+                await (async () => {
                     try {
                         setIsLoading(true);
                         let savedEvent;
@@ -556,6 +562,7 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
                             {/*  팀원 목록  */}
                             <InviteesList
                                 members={members}
+                                alreadyMember={alreadyMember}
                                 onSelectAction={handleSelect}
                                 selectedIds={[...selectedSet]} // 중복 클릭 막을 상태 전달
                             />

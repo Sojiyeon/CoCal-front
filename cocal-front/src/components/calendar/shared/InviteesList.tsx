@@ -5,11 +5,12 @@ import {useEffect, useState} from "react";
 
 type Props = {
     members: ProjectMember[];
+    alreadyMember: number[];
     onSelectAction?: (userId: number) => void;
     selectedIds?: number[];
 };
 
-export const InviteesList: React.FC<Props> = ({ members, onSelectAction, selectedIds = [] }) => {
+export const InviteesList: React.FC<Props> = ({ members, alreadyMember, onSelectAction, selectedIds = [] }) => {
     // 현재 로그인한 사용자id 상태
     const [currentUserId, setCurrentUserId] = useState<number | null>(null);
     // 프로필 이미지 없을 경우 사용하는 img
@@ -32,13 +33,15 @@ export const InviteesList: React.FC<Props> = ({ members, onSelectAction, selecte
     // --- 현재 사용자 제외 ---
     const visibleMembers = members.filter((m) => m.userId !== currentUserId);
 
+    // 팀원이 아무도 없다면
     if (!visibleMembers.length) return <p className="text-sm text-slate-400">No invitees</p>;
 
     return (
         <ul className="divide-y">
             {visibleMembers.map((m) => {
                 const src = m.profileImageUrl?.replace?.("96x96", "40x40") ?? m.profileImageUrl ?? "";
-                const isSelected = selectedIds.includes(m.userId);
+                const isSelected = selectedIds.includes(m.userId);    // 단일 소스
+                const isAlready = alreadyMember.includes(m.userId);   // 표시만
 
                 return (
                     <li key={m.userId} className="py-1">
@@ -65,14 +68,14 @@ export const InviteesList: React.FC<Props> = ({ members, onSelectAction, selecte
                                     <span>{getInitial(m.name)}</span>
                                 )}
                             </div>
-
+                            {/* 이름/메일 */}
                             <div className="min-w-0 text-left">
                                 <p className="text-sm font-medium text-slate-800 truncate">{m.name}</p>
                                 <a className="text-xs text-slate-500 truncate block" title={m.email ?? ""}>
                                     {m.email ?? "-"}
                                 </a>
                             </div>
-
+                            {/* 우측 선택 상태 */}
                             {isSelected && (
                                 <span className="ml-auto text-[11px] text-slate-600">✓</span>
                             )}
