@@ -38,7 +38,7 @@ const API_ENDPOINTS = {
     DELETE_USER_PHOTO: `${BASE_URL}/users/profile-image`,
 };
 type CalendarEventWithTodos = CalendarEvent & { todos: EventTodo[] };
-// 메인 캘린더 UI 컴포넌트
+// 메인 캘린더 UI  컴포넌트
 export default function CalendarUI() {
     // --- 훅(Hooks) 초기화 ---
     const { user, logout, isLoading: isUserLoading } = useUser();

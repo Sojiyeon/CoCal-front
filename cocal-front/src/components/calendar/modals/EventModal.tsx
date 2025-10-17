@@ -389,7 +389,7 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
                     visibility: formData.visibility,
                     description: formData.description,
                     location: formData.location,
-                    //  null이면 빼고, number면 그대로 (undefined만 허용)
+                    //  null이면  빼고, number면 그대로 (undefined만 허용)
                     ...(formData.offsetMinutes !== null ? { offsetMinutes: formData.offsetMinutes } : {}),
                     color: formData.color,
                     urls: formData.urls ?? [],
