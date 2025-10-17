@@ -294,8 +294,11 @@ export function EventModal({onClose, onSave, editEventId, initialDate, projectId
                 };
                 // projectId를 props에서 가져와 사용
                 const response = await createMemo(projectId, memoData);
+                window.alert("메모가 저장되었습니다.");
                 // 부모 컴포넌트로 새 메모 전달
                 onSave(response, activeTab);
+                // 모달 닫기
+                onClose();
 
             } else if (activeTab === "Todo") {
                 // --- 유효성 검사 로직 추가 ---
