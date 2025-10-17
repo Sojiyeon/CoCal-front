@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import TaskProgress from "./TaskProgress";
 import { SidebarTodo, UserSummary } from "./types";
 import {api} from "@/components/calendar/utils/api";
@@ -80,6 +80,14 @@ export default function SidebarLeft({
     const [todoFilter, setTodoFilter] = useState('ALL');
     // ✨ FIX: 모바일에서 '기능' 뷰와 '캘린더' 뷰를 전환하기 위한 상태
     const [mobileView, setMobileView] = useState<'actions' | 'calendar'>('actions');
+
+    // 자동으로 컴포넌트 로드
+    useEffect(() => {
+        // projectId가 유효한 숫자일 때만 실행하도록 조건을 추가합니다.
+        if (projectId) {
+            handleDateClick(today.getDate());
+        }
+    }, [projectId]); // projectId가 변경될 때마다 이 효과를 다시 확인합니다.
 
     const handleDateClick = async (day: number) => {
         handleSidebarDateSelect(day);

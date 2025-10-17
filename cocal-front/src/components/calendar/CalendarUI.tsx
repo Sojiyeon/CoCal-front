@@ -783,7 +783,7 @@ export default function CalendarUI() {
                     ></div>
                 )}
                 <div
-                    className={`fixed inset-y-0 left-0 z-30 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:mt-3 bg-white`}>
+                    className={`fixed inset-y-0 left-0 z-30 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:relative md:translate-x-0 bg-white`}>
                     <SidebarLeft
                         projectId={currentProject?.id ?? 0} // 필수!
                         onClose={() => setIsSidebarOpen(false)} // 닫기 함수 전달
@@ -814,7 +814,7 @@ export default function CalendarUI() {
                 </div>
 
                 {/* 메인 캘린더 영역 */}
-                <main className="flex-1 p-2 md:p-6 overflow-auto">
+                <main className="flex-1 p-2 md:p-5 overflow-auto">
                     {/* 메인 캘린더 헤더 */}
                     <div className="flex items-center justify-between mb-4">
                         {/* ← 왼쪽 블록: 항상 렌더. 모바일에서 week(또는 WeekViewMobile 열림)일 때만 invisible */}
