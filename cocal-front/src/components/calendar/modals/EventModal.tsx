@@ -347,7 +347,10 @@ export function EventModal({onClose, onSave, editEventId, initialDate, projectId
                         : {}),
                 };
 
+                await createTodo(projectId, serverPayload);
                 onSave(normalizedForParent, "Todo");
+
+                onClose(); // 성공 후 모달 닫기
             } else if (activeTab === "Event") {
                 // 날짜 넘어가는 이벤트인지 확인
                 const start = new Date(formData.startAt);
@@ -420,10 +423,8 @@ export function EventModal({onClose, onSave, editEventId, initialDate, projectId
                 };
                 onSave(eventPayload, activeTab, editEventId ? editEventId : undefined);
             }
-
-            onClose();
-        } catch (err) {
-            // ✅ err 미사용 경고 제거
+        } catch (err:unknown) {
+            // err 미사용 경고 제거
             console.error("Save error in EventModal:", err);
             alert("저장 중 오류 발생");
         } finally {

@@ -177,6 +177,7 @@ export default function CalendarUI() {
 
 
     // 페이지 로드 시 프로젝트 정보를 가져오는 효과
+    // 프로젝트 정보 조회
     useEffect(() => {
         if (isNaN(projectId)) return;
 
@@ -205,7 +206,7 @@ export default function CalendarUI() {
         };
 
         fetchProject();
-    }, [projectId, isProjectSettingsModalOpen]);
+    }, [projectId, isProjectSettingsModalOpen, isEventModalOpen]);
 
     //  [MOBILE WEEKVIEW] 모바일 뷰포트 감지 (클라이언트)
     useEffect(() => {
