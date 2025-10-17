@@ -1,7 +1,7 @@
 "use client"
 
 import {fetchJsonWithAuth} from "@/utils/authService";
-import {ApiResponse, Project} from "@/components/calendar/types"
+import {ApiResponse, Project} from "@/components/calendar/types";
 
 const PROJECT_URL: string = "/api/projects/";
 

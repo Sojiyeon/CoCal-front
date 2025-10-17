@@ -10,11 +10,13 @@ interface SettingsData {
     name: string;
     startDate: string;
     endDate: string;
+
 }
 
 interface Props {
     projectId: number;
     onClose: () => void;
+    userId: number;
 }
 
 export function SettingsModal({ projectId, onClose }: Props) {

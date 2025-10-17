@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import TaskProgress from "./TaskProgress";
 import { SidebarTodo, UserSummary } from "./types";
 import {api} from "@/components/calendar/utils/api";
@@ -8,6 +8,7 @@ import {api} from "@/components/calendar/utils/api";
 // 오늘 날짜를 저장하는 상수
 const today = new Date();
 
+//  CalendarUI로부터 더 많은 함수를 받기 위해 props 타입을 확장합니다.
 // Public 할 일 (이벤트 할 일)의 최종 API 응답 타입
 interface ApiEventTodo {
     id: number;
@@ -48,7 +49,7 @@ interface SidebarLeftProps {
     projectEndDate?: Date;
 }
 
-// ✨ FIX: 모바일 기능 목록을 위한 버튼 컴포넌트를 정의합니다.
+//  모바일 기능 목록을 위한 버튼 컴포넌트를 정의합니다.
 const ActionButton = ({ icon, text, onClick }: { icon: string; text: string; onClick: () => void }) => (
     <button onClick={onClick} className="flex items-center w-full p-3 text-left text-slate-700 hover:bg-slate-100 rounded-lg">
         <span className="text-2xl w-8 mr-4 text-center">{icon}</span>
@@ -73,11 +74,20 @@ export default function SidebarLeft({
     onOpenTeamModal,
     onOpenSettingsModal,
     projectStartDate,
-    projectEndDate
+    projectEndDate,
     }: { projectId: number; user: UserSummary | null } & SidebarLeftProps) {
     const [sidebarTodos, setSidebarTodos] = useState<SidebarTodo[]>([]);
     const [todoFilter, setTodoFilter] = useState('ALL');
+    // ✨ FIX: 모바일에서 '기능' 뷰와 '캘린더' 뷰를 전환하기 위한 상태
     const [mobileView, setMobileView] = useState<'actions' | 'calendar'>('actions');
+
+    // 자동으로 컴포넌트 로드
+    useEffect(() => {
+        // projectId가 유효한 숫자일 때만 실행하도록 조건을 추가합니다.
+        if (projectId) {
+            handleDateClick(today.getDate());
+        }
+    }, [projectId]); // projectId가 변경될 때마다 이 효과를 다시 확인합니다.
 
     const handleDateClick = async (day: number) => {
         handleSidebarDateSelect(day);
@@ -232,9 +242,11 @@ export default function SidebarLeft({
                                 <div className="flex-1 min-w-0 cursor-pointer" onDoubleClick={() => onEditTodo(todo)}>
                                     <div
                                         className={`font-medium truncate ${todo.status === "DONE" ? "line-through text-slate-400" : ""}`}>{todo.title}</div>
+
                                     <div className="text-xs text-slate-400 truncate">
                                         {todo.type === 'PRIVATE' ? (todo.description || 'No description') : `${user?.name || 'Unassigned'} - ${todo.description || ''}`}
                                     </div>
+
                                 </div>
                                 <button onClick={() => handleToggleTodoStatus(todo.id)}
                                         className="w-5 h-5 border-2 rounded-full flex-shrink-0 flex items-center justify-center cursor-pointer">

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import { CalendarEvent, EventTodo, ProjectMember } from "../types";
-
+import { getReminderLabel } from "../utils/reminderUtils";
 
 interface Props {
     event: CalendarEvent;
@@ -12,6 +12,7 @@ interface Props {
     onEditTodo?: (todo: EventTodo) => void;
     onDeleteTodo?: (todoId: number, type: "EVENT" | "PRIVATE") => void;
     members?: ProjectMember[];
+
 }
 
 // /** 레거시 호환: event.eventTodos / event.publicTodos를 허용 */
@@ -35,43 +36,102 @@ const getInitials = (name?: string) => {
 const AVATAR_FALLBACK =
     "https://placehold.co/100x100/A0BFFF/FFFFFF?text=User";
 
+// --- START: 아이콘 컴포넌트 정의 추가 ---
+
+
+const DeleteIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+);
+
+const ChevronLeftIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+);
+const ChevronRightIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+);
+
+
 // /** To-do 탭: todos 안전 합성 + 콜백 타입 명시 */
-const TodoListTab = ({ event, onToggleTodo, onEditTodo, onDeleteTodo }: Props) => {
+const TodoListTab = ({ event,  onDeleteTodo }: Props) => {
+    const [currentTodoIndex, setCurrentTodoIndex] = useState(0);
+
     const e = event as LegacyCalendarEvent;
     //  todos → eventTodos → publicTodos 순으로 안전하게 합성
     const todos: EventTodo[] = e.todos ?? e.eventTodos ?? e.publicTodos ?? [];
-
+   // ---  삭제 후 UI 오류 방지 로직 ---
+    useEffect(() => {
+        // 할 일이 삭제되어 현재 인덱스가 배열 범위를 벗어나는 경우,
+        // 인덱스를 유효한 마지막 값으로 재설정하여 오류를 방지합니다.
+        if (todos.length > 0 && currentTodoIndex >= todos.length) {
+            setCurrentTodoIndex(todos.length - 1);
+        }
+    }, [todos.length, currentTodoIndex]);
+    // ---  삭제 후 UI 오류 방지 로직 ---
     if (todos.length === 0) {
         return <p className="text-center text-sm text-slate-500 py-8">연관된 할 일이 없습니다.</p>;
     }
+    const currentTodo = todos[currentTodoIndex];
+
+    // 다음 할 일로 이동
+    const goToNext = () => {
+        setCurrentTodoIndex((prevIndex) => (prevIndex + 1) % todos.length);
+    };
+
+    // 이전 할 일로 이동
+    const goToPrev = () => {
+        setCurrentTodoIndex((prevIndex) => (prevIndex - 1 + todos.length) % todos.length);
+    };
+    const DetailRow = ({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) => (
+        <div className="flex text-sm">
+            <div className="w-28 text-slate-500 flex items-center gap-2 flex-shrink-0">
+                {icon}
+                <span className="font-semibold">{label}</span>
+            </div>
+            <div className="text-slate-800 break-words min-w-0">{children}</div>
+        </div>
+    );
 
     return (
-        <div className="space-y-3 p-1">
-            {todos.map((todo: EventTodo) => (
-                <div
-                    key={todo.id}
-                    className={`flex items-center gap-3 p-2 rounded-lg ${todo.status === "DONE" ? "opacity-60" : ""}`}
-                >
-                    <button
-                        onClick={() => onToggleTodo?.(todo.id)}
-                        className="w-5 h-5 border-2 rounded-md flex-shrink-0 flex items-center justify-center cursor-pointer"
-                    >
-                        {todo.status === "DONE" && <div className="w-2.5 h-2.5 bg-slate-500 rounded-sm"></div>}
-                    </button>
+        <div className="p-1 space-y-1">
+            {/* 제목, 수정/삭제/탐색 버튼 */}
+            <div className="flex justify-between items-center">
+                <h3 className="text-1xl font-bold text-slate-800 truncate"></h3>
+                <div className="flex items-center gap-3 text-slate-600">
+                    {/* 할 일이 2개 이상일 때만 화살표 표시 */}
+                    {todos.length > 1 && (
+                        <div className="flex items-center gap-1">
+                            <button onClick={goToPrev} className="p-1 rounded-full hover:bg-slate-100"><ChevronLeftIcon /></button>
+                            <span className="text-xs font-mono w-12 text-center">{currentTodoIndex + 1} / {todos.length}</span>
+                            <button onClick={goToNext} className="p-1 rounded-full hover:bg-slate-100"><ChevronRightIcon /></button>
+                        </div>
+                    )}
 
-                    <div className="flex-1 min-w-0">
-                        <p className={`font-medium truncate ${todo.status === "DONE" ? "line-through text-slate-500" : ""}`}>
-                            {todo.title}
-                        </p>
-                        {todo.description && <p className="text-xs text-slate-400 truncate">{todo.description}</p>}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <button onClick={() => onEditTodo?.(todo)} className="text-slate-400 hover:text-slate-700">✏️</button>
-                        <button onClick={() => onDeleteTodo?.(todo.id, "EVENT")} className="text-slate-400 hover:text-red-600">🗑️</button>
-                    </div>
+                    <button onClick={() => onDeleteTodo?.(currentTodo.id, "EVENT")} className="hover:text-red-600"><DeleteIcon /></button>
                 </div>
-            ))}
+            </div>
+
+            {/* 상세 정보 */}
+            <div className="space-y-4">
+                <DetailRow label="Title">
+                    {currentTodo.title || <span className="text-slate-400">메모가 없습니다.</span>}
+                </DetailRow>
+                <DetailRow label="Description">
+                    {currentTodo.description || <span className="text-slate-400">메모가 없습니다.</span>}
+                </DetailRow>
+                <DetailRow label="Category">
+                    {event.title || <span className="text-slate-400">미지정</span>}
+                </DetailRow>
+
+                <DetailRow label="URL" >
+                    {currentTodo.url ? (
+                        <a href={currentTodo.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
+                            {currentTodo.url}
+                        </a>
+                    ) : (
+                        <span className="text-slate-400">없음</span>
+                    )}
+                </DetailRow>
+            </div>
         </div>
     );
 };
@@ -133,7 +193,7 @@ export function EventDetailModal({
                                      members,
                                  }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
-
+    const [currentTodoIndex] = useState(0);
     const formatTime = (dateString: string) => {
         return new Date(dateString).toLocaleTimeString("ko-KR", {
             hour: "2-digit",
@@ -141,7 +201,19 @@ export function EventDetailModal({
             hour12: false,
         });
     };
+    const handleMainEditClick = () => {
+        if (activeTab === "Event") {
+            onEdit(event);
+        } else { // "To do" 탭이 활성화된 경우
+            const e = event as LegacyCalendarEvent;
+            const todos: EventTodo[] = e.todos ?? e.eventTodos ?? e.publicTodos ?? [];
 
+            if (todos.length > 0 && todos[currentTodoIndex]) {
+                const currentTodo = todos[currentTodoIndex];
+                onEditTodo?.(currentTodo); // 현재 보고 있는 할일를 수정합니다.
+            }
+        }
+    };
    // /** Event 탭 콘텐츠 */
     const EventContent = () => (
         <div className="space-y-4 text-sm p-1">
@@ -156,7 +228,7 @@ export function EventDetailModal({
             <div className="flex items-center">
                 <span className="w-24 text-slate-500">Team</span>
                 {members && members.length > 0 ? (
-                    <TeamAvatars list={members} />
+                    <TeamAvatars list={members}/>
                 ) : (
                     <span className="text-slate-400">No members</span>
                 )}
@@ -174,17 +246,16 @@ export function EventDetailModal({
                 </div>
             </div>
 
+
             <div className="flex items-center">
-                <span className="w-24 text-slate-500">URL</span>
+                <span className="w-24 text-slate-500">Reminder</span>
+                <span className="text-slate-800">{getReminderLabel(event.offsetMinutes ?? null)}</span>
+            </div>
+
+            <div className="flex items-center"><span className="w-24 text-slate-500">URL</span>
                 {event.url ? (
-                    <a
-                        href={event.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 truncate hover:underline"
-                    >
-                        {event.url}
-                    </a>
+                    <a href={event.url} target="_blank" rel="noopener noreferrer"
+                       className="text-blue-600 truncate hover:underline">{event.url}</a>
                 ) : (
                     <span>-</span>
                 )}
@@ -193,7 +264,7 @@ export function EventDetailModal({
     );
 
     ///** 탭 버튼 공통 컴포넌트 */
-    const TabButton = ({ tabName }: { tabName: ActiveTab }) => (
+    const TabButton = ({tabName}: { tabName: ActiveTab }) => (
         <button
             onClick={() => setActiveTab(tabName)}
             className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
@@ -214,28 +285,33 @@ export function EventDetailModal({
                 <div className="p-4 border-b sticky top-0 bg-white z-10">
                     <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">
-                            <div className="w-2.5 h-10 rounded-full" style={{ backgroundColor: event.color }}></div>
+                            <div className="w-2.5 h-10 rounded-full" style={{backgroundColor: event.color}}></div>
                             <h2 className="text-xl font-bold text-slate-800 truncate">{event.title}</h2>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                            <button onClick={() => onEdit(event)} className="text-xs font-semibold text-slate-500 hover:text-slate-800">
+                            {/* --- START: 수정된 부분 --- */}
+                            {/* 메인 Edit 버튼에 새로운 핸들러를 연결합니다. */}
+                            <button onClick={handleMainEditClick}
+                                    className="text-xs font-semibold text-slate-500 hover:text-slate-800">
                                 Edit
                             </button>
-                            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl">×</button>
+                            {/* --- END: 수정된 부분 --- */}
+                            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl">×
+                            </button>
                         </div>
                     </div>
                 </div>
 
                 {/* --- 탭 버튼 --- */}
                 <div className="flex border-b sticky top-[3.5rem] bg-white z-10">
-                    <TabButton tabName="Event" />
-                    <TabButton tabName="To do" />
+                    <TabButton tabName="Event"/>
+                    <TabButton tabName="To do"/>
                 </div>
 
                 {/* --- 컨텐츠 --- */}
                 <div className="p-4 overflow-y-auto h-full">
                     {activeTab === "Event" ? (
-                        <EventContent />
+                        <EventContent/>
                     ) : (
                         <TodoListTab
                             event={event}

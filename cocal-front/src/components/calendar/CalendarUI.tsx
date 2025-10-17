@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect,useMemo } from "react";
+import React, { useState, useEffect,useMemo,useRef  } from "react";
 import { useRouter, useParams } from "next/navigation";
 
 // 하위 컴포넌트들
@@ -42,7 +42,9 @@ const API_ENDPOINTS = {
 export default function CalendarUI() {
     // --- 훅(Hooks) 초기화 ---
     const { user, logout, isLoading: isUserLoading } = useUser();
-
+    // 고유 ID 생성을 위한 ref 카운터 추가
+    // 초기값을 Date.now()로 설정하여 페이지를 새로고침해도 겹칠 확률을 줄이기 위함
+    const nextId = useRef(Date.now());
     const router = useRouter();
     const params = useParams();
 
@@ -61,8 +63,9 @@ export default function CalendarUI() {
     const [events, setEvents] = useState<CalendarEvent[]>(sampleEvents);
     const [memos, setMemos] = useState<DateMemo[]>(sampleMemos);
 
+
     // 사용자가 클릭한 이벤트나 메모의 상세 정보를 저장하는 상태 (상세 모달 열기용)
-    const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+    const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
     const [selectedMemo, setSelectedMemo] = useState<DateMemo | null>(null);
 
     // 현재 캘린더 뷰 모드 ('month', 'week', 'day') 상태
@@ -124,6 +127,7 @@ export default function CalendarUI() {
                 ...todo,
                 parentEventTitle: event.title,
                 parentEventColor: event.color,
+                eventId: event.id,
             })));
 
         // 2. 독립적인 Private 할일을 SidebarTodo 형태로 변환
@@ -169,10 +173,11 @@ export default function CalendarUI() {
         };
 
         fetchCalendarData();
-    }, [projectId]);
+    }, [projectId, isEventModalOpen]);
 
 
     // 페이지 로드 시 프로젝트 정보를 가져오는 효과
+    // 프로젝트 정보 조회
     useEffect(() => {
         if (isNaN(projectId)) return;
 
@@ -201,7 +206,7 @@ export default function CalendarUI() {
         };
 
         fetchProject();
-    }, [projectId, isProjectSettingsModalOpen]);
+    }, [projectId, isProjectSettingsModalOpen, isEventModalOpen]);
 
     //  [MOBILE WEEKVIEW] 모바일 뷰포트 감지 (클라이언트)
     useEffect(() => {
@@ -289,7 +294,7 @@ export default function CalendarUI() {
 
     // 이벤트 '수정 모드'로 전환
     const handleEditEvent = (event: CalendarEvent) => {
-        setSelectedEvent(null);
+        setSelectedEventId(null);
         setEventToEdit(event);
         setIsEventModalOpen(true);
     };
@@ -299,7 +304,8 @@ export default function CalendarUI() {
         if (id) {
             setEvents(prevEvents => prevEvents.map(event => {
                 if (event.id === id) {
-                    return { ...event, ...itemData, description: itemData.content || itemData.description,url: itemData.url };
+                    const finalOffsetMinutes = itemData.offsetMinutes ?? null;
+                    return { ...event, ...itemData, description: itemData.content || itemData.description,url: itemData.url};
                 }
                 return event;
             }));
@@ -309,7 +315,7 @@ export default function CalendarUI() {
         // '생성' 로직 (id가 없는 경우)
         if (type === 'Event') {
             const newEvent: CalendarEvent = {
-                id: Date.now(),
+                id: nextId.current++,
                 projectId: projectId,
                 title: itemData.title,
                 startAt: itemData.startAt,
@@ -319,10 +325,11 @@ export default function CalendarUI() {
                 location: itemData.location,
                 visibility: itemData.visibility,
                 urlId: 0,
-                offsetMinutes: 0,
+                offsetMinutes: itemData.offsetMinutes ?? null,
                 allDay: false,
                 authorId: user?.id || 0,
                 todos: [],
+
             };
             setEvents(prevEvents => [...prevEvents, newEvent]);
         } else if (type === 'Memo') {
@@ -350,7 +357,7 @@ export default function CalendarUI() {
             const visibility = itemData.visibility;
             if (visibility === 'PRIVATE') {
                 const newPrivateTodo: PrivateTodo = {
-                    id: Date.now(),
+                    id: nextId.current++,
                     projectId: projectId,
                     userId: user?.id || 0,
                     title: itemData.title,
@@ -362,9 +369,14 @@ export default function CalendarUI() {
                 };
                 setPrivateTodos(prev => [...prev, newPrivateTodo]);
             } else {
+                if (!itemData.eventId) {
+                    alert("Please select a parent event for the public todo.");
+                    return;
+                }
+
                 const newTodoItem: EventTodo = {
-                    id: Date.now() + 1,
-                    eventId: Date.now(),
+                    id: nextId.current++,
+                    eventId: itemData.eventId, // 부모 이벤트 ID 연결
                     title: itemData.title,
                     description: itemData.description,
                     status: 'IN_PROGRESS',
@@ -374,23 +386,19 @@ export default function CalendarUI() {
                     authorId: user?.id || 0,
                     orderNo: 0,
                 };
-                const newTodoWrapperEvent: CalendarEvent = {
-                    id: newTodoItem.eventId,
-                    projectId: projectId,
-                    title: `Todo: ${itemData.title}`,
-                    startAt: `${itemData.memoDate}T00:00:00`,
-                    endAt: `${itemData.memoDate}T23:59:59`,
-                    color: 'transparent',
-                    todos: [newTodoItem],
-                    description: null,
-                    location: null,
-                    visibility: 'PRIVATE',
-                    urlId: 0,
-                    offsetMinutes: 0,
-                    allDay: true,
-                    authorId: user?.id || 0,
-                };
-                setEvents(prevEvents => [...prevEvents, newTodoWrapperEvent]);
+
+                // events 상태를 업데이트하여 선택된 이벤트에 새로운 할일을 추가
+                setEvents(prevEvents =>
+                    prevEvents.map(event => {
+                        if (event.id === itemData.eventId) {
+                            // 기존 todos 배열에 새 할일 추가
+                            const updatedTodos = [...(event.todos || []), newTodoItem];
+                            return { ...event, todos: updatedTodos };
+                        }
+                        return event;
+                    })
+                );
+
             }
         }
     };
@@ -529,13 +537,29 @@ export default function CalendarUI() {
     };
 
     // To-do 삭제 핸들러
-    const handleDeleteTodo = (idToDelete: number, type: 'EVENT' | 'PRIVATE') => {
+    const handleDeleteTodo = (idToDelete: number, type: "EVENT" | "PRIVATE") => {
         if (!window.confirm("정말로 이 할 일을 삭제하시겠습니까?")) return;
 
-        if (type === 'PRIVATE') {
-            setPrivateTodos(prev => prev.filter(todo => todo.id !== idToDelete));
+        if (type === "PRIVATE") {
+            setPrivateTodos((prev) => prev.filter((todo) => todo.id !== idToDelete));
         } else { // 'EVENT'
-            setEvents(prev => prev.filter(event => event.id !== idToDelete));
+            setEvents((prevEvents) =>
+                prevEvents.map((event) => {
+                    // 이 이벤트에 해당 todo가 없으면 그대로 반환
+                    if (!event.todos || !event.todos.some((t) => t.id === idToDelete)) {
+                        return event;
+                    }
+                    // 해당 todo가 있으면, 그 todo를 제외한 새 todo 배열을 포함한 이벤트 객체를 반환
+                    return {
+                        ...event,
+                        todos: event.todos.filter((todo) => todo.id !== idToDelete),
+                    };
+                })
+                    // (선택사항) 할 일이 모두 사라진 'Todo:' 래퍼 이벤트를 제거
+                    .filter(event => !(event.title.startsWith('Todo:') && (!event.todos || event.todos.length === 0)))
+            );
+            // 모달을 닫아 변경사항을 부모 컴포넌트에서 확인하도록 함
+            setSelectedEventId(null);
         }
     };
 
@@ -558,6 +582,7 @@ export default function CalendarUI() {
     }
 
     // --- 렌더링 ---
+
     // 이벤트가 해당 주에 걸쳐 있는지 확인하고, 시작 및 끝 요일을 계산하는 헬퍼 함수
     const getWeekEvents = (week: (number | null)[]) => {
         const weekStart = new Date(viewYear, viewMonth, week.find(day => day !== null)!);
@@ -637,6 +662,7 @@ export default function CalendarUI() {
         setWeekMobileData(data);
         setIsWeekMobileOpen(true);
     };
+    const selectedEvent = events.find(event => event.id === selectedEventId);
     return (
         <div className="h-screen w-screen flex flex-col bg-white">
             {/*  --- 데스크톱 헤더 ---  */}
@@ -734,7 +760,7 @@ export default function CalendarUI() {
                     ></div>
                 )}
                 <div
-                    className={`fixed inset-y-0 left-0 z-30 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:mt-3 bg-white`}>
+                    className={`fixed inset-y-0 left-0 z-30 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out md:relative md:translate-x-0 bg-white`}>
                     <SidebarLeft
                         projectId={currentProject?.id ?? 0} // 필수!
                         onClose={() => setIsSidebarOpen(false)} // 닫기 함수 전달
@@ -746,6 +772,7 @@ export default function CalendarUI() {
                         selectedSidebarDate={selectedSidebarDate}
                         handleSidebarDateSelect={handleSidebarDateSelect}
                         sidebarTodos={sidebarTodos}
+
                         projectStartDate={currentProject?.startDate ? new Date(currentProject.startDate) : undefined}
                         projectEndDate={currentProject?.endDate ? new Date(currentProject.endDate) : undefined}
                         onOpenEventModal={handleOpenEventModal}
@@ -759,11 +786,12 @@ export default function CalendarUI() {
                         } : null}
                         handleToggleTodoStatus={handleToggleTodoStatus}
                         onEditTodo={handleOpenTodoEditModal}
+
                     />
                 </div>
 
                 {/* 메인 캘린더 영역 */}
-                <main className="flex-1 p-2 md:p-6 overflow-auto">
+                <main className="flex-1 p-2 md:p-5 overflow-auto">
                     {/* 메인 캘린더 헤더 */}
                     <div className="flex items-center justify-between mb-4">
                         {/* ← 왼쪽 블록: 항상 렌더. 모바일에서 week(또는 WeekViewMobile 열림)일 때만 invisible */}
@@ -920,7 +948,7 @@ export default function CalendarUI() {
                                                                             const d = new Date(event.startAt);
                                                                             openWeekMobileForDate(d);
                                                                         } else {
-                                                                            setSelectedEvent(event);
+                                                                            setSelectedEventId(event.id);
                                                                         }
                                                                     }}
                                                                     style={{
@@ -949,22 +977,29 @@ export default function CalendarUI() {
 
                 {/* --- 오른쪽 사이드바는 lg(1024px) 이상에서만 보이도록 수정 ---  */}
                 <div className="hidden lg:block">
-                    <SidebarRight onOpenTeamModal={handleOpenTeamModal} onOpenEventModal={() => handleOpenEventModal()}
-                                  onOpenSettingsModal={handleOpenProjectSettingsModal}/>
+                    <SidebarRight onOpenTeamModal={handleOpenTeamModal}
+                                  onOpenEventModal={() => handleOpenEventModal()}
+                                  onOpenSettingsModal={handleOpenProjectSettingsModal}
+                    />
                 </div>
             </div>
 
             {/* 모달 렌더링 영역 */}
-            {selectedEvent &&
+            {/* 모달 렌더링 영역 */}
+            {selectedEvent && (
                 <EventDetailModal
                     event={selectedEvent}
-                    onClose={() => setSelectedEvent(null)}
-                     onEdit={handleEditEvent}
-                    members={currentProject?.members ?? []}/>}
+                    onClose={() => setSelectedEventId(null)}
+                    onEdit={handleEditEvent}
+                    members={currentProject?.members ?? []}
+                    onDeleteTodo={handleDeleteTodo}
+                    onToggleTodo={handleToggleTodoStatus}
+                />
+            )}
 
             {selectedMemo && <MemoDetailModal
                 memo={selectedMemo}
-                projectId={projectId}   // ← 필수 prop 추가
+                projectId={projectId}
                 onClose={() => setSelectedMemo(null)}
                 onEdit={(updatedMemo) => {
                     setMemos((prev) =>
@@ -976,14 +1011,28 @@ export default function CalendarUI() {
                     setSelectedMemo(null);
                 }}
             />}
-            {isEventModalOpen &&
-                <EventModal onClose={handleCloseEventModal} onSave={handleSaveItem} initialDate={modalInitialDate}
-                            editEvent={eventToEdit} projectId={projectId}/>}
+
+            {isEventModalOpen && (
+                <EventModal
+                    onClose={handleCloseEventModal}
+                    onSave={handleSaveItem}
+                    initialDate={modalInitialDate}
+                    editEventId={eventToEdit?.id ?? null}
+                    projectId={projectId}
+                    members={currentProject?.members ?? []}
+                    events={events}
+                />
+            )}
+
             {isTeamModalOpen && (<TeamModal projectId={projectId} onClose={handleCloseTeamModal}/>)}
+            <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} apiEndpoints={API_ENDPOINTS}/>
+
+
+            {/*{isTeamModalOpen && (<TeamModal projectId={projectId} onClose={handleCloseTeamModal}/>)}*/}
+            {/*<ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} apiEndpoints={API_ENDPOINTS}/>*/}
+            {isProjectSettingsModalOpen && <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId} userId={user?.id || 0}/>}
             <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal}
                                   apiEndpoints={API_ENDPOINTS}/>
-            {isProjectSettingsModalOpen &&
-                <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId}/>}
             {todoToEdit && (
                 <TodoEditModal
                     todoToEdit={todoToEdit}
