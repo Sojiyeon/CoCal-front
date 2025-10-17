@@ -160,8 +160,6 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
     // =======멤버 선택 관련========
     // 선택된 멤버
     const [selectedSet, setSelectedSet] = useState<Set<number>>(new Set());
-    // number[]로 저장
-    let selectedUserIds = [...selectedSet];
     // 멤버 선택 핸들러
     const handleSelect = (userId: number) => {
         setSelectedSet(prev => {
@@ -242,7 +240,7 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
                     }));
                     // 멤버 → id 배열
                     const ids: number[] = (eventData.members ?? [])
-                        .map(m => (m as any).userId ?? (m as any).id) // 서버 응답 키가 userId가 아닐 수도 있어 안전 처리
+                        .map(m => (m).userId ?? (m).userId) // 서버 응답 키가 userId가 아닐 수도 있어 안전 처리
                         .filter((v): v is number => typeof v === "number");
 
                     setAlreadyMember(ids);          // (표시용)
@@ -404,7 +402,7 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
                     urls: formData.urls ?? [],
                     memberUserIds: [...selectedSet],
                 };
-                (async () => {
+                await (async () => {
                     try {
                         setIsLoading(true);
                         let savedEvent;
