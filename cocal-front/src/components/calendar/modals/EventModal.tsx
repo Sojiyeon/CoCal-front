@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef  } from "react";
-import {CalendarEvent, ProjectMember, EventData, EventRequest, ModalFormData} from "../types";
+import {CalendarEvent, ProjectMember, EventData, EventRequest, ModalFormData,EventTodo} from "../types";
 import { HexColorPicker } from "react-colorful";
 import {createMemo} from "@/api/memoApi";
 import {InviteesList} from "../shared/InviteesList";
@@ -122,12 +122,13 @@ interface Props {
     onSave: (itemData: ModalFormData, type: ActiveTab, id?: number) => void;
     initialDate?: string | null;
     editEventId: number | null;
+    editTodo?: EventTodo | null;
     projectId: number;
     members?: ProjectMember[];
     events?: CalendarEvent[];
 }
 // 모달창
-export function EventModal({onClose, onSave, editEventId, initialDate, projectId, members = [], events = [] }: Props) {
+export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, projectId, members = [], events = [] }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
     const [isLoading, setIsLoading] = useState(false);
     function pickOffsetMinutes(e: unknown): number {
@@ -201,7 +202,20 @@ export function EventModal({onClose, onSave, editEventId, initialDate, projectId
     useEffect(() => {
         console.log("editEventId: ", editEventId);
         // '수정 모드'일 경우 (editEventId prop이 있을 때) 이벤트 정보 조회
-        if (editEventId) {
+        // 1. Todo 수정 모드 (최우선으로 확인)
+        if (editTodo) {
+            setActiveTab("Todo"); // 탭을 'Todo'로 강제 전환
+            setFormData(prev => ({
+                ...prev,
+                title: editTodo.title,
+                description: editTodo.description || "",
+                url: editTodo.url || "",
+                type: editTodo.type,
+                eventId: editTodo.eventId,
+                // date, offsetMinutes 등 editTodo에 있는 다른 필드도 채워줍니다.
+            }));
+        }
+        else if (editEventId) {
             (async () => {
                 try {
                     setIsLoading(true);
@@ -256,7 +270,7 @@ export function EventModal({onClose, onSave, editEventId, initialDate, projectId
                 date: startDateTime,
             }));
         }
-    }, [initialDate, editEventId]);
+    }, [initialDate, editEventId, editTodo,editEventId]);
 
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -351,7 +365,7 @@ export function EventModal({onClose, onSave, editEventId, initialDate, projectId
                 };
 
                 await createTodo(projectId, serverPayload);
-                onSave(normalizedForParent, "Todo");
+                onSave(normalizedForParent, "Todo",editTodo?.id);
 
                 onClose(); // 성공 후 모달 닫기
             } else if (activeTab === "Event") {
@@ -716,7 +730,7 @@ export function EventModal({onClose, onSave, editEventId, initialDate, projectId
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
             <div className="bg-white rounded-xl shadow-lg p-6 w-[500px]">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold text-slate-800">{editEventId ? "Edit Event" : "New"}</h2>
+                    <h2 className="text-lg font-bold text-slate-800">{editTodo ? "Edit Todo" : (editEventId ? "Edit Event" : "New")}</h2>
 
                     <button
                         onClick={onClose}
@@ -725,11 +739,13 @@ export function EventModal({onClose, onSave, editEventId, initialDate, projectId
                         ×
                     </button>
                 </div>
-                <div className="flex items-center gap-2 mb-6 border-b pb-2">
-                    <TabButton tabName="Event"/>
-                    {!editEventId && <TabButton tabName="Todo"/>}
-                    {!editEventId && <TabButton tabName="Memo"/>}
-                </div>
+                {!editEventId && !editTodo && (
+                    <div className="flex items-center gap-2 mb-6 border-b pb-2">
+                        <TabButton tabName="Event"/>
+                        <TabButton tabName="Todo"/>
+                        <TabButton tabName="Memo"/>
+                    </div>
+                )}
                 <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden pr-3">
                     {renderForm()}
                 </div>

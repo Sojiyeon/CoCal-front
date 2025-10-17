@@ -37,7 +37,7 @@ const API_ENDPOINTS = {
     UPDATE_USER_PHOTO: `${BASE_URL}/users/profile-image`,
     DELETE_USER_PHOTO: `${BASE_URL}/users/profile-image`,
 };
-
+type CalendarEventWithTodos = CalendarEvent & { todos: EventTodo[] };
 // 메인 캘린더 UI 컴포넌트
 export default function CalendarUI() {
     // --- 훅(Hooks) 초기화 ---
@@ -1045,7 +1045,7 @@ export default function CalendarUI() {
                     projectId={projectId}
                     members={currentProject?.members ?? []}
                     events={events}
-                   //editTodo={todoToEdit}
+                    editTodo={todoToEditInEventModal}
 
                 />
             )}
