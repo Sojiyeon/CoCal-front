@@ -116,43 +116,6 @@ export default function CalendarUI() {
         }[];
     } | null>(null);
 
-    // --- useEffect 훅 ---
-    // 왼쪽 사이드바의 'To do' 목록을 업데이트
-    useEffect(() => {
-        const selectedDateKey = formatYMD(selectedSidebarDate.getFullYear(), selectedSidebarDate.getMonth(), selectedSidebarDate.getDate());
-
-        // 1. 이벤트에 종속된 Public 할일을 SidebarTodo 형태로 변환
-        const publicTodos: SidebarTodo[] = events
-            .filter(e => e.startAt.startsWith(selectedDateKey) && e.todos)
-            .flatMap(event => (event.todos || []).map(todo => ({
-                ...todo,
-                parentEventTitle: event.title,
-                parentEventColor: event.color,
-                eventId: event.id,
-            })));
-
-        // 2. 독립적인 Private 할일을 SidebarTodo 형태로 변환
-        const privateTodosForDate: SidebarTodo[] = privateTodos
-            .filter(todo => todo.date.startsWith(selectedDateKey))
-            .map(todo => ({
-                id: todo.id,
-                title: todo.title,
-                description: todo.description,
-                status: todo.status,
-                type: todo.type,
-                parentEventTitle: 'Private',
-                parentEventColor: '#A0AEC0',
-                eventId: 0,
-                urlId: 0,
-                authorId: todo.userId,
-                orderNo: 0,
-                url: todo.url ?? undefined
-            }));
-
-        // 3. Public과 Private 할일을 합쳐 사이드바 상태를 업데이트
-        setSidebarTodos([...publicTodos, ...privateTodosForDate]);
-    }, [events, privateTodos, selectedSidebarDate]);
-
     // 페이지 로드 시 캘린더 데이터 불러오기
     useEffect(() => {
         if (isNaN(projectId)) return;
@@ -807,7 +770,7 @@ export default function CalendarUI() {
                             email: user.email ?? '',
                             profileImageUrl: user.profileImageUrl
                         } : null}
-                        handleToggleTodoStatus={handleToggleTodoStatus}
+                        //handleToggleTodoStatus={handleToggleTodoStatus}
                         onEditTodo={handleOpenTodoEditModal}
 
                     />
