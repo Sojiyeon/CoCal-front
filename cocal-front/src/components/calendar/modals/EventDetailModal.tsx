@@ -123,9 +123,9 @@ const TodoListTab = ({ event,  onDeleteTodo }: Props) => {
                 </DetailRow>
 
                 <DetailRow label="URL" >
-                    {(currentTodo as any).url ? (
-                        <a href={(currentTodo as any).url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
-                            {(currentTodo as any).url}
+                    {currentTodo.url ? (
+                        <a href={currentTodo.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
+                            {currentTodo.url}
                         </a>
                     ) : (
                         <span className="text-slate-400">없음</span>
