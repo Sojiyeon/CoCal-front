@@ -87,6 +87,7 @@ export default function CalendarUI() {
     // 생성/수정 모달에 전달할 초기 데이터 상태
     const [modalInitialDate, setModalInitialDate] = useState<string | null>(null);
     const [eventToEdit, setEventToEdit] = useState<CalendarEvent | null>(null);
+    const [todoToEditInEventModal, setTodoToEditInEventModal] = useState<EventTodo | null>(null);
     //  To-do 수정 모달을 제어하는 상태
     const [todoToEdit, setTodoToEdit] = useState<SidebarTodo | null>(null);
     // FIX: 모바일 사이드바 표시 상태를 관리하기 위한 state 추가
@@ -173,7 +174,7 @@ export default function CalendarUI() {
         };
 
         fetchCalendarData();
-    }, [projectId, isEventModalOpen]);
+    }, [projectId]);
 
 
     // 페이지 로드 시 프로젝트 정보를 가져오는 효과
@@ -271,6 +272,7 @@ export default function CalendarUI() {
     const handleOpenEventModal = (dateStr?: string) => {
         setModalInitialDate(dateStr || null);
         setEventToEdit(null);
+        setTodoToEditInEventModal(null); // To-do 수정 상태 초기화
         setIsEventModalOpen(true);
     };
 
@@ -278,6 +280,7 @@ export default function CalendarUI() {
     const handleCloseEventModal = () => {
         setIsEventModalOpen(false);
         setEventToEdit(null);
+        setTodoToEditInEventModal(null); // To-do 수정 상태도 함께 초기화
     };
 
     // 팀 모달 열기/닫기
@@ -298,17 +301,37 @@ export default function CalendarUI() {
         setEventToEdit(event);
         setIsEventModalOpen(true);
     };
+    // EventDetailModal에서 To-do 수정을 위해 EventModal을 여는 핸들러
+    const handleEditTodo = (todo: EventTodo) => {
+        setSelectedEventId(null); // 상세 모달 닫기
+        setEventToEdit(null); // 이벤트 수정 모드 해제
+        setTodoToEditInEventModal(todo); // 수정할 To-do 설정
+        setIsEventModalOpen(true); // 메인 모달 열기
+    };
 
     // EventModal에서 'Save' 버튼 클릭 시 실행되는 함수
     const handleSaveItem = (itemData: ModalFormData, type: 'Event' | 'Todo' | 'Memo', id?: number) => {
         if (id) {
-            setEvents(prevEvents => prevEvents.map(event => {
-                if (event.id === id) {
-                    const finalOffsetMinutes = itemData.offsetMinutes ?? null;
-                    return { ...event, ...itemData, description: itemData.content || itemData.description,url: itemData.url};
-                }
-                return event;
-            }));
+
+            // To-do 수정 로직을 추가합니다.
+            if (type === 'Todo') {
+                const newData = {
+                    title: itemData.title,
+                    description: itemData.description || "",
+                    visibility: itemData.visibility,
+                    url: itemData.url || "",
+                };
+                handleUpdateTodo(id, newData);
+            } else if (type === 'Event') {
+                // --- END: 수정된 부분 ---
+                setEvents(prevEvents => prevEvents.map(event => {
+                    if (event.id === id) {
+                        return { ...event, ...itemData, description: itemData.content || itemData.description,url: itemData.url};
+                    }
+                    return event;
+                }));
+            }
+            handleCloseEventModal(); // 수정 후 모달 닫기
             return;
         }
 
@@ -991,6 +1014,7 @@ export default function CalendarUI() {
                     event={selectedEvent}
                     onClose={() => setSelectedEventId(null)}
                     onEdit={handleEditEvent}
+                    onEditTodo={handleEditTodo}
                     members={currentProject?.members ?? []}
                     onDeleteTodo={handleDeleteTodo}
                     onToggleTodo={handleToggleTodoStatus}
@@ -1021,6 +1045,8 @@ export default function CalendarUI() {
                     projectId={projectId}
                     members={currentProject?.members ?? []}
                     events={events}
+                   //editTodo={todoToEdit}
+
                 />
             )}
 

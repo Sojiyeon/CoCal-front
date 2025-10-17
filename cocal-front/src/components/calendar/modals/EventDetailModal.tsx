@@ -193,7 +193,7 @@ export function EventDetailModal({
                                      members,
                                  }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
-    const [currentTodoIndex] = useState(0);
+    const [currentTodoIndex, setCurrentTodoIndex] = useState(0);
     const formatTime = (dateString: string) => {
         return new Date(dateString).toLocaleTimeString("ko-KR", {
             hour: "2-digit",
