@@ -8,6 +8,7 @@ import EditProjectModal from '@/components/modals/EditProjectModal';
 import ProfileSettingsModal from '@/components/modals/ProfileSettingModal';
 import { useUser } from '@/contexts/UserContext';
 import { fetchWithAuth } from '@/utils/authService';
+import Image from 'next/image'
 
 const API_BASE_URL = 'https://cocal-server.onrender.com';
 const API_PROJECTS_ENDPOINT = `${API_BASE_URL}/api/projects`;
@@ -227,11 +228,13 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
 
             <div className="flex items-center space-x-[-4px] pt-2 border-t border-gray-100">
                 {visibleMembers.map((member, index) => (
-                    <img
+                    <Image
                         key={member.id || index}
                         src={member.imageUrl}
                         title={member.name}
                         alt={member.name || 'Team member'}
+                        width={24}
+                        height={24}
                         className="w-6 h-6 rounded-full object-cover border-2 border-white shadow-sm transition transform hover:scale-110"
                         style={{ zIndex: visibleMembers.length - index }}
                     />
@@ -339,11 +342,13 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
                 className="flex items-center space-x-2 cursor-pointer p-1"
                 onClick={() => setIsOpen(!isOpen)}
             >
-                <img
+                <Image
                     src={user.imageUrl.replace('96x96', '40x40')}
                     alt={user.name}
+                    width={40}
+                    height={40}
                     className="w-10 h-10 rounded-full object-cover shadow-inner ring-1 ring-gray-200"
-                    onError={(e) => { e.currentTarget.src = 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User' }}
+                    // onError={(e) => { e.currentTarget.src = 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User' }}
                 />
                 <div className="flex-col text-xs hidden sm:block">
                     <span className="font-semibold text-gray-900 block">
@@ -377,7 +382,7 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
                             {/* 토글 스위치 (Dark Mode) */}
                             {item.isToggle && (
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" checked={item.isToggled} className="sr-only peer" readOnly />
+                                    <input type="checkbox" checked={item.isToggled} className="sr-only peer" onChange={() => {}} />
                                     <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             )}
@@ -663,13 +668,32 @@ const ProjectDashboardPage: React.FC = () => {
 
     // 프로젝트 필터링 로직을 useMemo로 구현
     const filteredProjects = useMemo(() => {
-        return projects.filter(project => {
+        const filtered = projects.filter(project => {
             if (selectedCategory === 'All') {
                 return true;
             }
             // 서버 상태를 UI 상태로 변환하여 현재 선택된 카테고리(activeCategory)와 비교
             return mapServerStatusToUI(project.status) === selectedCategory;
         });
+        // 2. 정렬 (추가된 로직: 'All'일 때만 적용, 진행 중 -> 완료 순)
+        if (selectedCategory === 'All') {
+            filtered.sort((a, b) => {
+                const statusA = mapServerStatusToUI(a.status);
+                const statusB = mapServerStatusToUI(b.status);
+
+                // 'In Progress'를 'Completed'보다 앞에 두도록 정렬합니다.
+                if (statusA === 'In Progress' && statusB === 'Completed') {
+                    return -1; // a가 먼저 (진행 중)
+                }
+                if (statusA === 'Completed' && statusB === 'In Progress') {
+                    return 1; // b가 먼저 (진행 중)
+                }
+                // 동일 상태일 경우 이름 순(선택 사항) 또는 다른 기준(예: 시작일)으로 정렬
+                return 0;
+                // return new Date(a.startDate).getTime() - new Date(b.startDate).getTime(); // 시작일 오름차순 정렬
+            });
+        }
+        return filtered;
     }, [projects, selectedCategory]);
 
     const handleOpenSettingsModal = () => setIsSettingsModalOpen(true);
