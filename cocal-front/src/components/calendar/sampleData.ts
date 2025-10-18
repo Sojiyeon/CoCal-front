@@ -27,7 +27,8 @@ export const sampleEvents: CalendarEvent[] = [
                 type: 'EVENT',
                 urlId: 1,
                 authorId: 1,
-                orderNo: 1
+                orderNo: 1,
+
             },
             {
                 id: 102,
@@ -38,7 +39,8 @@ export const sampleEvents: CalendarEvent[] = [
                 type: 'EVENT',
                 urlId: 2,
                 authorId: 1,
-                orderNo: 2
+                orderNo: 2,
+
             }
         ]
     },
