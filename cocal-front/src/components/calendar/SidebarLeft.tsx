@@ -15,16 +15,24 @@ interface ApiEventTodo {
     title: string;
     description: string;
     status: 'DONE' | 'IN_PROGRESS';
+    eventId: number;
     eventTitle: string;
     eventColor: string;
+    url?: string; // url 필드 추가
+    offsetMinutes?: number;
+    orderNo?: number;
 }
 
 // Private 할 일 (개인 할 일)의 API 응답 타입 (기존과 동일)
 interface ApiPrivateTodo {
+    date: string;
     id: number;
     title: string;
     description: string;
     status: 'DONE' | 'IN_PROGRESS';
+    url?: string; // url 필드 추가
+    //offsetMinutes?: number;
+    orderNo?: number;
     offsetMinutes?: number | null;
 }
 
@@ -39,7 +47,7 @@ interface SidebarLeftProps {
     handleSidebarDateSelect: (day: number) => void;
     sidebarTodos: SidebarTodo[];
     user: UserSummary | null;
-    handleToggleTodoStatus: (id: number) => void;
+    //handleToggleTodoStatus: (id: number) => void;
     onEditTodo: (todo: SidebarTodo) => void;
     onClose: () => void;
     // --- 모바일 기능 통합을 위해 추가된 props ---
@@ -68,7 +76,6 @@ export default function SidebarLeft({
     miniMatrix,
     selectedSidebarDate,
     handleSidebarDateSelect,
-    handleToggleTodoStatus,
     onEditTodo,
     onClose,
     onOpenEventModal,
@@ -90,10 +97,19 @@ export default function SidebarLeft({
         }
     }, [projectId]); // projectId가 변경될 때마다 이 효과를 다시 확인합니다.
 
+    // --- 핵심 3: 데이터 로딩 함수 (eventId를 정확히 매핑) ---
     const handleDateClick = async (day: number) => {
+        // 부모 컴포넌트에도 날짜가 변경되었음을 알림
         handleSidebarDateSelect(day);
+
         const selectedDate = new Date(miniYear, miniMonth, day);
         const formattedDate = `${selectedDate.getFullYear()}-${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}-${selectedDate.getDate().toString().padStart(2, '0')}`;
+
+       /* const eventDataResponse = await api.get(`/projects/${projectId}/events/todos?date=${formattedDate}`);
+
+        // --- 🛠️ 디버깅 코드 추가 ---
+        console.log("✅ [1단계] Axios가 받은 순수 응답:", eventDataResponse);
+        console.log("✅ [2단계] 응답 내부의 data.items:", eventDataResponse?.data?.items);*/
 
         try {
             const eventData = await api.get(`/projects/${projectId}/events/todos?date=${formattedDate}`);
@@ -102,28 +118,30 @@ export default function SidebarLeft({
             const eventItems: ApiEventTodo[] = eventData?.data?.items || [];
             const privateItems: ApiPrivateTodo[] = privateData?.data?.items || [];
 
+            //console.log('📬 [탐정 1] 서버로부터 받은 Event Todos (원본):', eventItems);
+
             const combinedTodos: SidebarTodo[] = [
-                // --- ✨ Public Todo 매핑 최종 수정 ---
-                ...eventItems.map((item: ApiEventTodo) => ({
+                ...eventItems.map((item) => ({
                     id: item.id,
+                    eventId: item.eventId, // <-- **이벤트 ID를 API 응답값으로 정확히 설정**
                     title: item.title,
+                    description: item.description,
+                    status: item.status,
                     type: "EVENT" as const,
                     parentEventColor: item.eventColor,
                     parentEventTitle: item.eventTitle,
-                    date: formattedDate, // date 속성 추가
-                    // --- ✅ API에서 직접 받은 데이터 사용으로 변경 ---
-                    status: item.status,
-                    description: item.description,
+                    date: formattedDate,
+                    url: item.url,
+                    authorId: user?.userId || 0, // 필요시 서버 응답에 맞춰 수정
+
+                    // --- ✅ API에서 직접 받은 데이터 사용으로 변경 --
 
                     // 나머지 필드는 여전히 API가 제공하지 않으므로 기본값 유지
-                    eventId: 0,
-                    authorId: 0,
-                    url: undefined,
                     urlId: 0,
-                    orderNo: 0,
+                    offsetMinutes: item.offsetMinutes || 0, // 서버에서 받은 값 사용
+                    orderNo: item.orderNo || 0,             // 서버에서 받은 값 사용
                 })),
-                // --- Private Todo 매핑 (기존과 동일) ---
-                ...privateItems.map((item: ApiPrivateTodo) => ({
+                ...privateItems.map((item) => ({
                     id: item.id,
                     title: item.title,
                     description: item.description,
@@ -132,19 +150,85 @@ export default function SidebarLeft({
                     parentEventColor: "#A0AEC0",
                     parentEventTitle: 'Private',
                     eventId: 0,
+                    date: formattedDate,
+                    url: item.url,
                     authorId: user?.userId || 0,
-                    url: undefined,
+                    offsetMinutes: item.offsetMinutes || 0, // 서버에서 받은 값 사용
+                    orderNo: item.orderNo || 0,
                     urlId: 0,
-                    orderNo: 0,
-                    date: formattedDate, // date 속성 추가
-                    offsetMinutes: item.offsetMinutes,
                 })),
             ];
 
-            setSidebarTodos(combinedTodos);
+            setSidebarTodos(combinedTodos); // 자체 상태를 업데이트
         } catch (error) {
-            console.error("API 요청 실패:", error);
+            console.error("사이드바 To-do API 요청 실패:", error);
             setSidebarTodos([]);
+        }
+    };
+
+    // --- 핵심 4: 상태 업데이트 함수 (서버에 완전한 데이터를 전송) ---
+    const handleToggleTodoStatus = async (todoToToggle: SidebarTodo) => {
+        const newStatus = todoToToggle.status === "DONE" ? "IN_PROGRESS" : "DONE";
+
+        // 낙관적 UI 업데이트: 서버 응답을 기다리지 않고 UI를 먼저 변경
+        setSidebarTodos(currentTodos =>
+            currentTodos.map(t =>
+                t.id === todoToToggle.id ? { ...t, status: newStatus } : t
+            )
+        );
+
+        try {
+            // 서버에 보낼 전체 페이로드 생성
+            const payload = {
+                title: todoToToggle.title,
+                description: todoToToggle.description,
+                status: newStatus,
+                url: todoToToggle.url,
+                //eventId: todoToToggle.eventId || null,
+                offsetMinutes: todoToToggle.offsetMinutes, // <-- 이 줄 추가
+                orderNo: todoToToggle.orderNo,
+            };
+
+            // 변경 후 (날짜를 YYYY-MM-DD로 정규화해서 보냄)
+            // 날짜 변환 함수 수정
+            const normalizeToDateTime = (isoOrYmd: string) => {
+                // "YYYY-MM-DD" 또는 ISO 모두 대응
+                const d = new Date(isoOrYmd);
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}T00:00:00`;
+            };
+
+
+            if (todoToToggle.type === "PRIVATE") {
+                await api.put(`/projects/${projectId}/todos/${todoToToggle.id}`, {
+                    ...payload,
+                    type: "PRIVATE",
+                    date: normalizeToDateTime(todoToToggle.date),
+                });
+            } else { // EVENT
+                const finalPayload = {
+                    ...payload,
+                    type: "EVENT",
+                    eventId: todoToToggle.eventId,
+                    authorId: user?.userId || 0,
+                };
+                console.log('📤 [탐정 2] 서버로 보내는 최종 데이터:', finalPayload);
+                // ----------------------------------------------------
+
+                await api.put(`/projects/${projectId}/todos/${todoToToggle.id}`, finalPayload);
+            }
+        } catch (error) {
+            console.error("Todo 상태 업데이트 실패:", error);
+
+            alert("상태 업데이트에 실패했습니다. 다시 시도해 주세요.");
+            // 실패 시 UI를 원래 상태로 되돌림
+            setSidebarTodos(currentTodos =>
+                currentTodos.map(t =>
+                    t.id === todoToToggle.id ? { ...t, status: todoToToggle.status } : t
+                )
+            );
         }
     };
 
@@ -251,7 +335,7 @@ export default function SidebarLeft({
                                     </div>
 
                                 </div>
-                                <button onClick={() => handleToggleTodoStatus(todo.id)}
+                                <button onClick={() => handleToggleTodoStatus(todo)}
                                         className="w-5 h-5 border-2 rounded-full flex-shrink-0 flex items-center justify-center cursor-pointer">
                                     {todo.status === "DONE" && (
                                         <div className="w-2.5 h-2.5 bg-slate-400 rounded-full"></div>)}

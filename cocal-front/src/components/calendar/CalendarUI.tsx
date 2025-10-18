@@ -838,7 +838,7 @@ export default function CalendarUI() {
                             email: user.email ?? '',
                             profileImageUrl: user.profileImageUrl
                         } : null}
-                        handleToggleTodoStatus={handleToggleTodoStatus}
+                        //handleToggleTodoStatus={handleToggleTodoStatus}
                         onEditTodo={handleOpenTodoEditModal}
 
                     />
