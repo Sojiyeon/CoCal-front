@@ -21,8 +21,6 @@ export type EventTodo = {
 };
 // 사이드바의 'To do' 목록에 사용될 확장된 타입 정의
 export interface SidebarTodo extends EventTodo {
-    offsetMinutes: number;
-    date: string;
     id: number;
     title: string;
     status: 'IN_PROGRESS' | 'DONE';
