@@ -145,7 +145,7 @@ export default function SidebarLeft({
                     parentEventColor: "#A0AEC0",
                     parentEventTitle: 'Private',
                     eventId: 0,
-                    date: item.date,
+                    date: formattedDate,
                     url: item.url,
                     authorId: user?.userId || 0,
                     offsetMinutes: item.offsetMinutes || 0, // 서버에서 받은 값 사용
@@ -184,11 +184,23 @@ export default function SidebarLeft({
                 orderNo: todoToToggle.orderNo,
             };
 
+            // 변경 후 (날짜를 YYYY-MM-DD로 정규화해서 보냄)
+            // 날짜 변환 함수 수정
+            const normalizeToDateTime = (isoOrYmd: string) => {
+                // "YYYY-MM-DD" 또는 ISO 모두 대응
+                const d = new Date(isoOrYmd);
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}T00:00:00`;
+            };
+
+
             if (todoToToggle.type === "PRIVATE") {
                 await api.put(`/projects/${projectId}/todos/${todoToToggle.id}`, {
                     ...payload,
                     type: "PRIVATE",
-                    date: todoToToggle.date,
+                    date: normalizeToDateTime(todoToToggle.date),
                 });
             } else { // EVENT
                 const finalPayload = {
@@ -204,6 +216,7 @@ export default function SidebarLeft({
             }
         } catch (error) {
             console.error("Todo 상태 업데이트 실패:", error);
+
             alert("상태 업데이트에 실패했습니다. 다시 시도해 주세요.");
             // 실패 시 UI를 원래 상태로 되돌림
             setSidebarTodos(currentTodos =>
