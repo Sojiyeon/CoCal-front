@@ -25,6 +25,7 @@ interface ApiPrivateTodo {
     title: string;
     description: string;
     status: 'DONE' | 'IN_PROGRESS';
+    offsetMinutes?: number | null;
 }
 
 // ✨ FIX: CalendarUI로부터 더 많은 함수를 받기 위해 props 타입을 확장합니다.
@@ -109,7 +110,7 @@ export default function SidebarLeft({
                     type: "EVENT" as const,
                     parentEventColor: item.eventColor,
                     parentEventTitle: item.eventTitle,
-
+                    date: formattedDate, // date 속성 추가
                     // --- ✅ API에서 직접 받은 데이터 사용으로 변경 ---
                     status: item.status,
                     description: item.description,
@@ -135,6 +136,8 @@ export default function SidebarLeft({
                     url: undefined,
                     urlId: 0,
                     orderNo: 0,
+                    date: formattedDate, // date 속성 추가
+                    offsetMinutes: item.offsetMinutes,
                 })),
             ];
 
@@ -236,7 +239,7 @@ export default function SidebarLeft({
                     </div>
                     <div className="space-y-3 text-sm">
                         {filteredSidebarTodos.length > 0 ? (filteredSidebarTodos.map((todo) => (
-                            <div key={todo.id}
+                            <div key={`${todo.type}-${todo.id}`}
                                  className={`flex items-center gap-3 p-1 rounded-md ${todo.status === "DONE" ? "opacity-50" : ""}`}>
                                 <div className="w-2 h-7 rounded" style={{backgroundColor: todo.parentEventColor}}></div>
                                 <div className="flex-1 min-w-0 cursor-pointer" onDoubleClick={() => onEditTodo(todo)}>

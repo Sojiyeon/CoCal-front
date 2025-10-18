@@ -30,6 +30,9 @@ export interface SidebarTodo extends EventTodo {
     authorId: number | null;
     url?: string;
     eventId: number;
+    date:string;
+    offsetMinutes?: number | null;
+
 }
 
 // 이벤트 데이터 타입  (events 테이블)

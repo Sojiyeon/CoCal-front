@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect,useMemo,useRef  } from "react";
-import { useRouter, useParams } from "next/navigation";
+import React, {useState, useEffect, useMemo, useRef} from "react";
+import {useRouter, useParams} from "next/navigation";
 
 // 하위 컴포넌트들
 import TaskProgress from "./TaskProgress";
@@ -9,14 +9,14 @@ import WeekView from "./Week";
 import DayView from "./Day";
 import SidebarLeft from "./SidebarLeft";
 import SidebarRight from "./SidebarRight";
-import { EventDetailModal } from "./modals/EventDetailModal";
+import {EventDetailModal} from "./modals/EventDetailModal";
 import ProfileDropdown from "./ProfileDropdown";
 import ProfileSettingsModal from "./modals/ProfileSettingModal";
-import { SettingsModal } from "./modals/SettingsModal";
-import { EventModal } from "./modals/EventModal";
-import { TeamModal } from "./modals/TeamModal";
-import { MemoDetailModal } from "./modals/MemoDetailModal";
-import { TodoEditModal } from "./modals/TodoEditModal";
+import {SettingsModal} from "./modals/SettingsModal";
+import {EventModal} from "./modals/EventModal";
+import {TeamModal} from "./modals/TeamModal";
+import {MemoDetailModal} from "./modals/MemoDetailModal";
+import {TodoEditModal} from "./modals/TodoEditModal";
 import WeekViewMobile from "./WeekViewMobile";
 // 전역 사용자 정보와 타입 정의, 유틸 함수, 샘플 데이터
 import { useUser } from "@/contexts/UserContext";
@@ -37,11 +37,11 @@ const API_ENDPOINTS = {
     UPDATE_USER_PHOTO: `${BASE_URL}/users/profile-image`,
     DELETE_USER_PHOTO: `${BASE_URL}/users/profile-image`,
 };
-type CalendarEventWithTodos = CalendarEvent & { todos: EventTodo[] };
-// 메인 캘린더 UI  컴포넌트
+
+// 메인 캘린더 UI 컴포넌트
 export default function CalendarUI() {
     // --- 훅(Hooks) 초기화 ---
-    const { user, logout, isLoading: isUserLoading } = useUser();
+    const {user, logout, isLoading: isUserLoading} = useUser();
     // 고유 ID 생성을 위한 ref 카운터 추가
     // 초기값을 Date.now()로 설정하여 페이지를 새로고침해도 겹칠 확률을 줄이기 위함
     const nextId = useRef(Date.now());
@@ -126,6 +126,7 @@ export default function CalendarUI() {
             .filter(e => e.startAt.startsWith(selectedDateKey) && e.todos)
             .flatMap(event => (event.todos || []).map(todo => ({
                 ...todo,
+                date: event.startAt,
                 parentEventTitle: event.title,
                 parentEventColor: event.color,
                 eventId: event.id,
@@ -135,18 +136,15 @@ export default function CalendarUI() {
         const privateTodosForDate: SidebarTodo[] = privateTodos
             .filter(todo => todo.date.startsWith(selectedDateKey))
             .map(todo => ({
-                id: todo.id,
-                title: todo.title,
-                description: todo.description,
-                status: todo.status,
-                type: todo.type,
+                ...todo,
                 parentEventTitle: 'Private',
                 parentEventColor: '#A0AEC0',
                 eventId: 0,
                 urlId: 0,
                 authorId: todo.userId,
                 orderNo: 0,
-                url: todo.url ?? undefined
+                url: todo.url ?? undefined,
+                offsetMinutes: todo.offsetMinutes,
             }));
 
         // 3. Public과 Private 할일을 합쳐 사이드바 상태를 업데이트
@@ -326,7 +324,11 @@ export default function CalendarUI() {
                 // --- END: 수정된 부분 ---
                 setEvents(prevEvents => prevEvents.map(event => {
                     if (event.id === id) {
-                        return { ...event, ...itemData, description: itemData.content || itemData.description,url: itemData.url};
+                        return {
+                            ...event, ...itemData,
+                            description: itemData.content || itemData.description,
+                            url: itemData.url
+                        };
                     }
                     return event;
                 }));
@@ -389,6 +391,7 @@ export default function CalendarUI() {
                     status: 'IN_PROGRESS',
                     type: 'PRIVATE',
                     url: itemData.url,
+                    offsetMinutes: itemData.offsetMinutes,
                 };
                 setPrivateTodos(prev => [...prev, newPrivateTodo]);
             } else {
@@ -416,7 +419,7 @@ export default function CalendarUI() {
                         if (event.id === itemData.eventId) {
                             // 기존 todos 배열에 새 할일 추가
                             const updatedTodos = [...(event.todos || []), newTodoItem];
-                            return { ...event, todos: updatedTodos };
+                            return {...event, todos: updatedTodos};
                         }
                         return event;
                     })
@@ -436,7 +439,7 @@ export default function CalendarUI() {
                 return {
                     ...event,
                     todos: event.todos.map(todo =>
-                        todo.id === todoId ? { ...todo, status: todo.status === 'DONE' ? 'IN_PROGRESS' : 'DONE' } : todo
+                        todo.id === todoId ? {...todo, status: todo.status === 'DONE' ? 'IN_PROGRESS' : 'DONE'} : todo
                     )
                 };
             })
@@ -444,12 +447,20 @@ export default function CalendarUI() {
         // Private 할일 상태 업데이트
         setPrivateTodos(prevPrivateTodos =>
             prevPrivateTodos.map(todo =>
-                todo.id === todoId ? { ...todo, status: todo.status === 'DONE' ? 'IN_PROGRESS' : 'DONE' } : todo
+                todo.id === todoId ? {...todo, status: todo.status === 'DONE' ? 'IN_PROGRESS' : 'DONE'} : todo
             )
         );
     };
 
-    const handleUpdateTodo = (todoId: number, newData: { title: string; description: string; visibility: 'PUBLIC' | 'PRIVATE'; url: string; }) => {
+    const handleUpdateTodo = (todoId: number, newData:
+        {
+            title: string;
+            description: string;
+            visibility: 'PUBLIC' | 'PRIVATE';
+            url: string;
+            date?: string;
+            offsetMinutes?: number | null;
+        }) => {
         let originalTodo: (EventTodo & { parentEventId?: number }) | PrivateTodo | null = null;
         let originalType: 'EVENT' | 'PRIVATE' | null = null;
         let parentEvent: CalendarEvent | null = null;
@@ -458,7 +469,7 @@ export default function CalendarUI() {
         for (const event of events) {
             const foundTodo = event.todos?.find(t => t.id === todoId);
             if (foundTodo) {
-                originalTodo = { ...foundTodo, parentEventId: event.id };
+                originalTodo = {...foundTodo, parentEventId: event.id};
                 originalType = 'EVENT';
                 parentEvent = event;
                 break;
@@ -485,13 +496,25 @@ export default function CalendarUI() {
         if (originalType === newType) {
             if (newType === 'PRIVATE') {
                 setPrivateTodos(prev => prev.map(todo =>
-                    todo.id === todoId ? { ...todo, title: newData.title, description: newData.description, url: newData.url } : todo
+                    todo.id === todoId ? {
+                        ...todo,
+                        title: newData.title,
+                        description: newData.description,
+                        url: newData.url,
+                        date: newData.date || todo.date,
+                        offsetMinutes: newData.offsetMinutes,
+                    } : todo
                 ));
             } else { // EVENT (PUBLIC)
                 setEvents(prev => prev.map(event => ({
                     ...event,
                     todos: (event.todos || []).map(todo =>
-                        todo.id === todoId ? { ...todo, title: newData.title, description: newData.description, url: newData.url } : todo
+                        todo.id === todoId ? {
+                            ...todo,
+                            title: newData.title,
+                            description: newData.description,
+                            url: newData.url
+                        } : todo
                     )
                 })));
             }
@@ -515,7 +538,7 @@ export default function CalendarUI() {
             setEvents(prev => prev
                 .map(event => {
                     if (event.id === (originalTodo as EventTodo & { parentEventId: number }).parentEventId) {
-                        return { ...event, todos: event.todos?.filter(t => t.id !== todoId) };
+                        return {...event, todos: event.todos?.filter(t => t.id !== todoId)};
                     }
                     return event;
                 })
@@ -588,10 +611,17 @@ export default function CalendarUI() {
 
     // 미니 캘린더 월 이동 함수
     function prevMiniMonth() {
-        if (miniMonth === 0) { setMiniMonth(11); setMiniYear(y => y - 1); } else setMiniMonth(m => m - 1);
+        if (miniMonth === 0) {
+            setMiniMonth(11);
+            setMiniYear(y => y - 1);
+        } else setMiniMonth(m => m - 1);
     }
+
     function nextMiniMonth() {
-        if (miniMonth === 11) { setMiniMonth(0); setMiniYear(y => y + 1); } else setMiniMonth(m => m + 1);
+        if (miniMonth === 11) {
+            setMiniMonth(0);
+            setMiniYear(y => y + 1);
+        } else setMiniMonth(m => m + 1);
     }
 
     // 메인 캘린더 월 이동  함수
@@ -599,6 +629,7 @@ export default function CalendarUI() {
         setViewMonth(viewMonth === 0 ? 11 : viewMonth - 1);
         setViewYear(viewMonth === 0 ? viewYear - 1 : viewYear);
     }
+
     function nextMonth() {
         setViewMonth(viewMonth === 11 ? 0 : viewMonth + 1);
         setViewYear(viewMonth === 11 ? viewYear + 1 : viewYear);
@@ -633,14 +664,14 @@ export default function CalendarUI() {
         const sunday = new Date(start);
         sunday.setDate(start.getDate() - day); // 일요일로 이동
 
-        const days = Array.from({ length: 7 }, (_, i) => {
+        const days = Array.from({length: 7}, (_, i) => {
             const d = new Date(sunday);
             d.setDate(sunday.getDate() + i);
             const y = d.getFullYear();
             const m = d.getMonth();
             const dd = d.getDate();
             const key = formatYMD(y, m, dd);
-            const weekday = d.toLocaleDateString("en-US", { weekday: "short" }); // "Mon" 등
+            const weekday = d.toLocaleDateString("en-US", {weekday: "short"}); // "Mon" 등
 
             // 해당 날짜와 겹치는 이벤트(하루라도 겹치면 포함)
             const dayEvents = events.filter((ev) => {
@@ -654,7 +685,7 @@ export default function CalendarUI() {
             const dayTodos = events.flatMap((ev) => {
                 const evDateKey = ev.startAt.split("T")[0];
                 if (evDateKey !== key || !ev.todos) return [];
-                return ev.todos.map((t) => ({ id: t.id, title: t.title, status: t.status }));
+                return ev.todos.map((t) => ({id: t.id, title: t.title, status: t.status}));
             });
 
             return {
@@ -666,7 +697,7 @@ export default function CalendarUI() {
         });
 
         // 예) "Sep Week 1, 2025" 식의 타이틀
-        const monthLabel = sunday.toLocaleDateString("en-US", { month: "short" });
+        const monthLabel = sunday.toLocaleDateString("en-US", {month: "short"});
         const weekNum = Math.ceil((sunday.getDate() - 1) / 7) + 1;
         const yearLabel = sunday.getFullYear();
         const weekTitle = `${monthLabel} Week ${weekNum}, ${yearLabel}`;
@@ -1045,18 +1076,20 @@ export default function CalendarUI() {
                     projectId={projectId}
                     members={currentProject?.members ?? []}
                     events={events}
-                    editTodo={todoToEditInEventModal}
+                    //editTodo={todoToEdit}
 
                 />
             )}
 
             {isTeamModalOpen && (<TeamModal projectId={projectId} onClose={handleCloseTeamModal}/>)}
-            <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} apiEndpoints={API_ENDPOINTS}/>
+            <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal}
+                                  apiEndpoints={API_ENDPOINTS}/>
 
 
             {/*{isTeamModalOpen && (<TeamModal projectId={projectId} onClose={handleCloseTeamModal}/>)}*/}
             {/*<ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} apiEndpoints={API_ENDPOINTS}/>*/}
-            {isProjectSettingsModalOpen && <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId} userId={user?.id || 0}/>}
+            {isProjectSettingsModalOpen &&
+                <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId} userId={user?.id || 0}/>}
             <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal}
                                   apiEndpoints={API_ENDPOINTS}/>
             {todoToEdit && (
