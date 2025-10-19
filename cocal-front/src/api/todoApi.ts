@@ -78,10 +78,10 @@ export async function updateTodo(projectId: number, todoId: number, data: update
 }
 
 // 투두 삭제
-export async function deleteTodo(projectId:number, todoId: number, eventId: number,  type: "EVENT" | "PRIVATE"): Promise<String> {
+export async function deleteTodo(projectId:number, todoId: number, eventId: number,  type: "EVENT" | "PRIVATE"): Promise<string> {
     const url = `${PROJECT_URL}${projectId}/todos/${todoId}?type=${type}&eventId=${eventId}`
     // api 호출
-    const result = await fetchJsonWithAuth<ApiResponse<String>>(url, {
+    const result = await fetchJsonWithAuth<ApiResponse<string>>(url, {
         method: "DELETE",
         headers: {
             'Content-Type': 'application/json',
