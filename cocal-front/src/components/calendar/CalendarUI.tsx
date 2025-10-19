@@ -20,7 +20,17 @@ import {TodoEditModal} from "./modals/TodoEditModal";
 import WeekViewMobile from "./WeekViewMobile";
 // 전역 사용자 정보와 타입 정의, 유틸 함수, 샘플 데이터
 import { useUser } from "@/contexts/UserContext";
-import { CalendarEvent, EventTodo, Project, ModalFormData, DateMemo, UserSummary, PrivateTodo, SidebarTodo } from "./types";
+import {
+    CalendarEvent,
+    EventTodo,
+    Project,
+    ModalFormData,
+    DateMemo,
+    UserSummary,
+    PrivateTodo,
+    SidebarTodo,
+    RealEventTodo
+} from "./types";
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
 import { sampleEvents, sampleMemos } from "./sampleData";
 import {api} from "@/components/calendar/utils/api";
@@ -88,7 +98,7 @@ export default function CalendarUI() {
     // 생성/수정 모달에 전달할 초기 데이터 상태
     const [modalInitialDate, setModalInitialDate] = useState<string | null>(null);
     const [eventToEdit, setEventToEdit] = useState<CalendarEvent | null>(null);
-    const [todoToEditInEventModal, setTodoToEditInEventModal] = useState<EventTodo | null>(null);
+    const [todoToEditInEventModal, setTodoToEditInEventModal] = useState<RealEventTodo | null>(null);
     //  To-do 수정 모달을 제어하는 상태
     const [todoToEdit, setTodoToEdit] = useState<SidebarTodo | null>(null);
     // FIX: 모바일 사이드바 표시 상태를 관리하기 위한 state 추가
@@ -301,7 +311,7 @@ export default function CalendarUI() {
         setIsEventModalOpen(true);
     };
     // EventDetailModal에서 To-do 수정을 위해 EventModal을 여는 핸들러
-    const handleEditTodo = (todo: EventTodo) => {
+    const handleEditTodo = (todo: RealEventTodo) => {
         setSelectedEventId(null); // 상세 모달 닫기
         setEventToEdit(null); // 이벤트 수정 모드 해제
         setTodoToEditInEventModal(todo); // 수정할 To-do 설정
@@ -1085,11 +1095,10 @@ export default function CalendarUI() {
                     onSave={handleSaveItem}
                     initialDate={modalInitialDate}
                     editEventId={eventToEdit?.id ?? null}
+                    editTodo={todoToEditInEventModal}
                     projectId={projectId}
                     members={currentProject?.members ?? []}
                     events={events}
-                    //editTodo={todoToEdit}
-
                 />
             )}
 

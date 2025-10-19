@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef  } from "react";
-import {CalendarEvent, ProjectMember, EventData, EventRequest, ModalFormData,EventTodo} from "../types";
+import {CalendarEvent, ProjectMember, EventData, EventRequest, ModalFormData, EventTodo, RealEventTodo} from "../types";
 import { HexColorPicker } from "react-colorful";
 import {createMemo} from "@/api/memoApi";
 import {InviteesList} from "../shared/InviteesList";
@@ -9,7 +9,7 @@ import { ReminderPicker } from "../shared/ReminderPicker";
 import {createTodo} from "@/api/todoApi";
 import {getEvent, createEvent, updateEvent} from "@/api/eventApi";
 
-type ActiveTab = "Event" | "Todo" | "Memo";
+export type ActiveTab = "Event" | "Todo" | "Memo";
 
 const palettes = [
     ["#19183B", "#708993", "#A1C2BD", "#E7F2EF"],
@@ -123,13 +123,13 @@ interface Props {
     onSave: (itemData: ModalFormData, type: ActiveTab, id?: number) => void;
     initialDate?: string | null;
     editEventId: number | null;
-    editTodo?: EventTodo | null;
+    editTodo?: RealEventTodo | null;
     projectId: number;
     members?: ProjectMember[];
     events?: CalendarEvent[];
 }
 // 모달창
-export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, projectId, members = [], events = [] }: Props) {
+export function EventModal({onClose, onSave, editEventId, editTodo, initialDate, projectId, members = [], events = [] }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
     const [isLoading, setIsLoading] = useState(false);
     function pickOffsetMinutes(e: unknown): number {
@@ -206,6 +206,7 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
         // 1. Todo 수정 모드 (최우선으로 확인)
         if (editTodo) {
             setActiveTab("Todo"); // 탭을 'Todo'로 강제 전환
+            if (editTodo.eventId) {editTodo.type="EVENT";} // eventId가 있으면 type=EVENT로 설정
             setFormData(prev => ({
                 ...prev,
                 title: editTodo.title,
@@ -648,7 +649,7 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
                                 <select
                                     id="parentEvent"
                                     name="eventId"
-                                    value={formData.eventId ?? ''}
+                                    value={formData.eventId ?? (editTodo?.eventId ?? '')} // editTodo가 있으면 그걸 기본 선택값으로
                                     onChange={(e) =>
                                         setFormData((prev) => ({
                                             ...prev,

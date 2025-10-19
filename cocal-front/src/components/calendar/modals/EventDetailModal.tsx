@@ -12,7 +12,7 @@ interface Props {
     onClose: () => void;
     onEdit: (event: CalendarEvent) => void;
     onToggleTodo?: (todoId: number) => void;
-    onEditTodo?: (todo: EventTodo) => void;
+    onEditTodo?: (todo: RealEventTodo) => void;
     onDeleteTodo?: (projectId: number,  todoId: number, eventId: number, type: "EVENT" | "PRIVATE") => void;
     members?: ProjectMember[];
 }
