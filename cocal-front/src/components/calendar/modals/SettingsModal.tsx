@@ -72,27 +72,30 @@ export function SettingsModal({ projectId, onClose }: Props) {
     };
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="bg-white rounded-xl shadow-lg p-6 w-[600px] text-slate-800 flex gap-8">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+            <div
+                className="bg-white rounded-xl shadow-lg p-4 md:p-6 w-full max-w-2xl text-slate-800 flex flex-col md:flex-row gap-4 md:gap-8">
                 {/* 사이드 메뉴 */}
-                <div className="w-1/4">
-                    <h2 className="text-lg font-bold mb-4">Settings</h2>
+                <div className="w-full md:w-1/4">
+                    <h2 className="text-lg font-bold mb-2 md:mb-4">Settings</h2>
                     <div className="space-y-2">
-                        <div className="bg-slate-100 p-2 rounded-md text-sm  text-slate-800">Project Settings</div>
+                        <div className="bg-slate-100 p-2 rounded-md text-sm text-slate-800">Project Settings</div>
                     </div>
                 </div>
 
                 {/* 메인 컨텐츠 */}
-                <div className="w-3/4">
+                <div className="w-full md:w-3/4">
                     {isLoading ? (
-                        <div>Loading...</div>
+                        <div className="flex justify-center items-center h-48">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-800"></div>
+                        </div>
                     ) : (
                         <>
                             {/* 프로젝트 설정 섹션 */}
                             <div className="bg-slate-50 p-4 rounded-lg mb-6">
-                                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                                    {settings.name}
-                                    <div className="flex items-center space-x-[-4px]">
+                                <h3 className="font-semibold mb-4 flex items-center gap-2 flex-wrap">
+                                    <span className="truncate">{settings.name}</span>
+                                    <div className="flex items-center space-x-[-8px] ml-auto">
                                         {members.map((member, index) => (
                                             <img
                                                 key={member.userId || index}
@@ -105,35 +108,36 @@ export function SettingsModal({ projectId, onClose }: Props) {
                                         ))}
                                     </div>
                                 </h3>
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     <div>
                                         <label className="block text-xs font-medium text-slate-500 mb-1">Project
                                             Name</label>
                                         <input type="text" name="name" value={settings.name}
                                                onChange={handleInputChange}
-                                               className="w-full border rounded-md px-3 py-2 text-sm"/>
+                                               className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none"/>
                                     </div>
 
-                                    <div className="flex gap-3">
+                                    <div className="flex flex-col sm:flex-row gap-4">
                                         <div className="flex-1">
                                             <label className="block text-xs font-medium text-slate-500 mb-1">Start
                                                 Date</label>
                                             <input type="date" name="startDate" value={settings.startDate}
                                                    onChange={handleInputChange}
-                                                   className="w-full border rounded-md px-3 py-2 text-sm"/>
+                                                   className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none"/>
                                         </div>
                                         <div className="flex-1">
                                             <label className="block text-xs font-medium text-slate-500 mb-1">End
                                                 Date</label>
                                             <input type="date" name="endDate" value={settings.endDate}
                                                    onChange={handleInputChange}
-                                                   className="w-full border rounded-md px-3 py-2 text-sm"/>
+                                                   className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none"/>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex justify space-x-3 mt-4">
+
+                            <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-3 gap-3">
                                 {/*취소 버튼*/}
                                 <button
                                     onClick={onClose}

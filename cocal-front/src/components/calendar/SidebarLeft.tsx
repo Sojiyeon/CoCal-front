@@ -56,15 +56,75 @@ interface SidebarLeftProps {
     onOpenSettingsModal: () => void;
     projectStartDate?: Date;
     projectEndDate?: Date;
+    onGoToWeekView: () => void;
+    onGoToMonthView: () => void;
 }
+const AddIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+        <line x1="12" y1="14" x2="12" y2="20"></line>
+        <line x1="9" y1="17" x2="15" y2="17"></line>
+    </svg>
+);
 
-//  모바일 기능 목록을 위한 버튼 컴포넌트를 정의합니다.
-const ActionButton = ({ icon, text, onClick }: { icon: string; text: string; onClick: () => void }) => (
-    <button onClick={onClick} className="flex items-center w-full p-3 text-left text-slate-700 hover:bg-slate-100 rounded-lg">
-        <span className="text-2xl w-8 mr-4 text-center">{icon}</span>
+const ShareIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="8.5" cy="7" r="4"></circle>
+        <line x1="20" y1="8" x2="20" y2="14"></line>
+        <line x1="17" y1="11" x2="23" y2="11"></line>
+    </svg>
+);
+
+const SettingsIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+);
+const ListIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="8" y1="6" x2="21" y2="6"></line>
+        <line x1="8" y1="12" x2="21" y2="12"></line>
+        <line x1="8" y1="18" x2="21" y2="18"></line>
+        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+    </svg>
+);
+
+const CalendarIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+    </svg>
+);
+
+// --- ActionButton 컴포넌트 수정 ---
+const ActionButton = ({ icon: Icon, text, onClick }: { icon: React.ElementType; text: string; onClick: () => void }) => (
+    <button
+        onClick={onClick}
+        className="flex items-center w-full text-left p-3 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors duration-150"
+    >
+        <span className="mr-4 text-gray-600">
+            <Icon />
+        </span>
         <span className="font-medium">{text}</span>
     </button>
 );
+
+//  모바일 기능 목록을 위한 버튼 컴포넌트를 정의합니다.
+// const ActionButton = ({ icon, text, onClick }: { icon: string; text: string; onClick: () => void }) => (
+//     <button onClick={onClick} className="flex items-center w-full p-3 text-left text-slate-700 hover:bg-slate-100 rounded-lg">
+//         <span className="text-2xl w-8 mr-4 text-center">{icon}</span>
+//         <span className="font-medium">{text}</span>
+//     </button>
+// );
 
 export default function SidebarLeft({
     projectId,
@@ -83,11 +143,13 @@ export default function SidebarLeft({
     onOpenSettingsModal,
     projectStartDate,
     projectEndDate,
+    onGoToMonthView,
+    onGoToWeekView,
     }: { projectId: number; user: UserSummary | null } & SidebarLeftProps) {
     const [sidebarTodos, setSidebarTodos] = useState<SidebarTodo[]>([]);
     const [todoFilter, setTodoFilter] = useState('ALL');
     // ✨ FIX: 모바일에서 '기능' 뷰와 '캘린더' 뷰를 전환하기 위한 상태
-    const [mobileView, setMobileView] = useState<'actions' | 'calendar'>('actions');
+    //const [mobileView, setMobileView] = useState<'actions' | 'calendar'>('actions');
 
     // 자동으로 컴포넌트 로드
     useEffect(() => {
@@ -245,39 +307,46 @@ export default function SidebarLeft({
 
                     <button onClick={onClose} className="p-2">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M18 6L6 18M6 6L18 18" stroke="#334155" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M18 6L6 18M6 6L18 18" stroke="#334155" strokeWidth="2" strokeLinecap="round"
+                                  strokeLinejoin="round"/>
                         </svg>
                     </button>
                 </div>
                 {/* 모바일 뷰 전환 탭 */}
                 <div className="flex justify-center items-center bg-slate-100 rounded-lg p-1 mb-6">
-                    <button onClick={() => setMobileView('actions')} className={`flex-1 p-2 text-sm font-semibold rounded-md ${mobileView === 'actions' ? 'bg-white shadow-sm' : ''}`}>
-                        Actions
+                    <button
+                        onClick={onGoToMonthView}
+                        className={`flex-1 p-2 rounded-md flex justify-center items-center text-slate-500`}
+                        aria-label="Month View"
+                    >
+                        <CalendarIcon/>
                     </button>
-                    <button onClick={() => setMobileView('calendar')} className={`flex-1 p-2 text-sm font-semibold rounded-md ${mobileView === 'calendar' ? 'bg-white shadow-sm' : ''}`}>
-                        Calendar
+                    <button
+                        onClick={onGoToWeekView}
+                        className={`flex-1 p-2 rounded-md flex justify-center items-center text-slate-500`}
+                        aria-label="Week View"
+                    >
+                        <ListIcon/>
                     </button>
                 </div>
 
                 {/* '기능 목록' 뷰 */}
-                {mobileView === 'actions' && (
-                    <div className="space-y-2">
-                        <ActionButton icon="➕" text="Add Event / Todo" onClick={onOpenEventModal} />
-                        <ActionButton icon="🤝" text="Invite Member" onClick={onOpenTeamModal} />
-                        <ActionButton icon="⚙️" text="Project Settings" onClick={onOpenSettingsModal} />
-                    </div>
-                )}
+                <div className="space-y-2">
+                    <ActionButton icon={AddIcon} text="Add Event / Todo / Memo" onClick={onOpenEventModal}/>
+                    <ActionButton icon={ShareIcon} text="Share Calendar" onClick={onOpenTeamModal}/>
+                    <ActionButton icon={SettingsIcon} text="Settings" onClick={onOpenSettingsModal}/>
+                </div>
+
             </div>
 
             {/* --- 기존 UI (데스크톱에서는 항상 보이고, 모바일에서는 '캘린더' 뷰일 때만 보임) --- */}
-            <div className={`${mobileView === 'calendar' ? 'block' : 'hidden'} md:block`}>
-                <div className="mb-4 hidden md:block">
+            <div className="hidden md:block">
+                <div className="mb-4">
                     <div
                         className="w-full px-6 py-1.5 rounded-full border border-slate-300 text-lg font-bold text-slate-800 text-center">
                         To do
                     </div>
                 </div>
-
                 {/* 1. 미니 캘린더 섹션 */}
                 <div className="mb-6">
                     <div className="flex items-center justify-between">

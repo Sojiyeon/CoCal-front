@@ -83,7 +83,7 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
                     style={paletteStyle}
                 >
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
                         {/* 기존 팔레트 영역 */}
                         <div className="space-y-3">
                             {palettes.map((palette, paletteIndex) => (
@@ -103,11 +103,12 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
                         </div>
 
                         {/*  컬러 피커 (컬러 서클) 영역 */}
-                        <div>
+                        <div className="w-full sm:w-[250px]">
                             <HexColorPicker
                                 color={selectedColor}
                                 onChange={handleColorSelect}
                                 style={{width: '250px'}}
+                                className="w-full"
                             />
                         </div>
                     </div>
@@ -254,7 +255,14 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
             })();
         } else {
             // '생성 모드'일 경우 (editEvent prop이 없을 때) - 기존 로직
-            const date = initialDate ? new Date(initialDate) : new Date();
+            let date = new Date(); // 먼저 현재 시간으로 안전하게 기본값을 설정합니다.
+            if (initialDate) {
+                const parsedDate = new Date(initialDate);
+                // initialDate로 파싱한 날짜가 유효한 경우에만 date 변수를 덮어씁니다.
+                if (!isNaN(parsedDate.getTime())) {
+                    date = parsedDate;
+                }
+            }
             // 지금 시간 계산 YYYY-MM-DDTHH:mm
             const startDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
                 .toISOString()
@@ -501,22 +509,30 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
                             rows={4} // 원하는 높이로 조절
                         />
 
-                        <div className="flex gap-2 items-center">
-                            <input
-                                type="datetime-local"
-                                name="startAt"
-                                value={formData.startAt}
-                                onChange={handleInputChange}
-                                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                            <span>-</span>
-                            <input
-                                type="datetime-local"
-                                name="endAt"
-                                value={formData.endAt}
-                                onChange={handleInputChange}
-                                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
+                        <div className="flex flex-col sm:grid sm:grid-cols-[1fr_auto_1fr] gap-2 items-center">
+                            <div className="w-full">
+                                <label htmlFor="startAt" className="text-xs text-slate-500">Start</label>
+                                <input
+                                    id="startAt"
+                                    type="datetime-local"
+                                    name="startAt"
+                                    value={formData.startAt}
+                                    onChange={handleInputChange}
+                                    className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                            </div>
+                            <span className="hidden sm:inline">-</span>
+                            <div className="w-full">
+                                <label htmlFor="endAt" className="text-xs text-slate-500">End</label>
+                                <input
+                                    id="endAt"
+                                    type="datetime-local"
+                                    name="endAt"
+                                    value={formData.endAt}
+                                    onChange={handleInputChange}
+                                    className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                />
+                            </div>
                         </div>
 
                         <ReminderPicker
@@ -734,8 +750,8 @@ export function EventModal({onClose, onSave, editEventId,editTodo, initialDate, 
     };
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="bg-white rounded-xl shadow-lg p-6 w-[500px]">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+            <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold text-slate-800">{editTodo ? "Edit Todo" : (editEventId ? "Edit Event" : "New")}</h2>
 
