@@ -89,7 +89,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
     const [isEditingPassword, setIsEditingPassword] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const API_DELETE_ENDPOINT = `https://cocal-server.onrender.com/api/users/delete`;
+    const API_DELETE_ENDPOINT = process.env.NEXT_PUBLIC_API_URL!+`/api/users/delete`;
 
     if (!isOpen) return null;
     if (isLoading && !user.id) return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"><div className="bg-white p-8 rounded-lg">Loading...</div></div>;

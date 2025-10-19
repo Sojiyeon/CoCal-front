@@ -18,7 +18,7 @@ interface UserContextType {
     logout: () => Promise<void>;
 }
 
-const API = 'https://cocal-server.onrender.com';
+const API = process.env.NEXT_PUBLIC_API_URL!;
 const API_ME_ENDPOINT = `${API}/api/users/me`;
 const API_LOGOUT_ENDPOINT = `${API}/api/auth/logout`;
 const initialUser: User = { id: null, email: null, name: null, profileImageUrl: null };

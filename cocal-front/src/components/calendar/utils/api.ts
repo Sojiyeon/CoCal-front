@@ -1,5 +1,5 @@
 // 서버의 기본 URL 주소입니다.
-const API_BASE_URL = 'https://cocal-server.onrender.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL! + "/api";
 
 /**
  * 모든 API 요청을 처리하는 중앙 함수입니다.

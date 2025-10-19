@@ -24,13 +24,14 @@ import { CalendarEvent, EventTodo, Project, ModalFormData, DateMemo, UserSummary
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
 import { sampleEvents, sampleMemos } from "./sampleData";
 import {api} from "@/components/calendar/utils/api";
+import {deleteTodo} from "@/api/todoApi";
 
 
 // 오늘 날짜를 저장하는 상수
 const today = new Date();
 
 // API 엔드포인트들을 정의하는 객체
-const BASE_URL = "https://cocal-server.onrender.com/api";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL! + "/api";
 const API_ENDPOINTS = {
     UPDATE_USER_NAME: `${BASE_URL}/users/edit-name`,
     UPDATE_USER_PASSWORD: `${BASE_URL}/users/edit-pwd`,
@@ -408,7 +409,6 @@ export default function CalendarUI() {
                     status: 'IN_PROGRESS',
                     type: 'EVENT',
                     url: itemData.url,
-                    urlId: 0,
                     authorId: user?.id || 0,
                     orderNo: 0,
                 };
@@ -557,7 +557,6 @@ export default function CalendarUI() {
                 status: originalTodo.status,
                 type: 'EVENT',
                 url: newData.url, // url 추가
-                urlId: 0,
                 authorId: user?.id || 0,
                 orderNo: 0,
             };
@@ -583,7 +582,7 @@ export default function CalendarUI() {
     };
 
     // To-do 삭제 핸들러
-    const handleDeleteTodo = (idToDelete: number, type: "EVENT" | "PRIVATE") => {
+    const handleDeleteTodo = async (projectId: number, idToDelete: number,  eventId: number, type: "EVENT" | "PRIVATE") => {
         if (!window.confirm("정말로 이 할 일을 삭제하시겠습니까?")) return;
 
         if (type === "PRIVATE") {
@@ -604,6 +603,18 @@ export default function CalendarUI() {
                     // (선택사항) 할 일이 모두 사라진 'Todo:' 래퍼 이벤트를 제거
                     .filter(event => !(event.title.startsWith('Todo:') && (!event.todos || event.todos.length === 0)))
             );
+
+            // 해당 todo가 있을 때, 삭제 api 호출
+            try {
+                const result = await deleteTodo(projectId, idToDelete, eventId, type);
+                if (result) {
+                    console.log("Todo 삭제를 성공했습니다.");
+                    alert("The to-do item has been successfully deleted.");
+                }
+            } catch(err: unknown) {
+                console.error("Todo 삭제 실패:", err);
+                alert("Failed to delete the to-do item.");
+            }
             // 모달을 닫아 변경사항을 부모 컴포넌트에서 확인하도록 함
             setSelectedEventId(null);
         }
@@ -1095,6 +1106,7 @@ export default function CalendarUI() {
                                   apiEndpoints={API_ENDPOINTS}/>
             {todoToEdit && (
                 <TodoEditModal
+                    projectId={projectId}
                     todoToEdit={todoToEdit}
                     onClose={() => setTodoToEdit(null)}
                     onSave={handleUpdateTodo}

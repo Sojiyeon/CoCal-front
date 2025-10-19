@@ -10,7 +10,7 @@ import { useUser } from '@/contexts/UserContext';
 import { fetchWithAuth } from '@/utils/authService';
 import Image from 'next/image'
 
-const API_BASE_URL = 'https://cocal-server.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 const API_PROJECTS_ENDPOINT = `${API_BASE_URL}/api/projects`;
 
 const API_ENDPOINTS = {

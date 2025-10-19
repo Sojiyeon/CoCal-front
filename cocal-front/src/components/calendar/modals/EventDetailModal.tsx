@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState,useEffect } from "react";
-import {CalendarEvent, EventData, EventTodo, ProjectMember} from "../types";
+import {CalendarEvent, EventData, EventTodo, ProjectMember, RealEventTodo} from "../types";
 import { getReminderLabel } from "../utils/reminderUtils";
 import {getEvent} from "@/api/eventApi";
+import {getEventTodoAll, updateTodo, updateTodoRequest} from "@/api/todoApi";
 
 interface Props {
     event: CalendarEvent;
@@ -11,9 +12,8 @@ interface Props {
     onEdit: (event: CalendarEvent) => void;
     onToggleTodo?: (todoId: number) => void;
     onEditTodo?: (todo: EventTodo) => void;
-    onDeleteTodo?: (todoId: number, type: "EVENT" | "PRIVATE") => void;
+    onDeleteTodo?: (projectId: number,  todoId: number, eventId: number, type: "EVENT" | "PRIVATE") => void;
     members?: ProjectMember[];
-
 }
 
 // /** 레거시 호환: event.eventTodos / event.publicTodos를 허용 */
@@ -54,33 +54,88 @@ const ChevronRightIcon = () => (
 
 // /** To-do 탭: todos 안전 합성 + 콜백 타입 명시 */
 const TodoListTab = ({ event,  onDeleteTodo }: Props) => {
+    // 이벤트 투두 상태
+    const [eventTodos, setEventTodos] = useState<RealEventTodo[]>([]);
+    // 이벤트 투두 index 상태
     const [currentTodoIndex, setCurrentTodoIndex] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const e = event as LegacyCalendarEvent;
-    //  todos → eventTodos → publicTodos 순으로 안전하게 합성
-    const todos: EventTodo[] = e.todos ?? e.eventTodos ?? e.publicTodos ?? [];
+    // 이벤트 투두 완료 핸들러
+    const onTodoComplete = async (projectId:number, currentTodo:RealEventTodo) => {
+        if (!currentTodo) return;
+        try {
+            setIsLoading(true);
+
+            // 투두 상태 변경
+            if (currentTodo.status === "IN_PROGRESS") currentTodo.status = "DONE";
+            else if (currentTodo.status === "DONE") currentTodo.status = "IN_PROGRESS";
+
+            // 요청 보낼 reqeust
+            const requestTodo:updateTodoRequest = {
+                title: currentTodo.title,
+                description: currentTodo.description ?? "",
+                status: currentTodo.status,
+                url: currentTodo.url ?? "",
+                type: "EVENT",
+                eventId: currentTodo.eventId,
+                projectId: projectId,
+            };
+            // api 호출
+            await updateTodo(projectId, currentTodo.id, requestTodo);
+            console.log("Todo 완료 성공");
+        } catch (err) {
+            console.error("Todo 상태 변경 실패:", err);
+            alert("Failed to update the completion status.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
    // ---  삭제 후 UI 오류 방지 로직 ---
     useEffect(() => {
         // 할 일이 삭제되어 현재 인덱스가 배열 범위를 벗어나는 경우,
         // 인덱스를 유효한 마지막 값으로 재설정하여 오류를 방지합니다.
-        if (todos.length > 0 && currentTodoIndex >= todos.length) {
-            setCurrentTodoIndex(todos.length - 1);
+        if (eventTodos.length > 0 && currentTodoIndex >= eventTodos.length) {
+            setCurrentTodoIndex(eventTodos.length - 1);
         }
-    }, [todos.length, currentTodoIndex]);
+    }, [eventTodos.length, currentTodoIndex]);
+
+    // 이벤트 투두 조회
+    useEffect(() => {
+        if (!event?.id || !event?.projectId) {console.log("이벤트가 없음."); return;}
+        (async () => {
+            try {
+                // api 호출
+                // 이벤트 조회(members:ProjectMember[] 사용)
+                const data: RealEventTodo[] = await getEventTodoAll(event.projectId, event.id);
+                // 이벤트멤버 저장
+                console.log("이벤트 투두 조회 성공:", data);
+                if (!data) {
+                    window.alert("Failed to fetch event information.");
+                    return;
+                }
+                setEventTodos(data);
+            } catch (err: unknown) {
+                console.error('이벤트 정보 로드 실패:', err);
+            } finally {
+            }
+        })();
+    }, [event?.id, event?.projectId, isLoading]);
+
     // ---  삭제 후 UI 오류 방지 로직 ---
-    if (todos.length === 0) {
+    if (eventTodos.length === 0) {
         return <p className="text-center text-sm text-slate-500 py-8">연관된 할 일이 없습니다.</p>;
     }
-    const currentTodo = todos[currentTodoIndex];
+    const currentTodo = eventTodos?.[currentTodoIndex];
 
     // 다음 할 일로 이동
     const goToNext = () => {
-        setCurrentTodoIndex((prevIndex) => (prevIndex + 1) % todos.length);
+        setCurrentTodoIndex((prevIndex) => (prevIndex + 1) % eventTodos.length);
     };
 
     // 이전 할 일로 이동
     const goToPrev = () => {
-        setCurrentTodoIndex((prevIndex) => (prevIndex - 1 + todos.length) % todos.length);
+        setCurrentTodoIndex((prevIndex) => (prevIndex - 1 + eventTodos.length) % eventTodos.length);
     };
     const DetailRow = ({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) => (
         <div className="flex text-sm">
@@ -99,38 +154,53 @@ const TodoListTab = ({ event,  onDeleteTodo }: Props) => {
                 <h3 className="text-1xl font-bold text-slate-800 truncate"></h3>
                 <div className="flex items-center gap-3 text-slate-600">
                     {/* 할 일이 2개 이상일 때만 화살표 표시 */}
-                    {todos.length > 1 && (
+                    {eventTodos.length > 1 && (
                         <div className="flex items-center gap-1">
                             <button onClick={goToPrev} className="p-1 rounded-full hover:bg-slate-100"><ChevronLeftIcon /></button>
-                            <span className="text-xs font-mono w-12 text-center">{currentTodoIndex + 1} / {todos.length}</span>
+                            <span className="text-xs font-mono w-12 text-center">{currentTodoIndex + 1} / {eventTodos.length}</span>
                             <button onClick={goToNext} className="p-1 rounded-full hover:bg-slate-100"><ChevronRightIcon /></button>
                         </div>
                     )}
 
-                    <button onClick={() => onDeleteTodo?.(currentTodo.id, "EVENT")} className="hover:text-red-600"><DeleteIcon /></button>
+                    <button onClick={() => onDeleteTodo?.(event.projectId, currentTodo.id, event.id, "EVENT")} className="hover:text-red-600"><DeleteIcon /></button>
                 </div>
             </div>
 
             {/* 상세 정보 */}
             <div className="space-y-4">
                 <DetailRow label="Title">
-                    {currentTodo.title || <span className="text-slate-400">메모가 없습니다.</span>}
+                    {currentTodo?.title || <span className="text-slate-400">제목이 없습니다.</span>}
                 </DetailRow>
                 <DetailRow label="Description">
-                    {currentTodo.description || <span className="text-slate-400">메모가 없습니다.</span>}
+                    {currentTodo?.description || <span className="text-slate-400">설명이 없습니다.</span>}
                 </DetailRow>
                 <DetailRow label="Category">
                     {event.title || <span className="text-slate-400">미지정</span>}
                 </DetailRow>
 
                 <DetailRow label="URL" >
-                    {currentTodo.url ? (
-                        <a href={currentTodo.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
-                            {currentTodo.url}
+                    {currentTodo?.url ? (
+                        <a href={currentTodo?.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
+                            {currentTodo?.url}
                         </a>
                     ) : (
                         <span className="text-slate-400">없음</span>
                     )}
+                </DetailRow>
+
+                <DetailRow label="Completed">
+                    <div className="flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            checked={currentTodo?.status === "DONE"}
+                            onChange={() => onTodoComplete(event.projectId, currentTodo) }
+                            className="w-4 h-4 accent-blue-600 cursor-pointer"
+                            disabled={!currentTodo} // currentTodo 없으면 비활성화
+                        />
+                        <span className={currentTodo?.status === "DONE" ? "text-green-600" : "text-slate-500"}>
+                          {currentTodo?.status === "DONE" ? "DONE" : "IN_PROGRESS"}
+                        </span>
+                    </div>
                 </DetailRow>
             </div>
         </div>
@@ -243,7 +313,7 @@ export function EventDetailModal({
                 setEventMembers(data.members);
                 console.log("이벤트 조회 성공:", data);
                 if (!data) {
-                    window.alert("이벤트 정보를 가져오지 못했습니다.");
+                    window.alert("Failed to fetch event information.");
                     return;
                 }
                 setEventData(data);
@@ -282,7 +352,7 @@ export function EventDetailModal({
             <div className="flex items-start">
                 <span className="w-24 text-slate-500 pt-1">Memo</span>
                 <div className="flex-1 text-slate-800 bg-slate-50 p-2 rounded-md text-xs min-h-[4rem]">
-                    {eventData?.description || "작성된 설명이 없습니다."}
+                    {eventData?.description || "No description available."}
                 </div>
             </div>
 

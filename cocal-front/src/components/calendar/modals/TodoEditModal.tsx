@@ -9,8 +9,9 @@ import { getReminderLabel } from "../utils/reminderUtils";
 interface Props {
     onClose: () => void;
     onSave: (id: number, data: { title: string; description: string; visibility: 'PUBLIC' | 'PRIVATE'; url: string; date?: string; offsetMinutes?: number | null; }) => void;
-    onDelete: (id: number, type: 'EVENT' | 'PRIVATE') => void;
+    onDelete: (projectId:number, todoId: number, eventId:number,  type: 'EVENT' | 'PRIVATE') => void;
     todoToEdit: SidebarTodo;
+    projectId: number;
 }
 
 // 상세 정보 행을 위한 헬퍼 컴포넌트 (EventDetailModal에서 가져옴)
@@ -21,7 +22,7 @@ const DetailRow = ({ label, children }: { label: string; children: React.ReactNo
     </div>
 );
 
-export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit }: Props) {
+export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId }: Props) {
     // --- 🔽 [STEP 1] 모드 전환을 위한 상태 추가 🔽 ---
     const [isEditing, setIsEditing] = useState(false);
 
@@ -73,7 +74,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit }: Props) 
     const handleDelete = () => {
         // Public Todo는 부모 이벤트가 있을 수 있으므로, Todo 자체의 ID로 삭제를 요청해야 합니다.
         // Private Todo는 ID가 고유하므로 그대로 사용합니다.
-        onDelete(todoToEdit.id, todoToEdit.type);
+        onDelete(projectId, todoToEdit.eventId, todoToEdit.id, todoToEdit.type);
         onClose();
     }
 

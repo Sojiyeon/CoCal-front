@@ -5,7 +5,7 @@ import { X, ChevronRight } from 'lucide-react';
 import { fetchWithAuth } from '@/utils/authService';
 import { useUser } from '@/contexts/UserContext';
 
-const API = 'https://cocal-server.onrender.com';
+const API = process.env.NEXT_PUBLIC_API_URL!;
 const API_ALL_LOGOUT_ENDPOINT = `${API}/api/auth/all-logout`;
 const API_DELETE_ENDPOINTS = `${API}/api/users/delete`;
 

@@ -25,7 +25,6 @@ export const sampleEvents: CalendarEvent[] = [
                 description: "After yoga",
                 status: 'IN_PROGRESS',
                 type: 'EVENT',
-                urlId: 1,
                 authorId: 1,
                 orderNo: 1,
 
@@ -37,7 +36,6 @@ export const sampleEvents: CalendarEvent[] = [
                 description: null,
                 status: 'IN_PROGRESS',
                 type: 'EVENT',
-                urlId: 2,
                 authorId: 1,
                 orderNo: 2,
 
