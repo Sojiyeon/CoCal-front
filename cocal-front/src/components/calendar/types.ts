@@ -10,7 +10,6 @@ export interface UserSummary {
 export type EventTodo = {
     id: number;
     eventId: number;
-    urlId: number;
     title: string;
     description: string | null;
     status: 'IN_PROGRESS' | 'DONE';
@@ -221,3 +220,23 @@ export interface EventUrl {
     orderNo: number;
 }
 
+// 이벤트 별 투두 조회 응답
+export interface EventTodoListResponse {
+    projectId: number;
+    date: string | null;
+    count: number;
+    items: RealEventTodo[];
+}
+export type RealEventTodo = {
+    id: number;
+    eventId: number;
+    title: string;
+    description: string | null;
+    eventTitle: string | null;
+    eventColor: string | null;
+    status: 'IN_PROGRESS' | 'DONE';
+    authorId: number | null;
+    orderNo: number;
+    type: 'EVENT' | 'PRIVATE';
+    url?: string;
+};
