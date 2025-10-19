@@ -5,6 +5,7 @@ import {CalendarEvent, EventData, EventTodo, ProjectMember, RealEventTodo} from 
 import { getReminderLabel } from "../utils/reminderUtils";
 import {getEvent} from "@/api/eventApi";
 import {getEventTodoAll, updateTodo, updateTodoRequest} from "@/api/todoApi";
+import { ActiveTab } from "@/components/calendar/modals/EventModal";
 
 interface Props {
     event: CalendarEvent;
@@ -21,8 +22,6 @@ type LegacyCalendarEvent = CalendarEvent & {
     eventTodos?: EventTodo[];
     publicTodos?: EventTodo[];
 };
-
-type ActiveTab = "Event" | "To do";
 
 ///**  이름에서 이니셜 생성(이미지 없을 때 표시) */
 const getInitials = (name?: string) => {
@@ -53,13 +52,20 @@ const ChevronRightIcon = () => (
 
 
 // /** To-do 탭: todos 안전 합성 + 콜백 타입 명시 */
-const TodoListTab = ({ event,  onDeleteTodo }: Props) => {
+const TodoListTab = ({ event,  onDeleteTodo, onSelectTodo }: Props & { onSelectTodo?: (todo: RealEventTodo) => void }) => {
     // 이벤트 투두 상태
     const [eventTodos, setEventTodos] = useState<RealEventTodo[]>([]);
     // 이벤트 투두 index 상태
     const [currentTodoIndex, setCurrentTodoIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
 
+    // 현재 보고 있는 Todo가 바뀔 때 부모에 알림 (edit 위해 필요)
+    useEffect(() => {
+        if (onSelectTodo && eventTodos[currentTodoIndex]) {
+            onSelectTodo(eventTodos[currentTodoIndex]);
+        }
+    }, [currentTodoIndex, eventTodos, onSelectTodo]);
+    
     // 이벤트 투두 완료 핸들러
     const onTodoComplete = async (projectId:number, currentTodo:RealEventTodo) => {
         if (!currentTodo) return;
@@ -266,6 +272,7 @@ export function EventDetailModal({
                                  }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
     const [currentTodoIndex, setCurrentTodoIndex] = useState(0);
+    const [currentTodo, setCurrentTodo] = useState<RealEventTodo | null>(null);
     // 이벤트 정보 담는 상태
     const [eventData, setEventData] = useState<EventData | null>(null);
     // 이벤트 멤버 담는 상태
@@ -291,14 +298,11 @@ export function EventDetailModal({
     const handleMainEditClick = () => {
         if (activeTab === "Event") {
             onEdit(event);
-        } else { // "To do" 탭이 활성화된 경우
-            const e = event as LegacyCalendarEvent;
-            const todos: EventTodo[] = e.todos ?? e.eventTodos ?? e.publicTodos ?? [];
-
-            if (todos.length > 0 && todos[currentTodoIndex]) {
-                const currentTodo = todos[currentTodoIndex];
-                onEditTodo?.(currentTodo); // 현재 보고 있는 할일를 수정합니다.
-            }
+        } else if (activeTab === "Todo" && currentTodo) {
+            onEditTodo?.(currentTodo);
+            console.log("수정할 todo: ", currentTodo);
+        } else {
+            alert("No To-do items to edit.");
         }
     };
 
@@ -427,7 +431,7 @@ export function EventDetailModal({
                 {/* --- 탭 버튼 --- */}
                 <div className="flex border-b sticky top-[3.5rem] bg-white z-10">
                     <TabButton tabName="Event"/>
-                    <TabButton tabName="To do"/>
+                    <TabButton tabName="Todo"/>
                 </div>
 
                 {/* --- 컨텐츠 --- */}
@@ -443,6 +447,7 @@ export function EventDetailModal({
                             onEditTodo={onEditTodo}
                             onDeleteTodo={onDeleteTodo}
                             members={members} // 전달은 되지만 TodoListTab에서 사용하지 않음(무시됨)
+                            onSelectTodo={setCurrentTodo} // 현재 보고 있는 Todo를 상위로 전달
                         />
                     )}
                 </div>
