@@ -263,7 +263,7 @@ export default function SidebarLeft({
                 status: newStatus,
                 url: todoToToggle.url,
                 //eventId: todoToToggle.eventId || null,
-                offsetMinutes: todoToToggle.offsetMinutes, // <-- 이 줄 추가
+                offsetMinutes: todoToToggle.offsetMinutes ?? 0, // <-- 이 줄 추가
                 orderNo: todoToToggle.orderNo,
             };
 
