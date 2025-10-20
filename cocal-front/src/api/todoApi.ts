@@ -12,7 +12,7 @@ export interface TodoData {
     description?: string;
     url?: string;
     date: string; // ISO string
-    offsetMinutes: number;
+    offsetMinutes: number | null;
     type: TodoType;
     eventId?: number;
     projectId: number;

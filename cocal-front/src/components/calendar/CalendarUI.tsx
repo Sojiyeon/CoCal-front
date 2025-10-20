@@ -174,6 +174,7 @@ export default function CalendarUI() {
                     setEvents(json.data.events || []);
                     // 메모 저장
                     setMemos(json.data.memos || []);
+                    setPrivateTodos(json.data.privateTodos || []);
                 } else {
                     console.error("캘린더 데이터가 없습니다.");
                 }
@@ -541,6 +542,7 @@ export default function CalendarUI() {
                 status: originalTodo.status,
                 type: 'PRIVATE',
                 url: newData.url,
+                offsetMinutes: newData.offsetMinutes,
             };
             setPrivateTodos(prev => [...prev, newPrivate]);
 
@@ -593,7 +595,7 @@ export default function CalendarUI() {
 
     // To-do 삭제 핸들러
     const handleDeleteTodo = async (projectId: number, idToDelete: number,  eventId: number, type: "EVENT" | "PRIVATE") => {
-        if (!window.confirm("정말로 이 할 일을 삭제하시겠습니까?")) return;
+        if (!window.confirm("Are you sure you want to delete this to-do?")) return;
 
         if (type === "PRIVATE") {
             setPrivateTodos((prev) => prev.filter((todo) => todo.id !== idToDelete));
@@ -674,8 +676,53 @@ export default function CalendarUI() {
     };
 
     // To-do 수정 모달을 여는 핸들러
-    const handleOpenTodoEditModal = (todo: SidebarTodo) => {
-        setTodoToEdit(todo);
+// To-do 수정 모달을 여는 핸들러 (API 재호출 기능 추가)
+    const handleOpenTodoEditModal = async (todoFromSidebar: SidebarTodo) => {
+        // 1. Private To-do일 경우에만 상세 데이터를 다시 불러옵니다.
+        // (Event To-do는 이미 SidebarLeft에서 올바른 데이터를 받고 있다고 가정)
+        if (todoFromSidebar.type === 'PRIVATE') {
+            try {
+                // 2. 단일 To-do 상세 조회 API를 호출합니다.
+                const res = await api.get(`/projects/${projectId}/todos/${todoFromSidebar.id}`);
+
+                if (!res.success || !res.data) {
+                    throw new Error(res.error?.message || "Failed to fetch To-do details.");
+                }
+
+                const fullTodoData = res.data; // API가 반환한 상세 To-do 데이터
+
+                // 3. API 응답(상세 데이터)과 사이드바의 기존 데이터를 조합하여
+                //    TodoEditModal이 필요로 하는 완전한 'SidebarTodo' 객체를 만듭니다.
+                const completeTodoForModal: SidebarTodo = {
+                    ...todoFromSidebar, // parentEventColor, parentEventTitle 등 기존 값 사용
+
+                    // --- 🔽 API에서 새로 받은 정확한 데이터로 덮어쓰기 🔽 ---
+                    id: fullTodoData.id,
+                    title: fullTodoData.title,
+                    description: fullTodoData.description,
+                    status: fullTodoData.status,
+                    type: 'PRIVATE',
+                    date: fullTodoData.date,
+                    url: fullTodoData.url,
+                    authorId: fullTodoData.userId || todoFromSidebar.authorId,
+                    orderNo: fullTodoData.orderNo,
+
+                    // ✨ 리마인더 문제를 해결하는 핵심 코드
+                    offsetMinutes: fullTodoData.offsetMinutes,
+                };
+
+                // 4. 완성된 객체로 모달을 엽니다.
+                setTodoToEdit(completeTodoForModal);
+
+            } catch (error) {
+                console.error("Failed to fetch full todo details:", error);
+                alert("To-do 상세 정보를 불러오는 데 실패했습니다.");
+                setTodoToEdit(null); // 실패 시 모달을 열지 않음
+            }
+        } else {
+            // 5. Event To-do는 기존 방식대로 즉시 모달을 엽니다.
+            setTodoToEdit(todoFromSidebar);
+        }
     };
     const buildWeekViewMobileData = (baseDate: Date) => {
         // 주 시작(일요일) 기준으로 7일 산출
@@ -1120,6 +1167,7 @@ export default function CalendarUI() {
                     onClose={() => setTodoToEdit(null)}
                     onSave={handleUpdateTodo}
                     onDelete={handleDeleteTodo}
+                    events={events}
                 />
             )}
 

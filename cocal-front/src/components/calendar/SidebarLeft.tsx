@@ -19,7 +19,7 @@ interface ApiEventTodo {
     eventTitle: string;
     eventColor: string;
     url?: string; // url 필드 추가
-    offsetMinutes?: number;
+    offsetMinutes?: number | null;
     orderNo?: number;
 }
 
@@ -200,7 +200,7 @@ export default function SidebarLeft({
 
                     // 나머지 필드는 여전히 API가 제공하지 않으므로 기본값 유지
                     urlId: 0,
-                    offsetMinutes: item.offsetMinutes || 0, // 서버에서 받은 값 사용
+                    offsetMinutes: item.offsetMinutes ?? null, // 서버에서 받은 값 사용
                     orderNo: item.orderNo || 0,             // 서버에서 받은 값 사용
                 })),
                 ...privateItems.map((item) => ({
@@ -215,7 +215,7 @@ export default function SidebarLeft({
                     date: formattedDate,
                     url: item.url,
                     authorId: user?.userId || 0,
-                    offsetMinutes: item.offsetMinutes || 0, // 서버에서 받은 값 사용
+                    offsetMinutes: item.offsetMinutes ?? null, // 서버에서 받은 값 사용
                     orderNo: item.orderNo || 0,
                     urlId: 0,
                 })),
