@@ -72,10 +72,11 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
     };
 
     const handleDelete = () => {
-        // Public Todo는 부모 이벤트가 있을 수 있으므로, Todo 자체의 ID로 삭제를 요청해야 합니다.
-        // Private Todo는 ID가 고유하므로 그대로 사용합니다.
-        onDelete(projectId, todoToEdit.eventId, todoToEdit.id, todoToEdit.type);
-        onClose();
+        if (window.confirm("정말 삭제하시겠습니까?")) {
+            // 인자 순서를 (projectId, todoId, eventId, type)으로 정확하게 전달합니다.
+            onDelete(projectId, todoToEdit.id, todoToEdit.eventId, todoToEdit.type);
+            onClose();
+        }
     }
 
     // --- 🔽 [STEP 2] 렌더링할 JSX를 isEditing 상태에 따라 분기 🔽 ---
