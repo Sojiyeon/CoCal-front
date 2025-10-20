@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
+import Image from "next/image";
 import { Folder, MoreVertical, Moon, Settings, LogOut, Plus } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -64,8 +65,7 @@ interface CurrentUser {
     id: number | null;
     name: string;
     email: string;
-    imageUrl: string;
-    profileImageUrl?: string;
+    profileImageUrl: string;
 }
 
 // 사용자 정보의 기본값
@@ -73,7 +73,7 @@ const DEFAULT_USER: CurrentUser = {
     id: null,
     name: 'Guest',
     email: 'guest@example.com',
-    imageUrl: 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User', // 임시 이미지
+    profileImageUrl: 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User', // 임시 이미지
 };
 
 interface ExpectedApiEndpoints {
@@ -299,14 +299,28 @@ const EmptyState: FC<{ selectedCategory: ProjectCategory }> = ({ selectedCategor
 );
 
 interface ProfileDropdownProps {
-    user: CurrentUser;
     onOpenSettings: () => void;
     onLogout: () => void;
 }
 
-const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLogout }) => {
+export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLogout }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [user, setUser] = useState<CurrentUser | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // localStorage에서 유저 정보 불러오기
+    useEffect(() => {
+        const stored = localStorage.getItem("userProfile");
+        if (stored) {
+            try {
+                const parsed: CurrentUser = JSON.parse(stored);
+                setUser(parsed);
+                // console.log("불러온 유저:", parsed);
+            } catch (e) {
+                console.error("userProfile 파싱 실패:", e);
+            }
+        }
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -346,6 +360,11 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
         },
     ], [onOpenSettings, onLogout]);
 
+    // 아직 유저 정보가 없을 경우 (로딩 상태)
+    if (!user) {
+        return null;
+    }
+
     return (
         <div className="relative z-50" ref={dropdownRef}>
             {/* 프로필 표시 영역 (클릭 트리거) */}
@@ -353,13 +372,13 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
                 className="flex items-center space-x-2 cursor-pointer p-1"
                 onClick={() => setIsOpen(!isOpen)}
             >
-                <img
-                    src={user.imageUrl.replace('96x96', '40x40')}
+                <Image
+                    src={user.profileImageUrl || DEFAULT_USER.profileImageUrl}
                     alt={user.name}
                     width={40}
                     height={40}
+                    unoptimized
                     className="w-10 h-10 rounded-full object-cover shadow-inner ring-1 ring-gray-200"
-                    onError={(e) => { e.currentTarget.src = 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User' }}
                 />
                 <div className="flex-col text-xs hidden sm:block">
                     <span className="font-semibold text-gray-900 block">
@@ -449,7 +468,7 @@ const ProjectDashboardPage: React.FC = () => {
                             id: member.userId,
                             name: member.name,
                             // 'default_url' 대신 DEFAULT_USER.imageUrl을 사용
-                            imageUrl: member.profileImageUrl || DEFAULT_USER.imageUrl,
+                            imageUrl: member.profileImageUrl || DEFAULT_USER.profileImageUrl,
                         })) : [],
                 }));
                 setProjects(projectsData);
@@ -509,7 +528,7 @@ const ProjectDashboardPage: React.FC = () => {
                 const defaultMember: TeamMemberForCard = {
                     id: user.id || 0,
                     name: user.name || 'Owner',
-                    imageUrl: user.profileImageUrl || DEFAULT_USER.imageUrl,
+                    imageUrl: user.profileImageUrl || DEFAULT_USER.profileImageUrl,
                 };
 
                 const createdProject: Project = {
@@ -524,7 +543,7 @@ const ProjectDashboardPage: React.FC = () => {
                         ? serverProject.members.map((m: ServerMember): TeamMemberForCard => ({
                             id: m.userId,
                             name: m.name,
-                            imageUrl: m.profileImageUrl || DEFAULT_USER.imageUrl
+                            imageUrl: m.profileImageUrl || DEFAULT_USER.profileImageUrl
                         }))
                         : [defaultMember],
                 };
@@ -729,13 +748,6 @@ const ProjectDashboardPage: React.FC = () => {
     }
     const currentUserName = user.name || 'Guest';
 
-    const displayUser: CurrentUser = {
-        id: user.id,
-        name: user.name || DEFAULT_USER.name,
-        email: user.email || DEFAULT_USER.email,
-        imageUrl: user.profileImageUrl || DEFAULT_USER.imageUrl,
-    };
-
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
             {/* 상단 통합 헤더 영역 */}
@@ -744,7 +756,6 @@ const ProjectDashboardPage: React.FC = () => {
 
                 <div className="flex items-center space-x-4"> {/* 유저 프로필 */}
                     <ProfileDropdown
-                        user={displayUser}
                         onOpenSettings={handleOpenSettingsModal}
                         onLogout={handleLogout}
                     />

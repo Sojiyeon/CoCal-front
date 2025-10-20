@@ -10,8 +10,8 @@ import DayView from "./Day";
 import SidebarLeft from "./SidebarLeft";
 import SidebarRight from "./SidebarRight";
 import {EventDetailModal} from "./modals/EventDetailModal";
-import ProfileDropdown from "./ProfileDropdown";
-import ProfileSettingsModal from "./modals/ProfileSettingModal";
+import { ProfileDropdown } from "@/components/dashboard/Dashboard";
+import ProfileSettingsModal from '@/components/modals/ProfileSettingModal';
 import {SettingsModal} from "./modals/SettingsModal";
 import {EventModal} from "./modals/EventModal";
 import {TeamModal} from "./modals/TeamModal";
@@ -808,11 +808,6 @@ export default function CalendarUI() {
                 {isUserLoading ? (
                     <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>) : user && user.id ? (
                     <ProfileDropdown
-                        user={{
-                            name: user.name || "User",
-                            email: user.email || "No email",
-                            imageUrl: user.profileImageUrl || "https://placehold.co/100x100/A0BFFF/FFFFFF?text=User",
-                        }}
                         onOpenSettings={handleOpenSettingsModal}
                         onLogout={logout}
                     />
@@ -841,12 +836,6 @@ export default function CalendarUI() {
                     {isUserLoading ? (
                         <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse"></div>) : user && user.id ? (
                         <ProfileDropdown
-                            user={{
-                                // 이름과 이메일은 빈 값으로 전달하여 숨김 처리
-                                name: "",
-                                email: "",
-                                imageUrl: user.profileImageUrl || "https://placehold.co/100x100/A0BFFF/FFFFFF?text=User",
-                            }}
                             onOpenSettings={handleOpenSettingsModal}
                             onLogout={logout}
                         />
