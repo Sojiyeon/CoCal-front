@@ -9,10 +9,14 @@ interface ModalProps {
     title: string;
     children: ReactNode;
     className?: string;
+
+    titleClassName?: string;
+    footer?: ReactNode; // 버튼을 위한 푸터 영역
+    maxWidth?: string; // 모달 최대 너비 제어 (max-w-md, max-w-lg 등)
 }
 
 
-const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, className = '' }) => {
+const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, className, titleClassName, footer = '' }) => {
     const modalRef = useRef<HTMLDivElement>(null);
     if (!isOpen) return null;
 
@@ -52,6 +56,12 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, className = '
                 <div className="p-6">
                     {children}
                 </div>
+                
+                {footer && (
+                    <div className="flex justify-end p-4 border-t border-gray-100 dark:border-dark-border">
+                        {footer}
+                    </div>
+                )}
             </div>
         </div>
     );

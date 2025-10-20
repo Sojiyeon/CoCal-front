@@ -1,13 +1,15 @@
 "use client";
 import React, { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Button from '../ui/Button';
 import Link from 'next/link';
 import {authApi} from "@/api/authApi";
 
 const Login: React.FC = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectUrl = searchParams.get('redirect');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -33,9 +35,8 @@ const Login: React.FC = () => {
                 localStorage.setItem('userProfile', JSON.stringify(user));
                 console.log('사용자 정보 저장 완료:', user);
             }
-
             // 대시보드로 이동
-            router.push('/dashboard');
+            router.push(redirectUrl || '/dashboard');
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message || '로그인 중 문제가 발생했습니다.');
