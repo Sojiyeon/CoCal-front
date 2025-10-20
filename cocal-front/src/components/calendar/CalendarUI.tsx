@@ -127,6 +127,9 @@ export default function CalendarUI() {
         }[];
     } | null>(null);
 
+    // Todo 데이터의 버전을 관리할 상태 추가
+    const [todoVersion, setTodoVersion] = useState(0);
+
     // --- useEffect 훅 ---
     // 왼쪽 사이드바의 'To do' 목록을 업데이트
     useEffect(() => {
@@ -592,41 +595,32 @@ export default function CalendarUI() {
     };
 
     // To-do 삭제 핸들러
-    const handleDeleteTodo = async (projectId: number, idToDelete: number,  eventId: number, type: "EVENT" | "PRIVATE") => {
-        if (!window.confirm("정말로 이 할 일을 삭제하시겠습니까?")) return;
-
-        if (type === "PRIVATE") {
-            setPrivateTodos((prev) => prev.filter((todo) => todo.id !== idToDelete));
-        } else { // 'EVENT'
-            setEvents((prevEvents) =>
-                prevEvents.map((event) => {
-                    // 이 이벤트에 해당 todo가 없으면 그대로 반환
-                    if (!event.todos || !event.todos.some((t) => t.id === idToDelete)) {
+    const handleDeleteTodo = async (projectId: number, todoId: number, eventId: number, type: 'EVENT' | 'PRIVATE') => {
+        try {
+            if (type === 'PRIVATE') {
+                await api.delete(`/projects/${projectId}/todos/${todoId}?type=PRIVATE`);
+                setPrivateTodos(prev => prev.filter(t => t.id !== todoId));
+            } else { // 'EVENT' 타입
+                await api.delete(`/projects/${projectId}/todos/${todoId}?type=EVENT&eventId=${eventId}`);
+                setEvents(prevEvents =>
+                    prevEvents.map(event => {
+                        if (event.id === eventId && event.todos) {
+                            return {
+                                ...event,
+                                todos: event.todos.filter(todo => todo.id !== todoId),
+                            };
+                        }
                         return event;
-                    }
-                    // 해당 todo가 있으면, 그 todo를 제외한 새 todo 배열을 포함한 이벤트 객체를 반환
-                    return {
-                        ...event,
-                        todos: event.todos.filter((todo) => todo.id !== idToDelete),
-                    };
-                })
-                    // (선택사항) 할 일이 모두 사라진 'Todo:' 래퍼 이벤트를 제거
-                    .filter(event => !(event.title.startsWith('Todo:') && (!event.todos || event.todos.length === 0)))
-            );
-
-            // 해당 todo가 있을 때, 삭제 api 호출
-            try {
-                const result = await deleteTodo(projectId, idToDelete, eventId, type);
-                if (result) {
-                    console.log("Todo 삭제를 성공했습니다.");
-                    alert("The to-do item has been successfully deleted.");
-                }
-            } catch(err: unknown) {
-                console.error("Todo 삭제 실패:", err);
-                alert("Failed to delete the to-do item.");
+                    })
+                );
             }
-            // 모달을 닫아 변경사항을 부모 컴포넌트에서 확인하도록 함
-            setSelectedEventId(null);
+
+            // [추가] 삭제 성공 시, Todo 버전을 1 증가시켜서 변경 신호를 보냅니다.
+            setTodoVersion(v => v + 1);
+
+        } catch (err) {
+            console.error("Todo 삭제 실패:", err);
+            alert('삭제에 실패했습니다.');
         }
     };
 
@@ -861,6 +855,7 @@ export default function CalendarUI() {
                             profileImageUrl: user.profileImageUrl
                         } : null}
                         //handleToggleTodoStatus={handleToggleTodoStatus}
+                        todoVersion={todoVersion}
                         onEditTodo={handleOpenTodoEditModal}
 
                     />
