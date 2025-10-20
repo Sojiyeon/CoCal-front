@@ -87,6 +87,7 @@ interface ProfileSettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
     apiEndpoints: ExpectedApiEndpoints;
+    onChanged?: () => void;
 }
 
 // ProfileSettingsModal의 prop 타입 오류 방지를 위해 임시 타입 정의 사용
@@ -320,7 +321,7 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
                 console.error("userProfile 파싱 실패:", e);
             }
         }
-    }, []);
+    }, [isOpen, onOpenSettings]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -392,7 +393,7 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
 
             {isOpen && (
                 <div
-                    className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl z-40 p-2 border border-gray-100 transform origin-top-right transition-all duration-150 ease-out"
+                    className="fixed top-[72px] right-8 z-[9999] mt-2 w-56 bg-white dark:bg-slate-800 dark:text-gray-100 rounded-xl shadow-2xl p-2 border border-gray-100 dark:border-slate-700 transform origin-top-right transition-all duration-150 ease-out"
                     role="menu"
                 >
                     {menuItems.map((item, index) => (
@@ -428,7 +429,7 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
 const ProjectDashboardPage: React.FC = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { user, isLoading: isLoadingUser, logout } = useUser();
+    const { user, isLoading: isLoadingUser, logout, fetchUserProfile } = useUser();
     const [isLoadingProjects, setIsLoadingProjects] = useState(false);
     const [projects, setProjects] = useState<Project[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('All');
@@ -439,6 +440,20 @@ const ProjectDashboardPage: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [descriptionModalProject, setDescriptionModalProject] = useState<Project | null>(null);
+    const [isChanged, setIsChanged] = useState(false); // 이름 변경 여부 상태 추가
+
+    // ProfileSettingsModal 닫힐 때 유저 정보 재조회
+    useEffect(() => {
+        // 모달이 닫히고, 이름, 프로필 실제로 변경된 경우만 재조회
+        if (!isSettingsModalOpen && isChanged) {
+            const token = localStorage.getItem("accessToken");
+            if (token) {
+                console.log("유저 정보 변경 감지됨 → 유저 정보 다시 조회 중...");
+                fetchUserProfile(token);
+                setIsChanged(false); // 한 번만 실행되도록 초기화
+            }
+        }
+    }, [isSettingsModalOpen, isChanged, fetchUserProfile]);
 
     const handleLogout = useCallback(async () => {
         await logout();
@@ -674,6 +689,7 @@ const ProjectDashboardPage: React.FC = () => {
     };
 */
 
+
     // 초대 수락 감지
     useEffect(() => {
         const inviteAccepted = searchParams.get('inviteAccepted');
@@ -751,10 +767,10 @@ const ProjectDashboardPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
             {/* 상단 통합 헤더 영역 */}
-            <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 bg-white sticky top-0 z-10 shadow-sm">
+            <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 bg-white sticky top-0 z-50 shadow-sm">
                 <h1 className="text-2xl font-bold text-gray-800">My projects</h1>
 
-                <div className="flex items-center space-x-4"> {/* 유저 프로필 */}
+                <div className="flex items-center space-x-4 z-50"> {/* 유저 프로필 */}
                     <ProfileDropdown
                         onOpenSettings={handleOpenSettingsModal}
                         onLogout={handleLogout}
@@ -818,6 +834,7 @@ const ProjectDashboardPage: React.FC = () => {
                 isOpen={isSettingsModalOpen}
                 onClose={handleCloseSettingsModal}
                 apiEndpoints={API_ENDPOINTS}
+                onChanged={() => setIsChanged(true)}
             />
             {/* editingProject가 null이 아닐 때만 렌더링 */}
             {editingProject && (
