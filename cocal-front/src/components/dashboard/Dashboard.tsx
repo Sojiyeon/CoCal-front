@@ -393,7 +393,7 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
 
             {isOpen && (
                 <div
-                    className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl z-40 p-2 border border-gray-100 transform origin-top-right transition-all duration-150 ease-out"
+                    className="fixed top-[72px] right-8 z-[9999] mt-2 w-56 bg-white rounded-xl shadow-2xl p-2 border border-gray-100 transform origin-top-right transition-all duration-150 ease-out"
                     role="menu"
                 >
                     {menuItems.map((item, index) => (
@@ -767,10 +767,10 @@ const ProjectDashboardPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 font-sans">
             {/* 상단 통합 헤더 영역 */}
-            <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 bg-white sticky top-0 z-10 shadow-sm">
+            <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 bg-white sticky top-0 z-50 shadow-sm">
                 <h1 className="text-2xl font-bold text-gray-800">My projects</h1>
 
-                <div className="flex items-center space-x-4"> {/* 유저 프로필 */}
+                <div className="flex items-center space-x-4 z-50"> {/* 유저 프로필 */}
                     <ProfileDropdown
                         onOpenSettings={handleOpenSettingsModal}
                         onLogout={handleLogout}
