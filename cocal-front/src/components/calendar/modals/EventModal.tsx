@@ -770,7 +770,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                         <TabButton tabName="Memo"/>
                     </div>
                 )}
-                <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden pr-3">
+                <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
                     {renderForm()}
                 </div>
 
