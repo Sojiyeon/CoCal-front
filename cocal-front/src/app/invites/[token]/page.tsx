@@ -189,7 +189,7 @@ const InvitePage = ({params}: { params: { token: string } }) => {
                     <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
                     <h2 className="text-2xl font-bold mb-2 dark:text-dark-text-primary">초대 수락 완료!</h2>
                     <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
-                        '{inviteInfo.projectName}' 프로젝트에 성공적으로 참여했습니다. 잠시 후 대시보드로 이동합니다.
+                        &apos;{inviteInfo.projectName}&apos; 프로젝트에 성공적으로 참여했습니다. 잠시 후 대시보드로 이동합니다.
                     </p>
                     <button
                         onClick={() => router.push('/dashboard')} // 버튼 클릭 시 즉시 이동 가능
