@@ -6,6 +6,7 @@ import {fetchJsonWithAuth} from "@/utils/authService";
 const PROJECT_URL: string = "/api/projects/";
 export type TodoType = "PRIVATE" | "EVENT";
 export type Status = "IN_PROGRESS" | "DONE";
+export type TodoVisibility = 'PUBLIC' | 'PRIVATE';
 
 export interface TodoData {
     title: string;
@@ -26,6 +27,20 @@ export interface updateTodoRequest {
     type: TodoType
     eventId: number;
     projectId: number;
+}
+
+
+export interface TodoUpdatePayload {
+    title: string;
+    description: string;
+    visibility: TodoVisibility;
+    url: string;
+    date?: string;
+    offsetMinutes?: number | null;
+    eventId?: number; // null 제거
+    status?: Status;
+    projectId?: number;
+    type: TodoType; // ✅ 추가
 }
 
 // Todo 생성

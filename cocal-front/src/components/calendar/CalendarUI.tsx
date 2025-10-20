@@ -34,7 +34,7 @@ import {
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
 import { sampleEvents, sampleMemos } from "./sampleData";
 import {api} from "@/components/calendar/utils/api";
-import {deleteTodo} from "@/api/todoApi";
+import {deleteTodo, TodoUpdatePayload} from "@/api/todoApi";
 
 
 // 오늘 날짜를 저장하는 상수
@@ -495,37 +495,48 @@ export default function CalendarUI() {
             return;
         }
 
-        const payload: any = {
+        // 기존 any 제거, TodoUpdatePayload 기반 payload 구성
+        const payload: TodoUpdatePayload = {
             title: newData.title,
             description: newData.description,
             url: newData.url,
             status: todoToEdit.status,
-            type: originalType,
+            type: originalType,      // type은 변경하지 않음
             projectId: projectId,
             offsetMinutes: newData.offsetMinutes,
+            visibility: newData.visibility,
+            date: originalType === 'PRIVATE'
+                ? newData.date ? new Date(newData.date).toISOString() : todoToEdit.date
+                : undefined,
+            eventId: originalType === 'EVENT' ? newData.eventId ?? todoToEdit.eventId : undefined,
         };
+
 
         if (originalType === 'PRIVATE') {
             payload.date = newData.date ? new Date(newData.date).toISOString() : todoToEdit.date;
         } else { // 'EVENT'
             // 모달에서 받은 새로운 eventId를 payload에 담습니다.
-            payload.eventId = newData.eventId;
+            payload.eventId = newData.eventId ?? 0;
         }
 
         try {
             await api.put(`/projects/${projectId}/todos/${todoId}`, payload);
 
             if (originalType === 'PRIVATE') {
-                setPrivateTodos(prev => prev.map(todo =>
-                    todo.id === todoId ? {
-                        ...todo,
-                        title: newData.title,
-                        description: newData.description,
-                        url: newData.url,
-                        date: payload.date,
-                        offsetMinutes: newData.offsetMinutes,
-                    } : todo
-                ));
+                setPrivateTodos(prev =>
+                    prev.map(todo =>
+                        todo.id === todoId
+                            ? {
+                                ...todo,
+                                title: newData.title,
+                                description: newData.description,
+                                url: newData.url,
+                                date: payload.date || todo.date,          // ✅ 항상 string
+                                offsetMinutes: newData.offsetMinutes ?? todo.offsetMinutes,
+                            }
+                            : todo
+                    )
+                );
             } else { // 'EVENT'
                 // eventId가 변경되었을 경우를 처리하는 로직
                 const oldEventId = todoToEdit.eventId;
