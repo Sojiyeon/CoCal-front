@@ -20,7 +20,7 @@ interface ProjectInviteInfo {
 
 type InviteStatus = 'loading' | 'info_loaded' | 'pending' | 'accepted' | 'error' | 'expired';
 
-const InvitePage = ({params}: { params: { token: string } }) => {
+const InvitePage = ({_params}: { _params: { token: string } }) => {
     const router = useRouter();
     const pathname = usePathname();
     const pathSegments = pathname.split('/');
