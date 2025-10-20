@@ -102,9 +102,11 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
     };
 
     const handleDelete = () => {
-        // [수정] todoId와 eventId의 순서를 올바르게 전달합니다.
-        onDelete(projectId, todoToEdit.id, todoToEdit.eventId, todoToEdit.type);
-        onClose();
+        if (window.confirm("정말 삭제하시겠습니까?")) {
+            // 인자 순서를 (projectId, todoId, eventId, type)으로 정확하게 전달합니다.
+            onDelete(projectId, todoToEdit.id, todoToEdit.eventId, todoToEdit.type);
+            onClose();
+        }
     }
     // --- 🔽 [STEP 2] 렌더링할 JSX를 isEditing 상태에 따라 분기 🔽 ---
     return (
@@ -121,6 +123,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                             <h2 className="text-xl font-bold text-slate-800">
                                 {isEditing ? "Edit To-do" : todoToEdit.title}
                             </h2>
+                            {/* 상세 보기 모드일 때만 카테고리 표시 */}
                             {!isEditing && (
                                 <p className="text-xs text-slate-500">{todoToEdit.parentEventTitle}</p>
                             )}

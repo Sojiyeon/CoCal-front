@@ -58,6 +58,8 @@ interface SidebarLeftProps {
     projectEndDate?: Date;
     onGoToWeekView: () => void;
     onGoToMonthView: () => void;
+    // [추가]
+    todoVersion: number;
 }
 const AddIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -145,6 +147,8 @@ export default function SidebarLeft({
     projectEndDate,
     onGoToMonthView,
     onGoToWeekView,
+    // [추가]
+    todoVersion
     }: { projectId: number; user: UserSummary | null } & SidebarLeftProps) {
     const [sidebarTodos, setSidebarTodos] = useState<SidebarTodo[]>([]);
     const [todoFilter, setTodoFilter] = useState('ALL');
@@ -152,17 +156,17 @@ export default function SidebarLeft({
     //const [mobileView, setMobileView] = useState<'actions' | 'calendar'>('actions');
 
     // 자동으로 컴포넌트 로드
-    useEffect(() => {
+   /* useEffect(() => {
         // projectId가 유효한 숫자일 때만 실행하도록 조건을 추가합니다.
         if (projectId) {
             handleDateClick(today.getDate());
         }
-    }, [projectId]); // projectId가 변경될 때마다 이 효과를 다시 확인합니다.
+    }, [projectId]); */// projectId가 변경될 때마다 이 효과를 다시 확인합니다.
 
     // --- 핵심 3: 데이터 로딩 함수 (eventId를 정확히 매핑) ---
     const handleDateClick = async (day: number) => {
         // 부모 컴포넌트에도 날짜가 변경되었음을 알림
-        handleSidebarDateSelect(day);
+        //handleSidebarDateSelect(day);
 
         const selectedDate = new Date(miniYear, miniMonth, day);
         const formattedDate = `${selectedDate.getFullYear()}-${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}-${selectedDate.getDate().toString().padStart(2, '0')}`;
@@ -227,6 +231,18 @@ export default function SidebarLeft({
             setSidebarTodos([]);
         }
     };
+
+    // 날짜가 변경되거나 '삭제 신호(todoVersion)'가 올 때마다 데이터를 다시 불러오는
+    // 새로운 useEffect를 추가합니다.
+    useEffect(() => {
+        if (projectId) {
+            // 현재 선택된 날짜(selectedSidebarDate)를 기준으로 데이터를 다시 불러옵니다.
+            // handleDateClick은 날짜를 prop(selectedSidebarDate)에서 가져오지 않고
+            // miniYear, miniMonth에서 가져오므로, selectedSidebarDate의 day를 전달합니다.
+            handleDateClick(selectedSidebarDate.getDate());
+        }
+        // 의존성 배열에 selectedSidebarDate와 todoVersion을 추가합니다.
+    }, [projectId, selectedSidebarDate, todoVersion]);
 
     // --- 핵심 4: 상태 업데이트 함수 (서버에 완전한 데이터를 전송) ---
     const handleToggleTodoStatus = async (todoToToggle: SidebarTodo) => {
@@ -367,7 +383,9 @@ export default function SidebarLeft({
                         return (
                             <div
                                 key={`${ri}-${ci}`}
-                                onClick={() => day && handleDateClick(day)}
+                                // onClick 핸들러가 내부 handleDateClick 대신
+                                // 부모의 handleSidebarDateSelect를 호출하도록 변경합니다.
+                                onClick={() => day && handleSidebarDateSelect(day)}
                                 className={`h-7 flex items-center justify-center rounded cursor-pointer ${isTodayDate ? "bg-slate-800 text-white" : isSelected ? "bg-slate-200 text-slate-800" : "text-slate-500 hover:bg-slate-100"}`}
                             >{day ?? ""}</div>
                         );
