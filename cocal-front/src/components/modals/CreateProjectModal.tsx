@@ -70,7 +70,7 @@ const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, user
                     <textarea
                         id="projectDescription"
                         name="description"
-                        placeholder="프로젝트의 목표, 주요 요구사항 등을 간략하게 설명해 주세요."
+                        placeholder="Please briefly describe the project's goals, key requirements, and so on."
                         value={formData.description}
                         onChange={handleChange}
                         rows={3}
