@@ -1,17 +1,52 @@
 "use client";
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useUser } from '@/contexts/UserContext';
 import Button from '../ui/Button';
 import Link from 'next/link';
 import {authApi} from "@/api/authApi";
 
+// 유효한 토큰 및 로그인 상태 확인 (useUser 훅을 사용하거나, 로컬 저장소 직접 접근)
+const checkAuthStatus = () => {
+    if (typeof window !== 'undefined') {
+        // 실제 프로젝트에서는 accessToken 존재 여부로 확인
+        return localStorage.getItem('accessToken') !== null;
+    }
+    return false;
+};
+
 const Login: React.FC = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectUrl = searchParams.get('redirect');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        // useUser Context를 사용하지 않는다면 checkAuthStatus를 사용
+        const isLoggedIn = checkAuthStatus();
+        const redirectPath = searchParams.get('redirect');
+
+        if (isLoggedIn) {
+            if (redirectPath) {
+                // redirect 파라미터가 있으면 그곳으로 이동 (초대 링크 복귀)
+                console.log(`Token found, redirecting to ${redirectPath}.`);
+                // URL 인코딩된 경로를 디코딩하여 사용
+                router.replace(decodeURIComponent(redirectPath));
+            } else {
+                // redirect 파라미터가 없으면 기본 대시보드로 이동
+                console.log("Token found, redirecting to /dashboard.");
+                router.replace('/dashboard');
+            }
+        }
+    }, [router, searchParams]);
+
+    if (checkAuthStatus()) {
+        return null;
+    }
 
     // 구글 소셜 로그인 핸들러
     const handleGoogleLogin = () => {
@@ -33,9 +68,8 @@ const Login: React.FC = () => {
                 localStorage.setItem('userProfile', JSON.stringify(user));
                 console.log('사용자 정보 저장 완료:', user);
             }
-
             // 대시보드로 이동
-            router.push('/dashboard');
+            router.push(redirectUrl || '/dashboard');
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message || '로그인 중 문제가 발생했습니다.');

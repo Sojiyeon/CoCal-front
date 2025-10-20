@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { Folder, MoreVertical, Moon, Settings, LogOut, Plus } from 'lucide-react';
+import { useUser } from '@/contexts/UserContext';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { fetchWithAuth } from '@/utils/authService';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
 import EditProjectModal from '@/components/modals/EditProjectModal';
 import ProfileSettingsModal from '@/components/modals/ProfileSettingModal';
-import { useUser } from '@/contexts/UserContext';
-import { fetchWithAuth } from '@/utils/authService';
-import Image from 'next/image'
+import ProjectDescriptionModal from '@/components/modals/ProjectDescriptionModal';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 const API_PROJECTS_ENDPOINT = `${API_BASE_URL}/api/projects`;
@@ -73,7 +73,7 @@ const DEFAULT_USER: CurrentUser = {
     id: null,
     name: 'Guest',
     email: 'guest@example.com',
-    imageUrl: 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=Guset', // 임시 이미지
+    imageUrl: 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User', // 임시 이미지
 };
 
 interface ExpectedApiEndpoints {
@@ -112,9 +112,10 @@ interface ProjectCardProps {
     onEdit: (project: Project) => void;
     onDelete: (projectId: number) => void;
     isDropdownActive: boolean;
-    onToggleDropdown: (active: boolean) => void;
+    onToggleDropdown: (isActive: boolean) => void;
     // UI에서 사용할 status를 prop으로 받습니다.
-    status: 'In Progress' | 'Completed';
+    status: ProjectCategory;
+    onShowDescription: (project: Project) => void;
 }
 
 // --- ProjectCategoryFilter Component (Inline) ---
@@ -161,7 +162,7 @@ const ProjectCategoryFilter: FC<ProjectCategoryFilterProps> = ({
     );
 };
 
-const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onDelete, isDropdownActive, onToggleDropdown, status }) => {
+const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onDelete, isDropdownActive, onToggleDropdown, status, onShowDescription }) => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const isOwner = project.ownerId === currentUserId;
     const isMember = project.members.some(member => member.id === currentUserId);
@@ -210,9 +211,19 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
                             </button>
                         </div>
                     ) : (  isMember && project.description ? (
-                        <p className="text-xs text-gray-600 line-clamp-2 mt-1 w-24 text-right">
-                            {project.description}
-                        </p>
+                        <div ref={dropdownRef}> {/* useRef 재활용 */}
+                            <button
+                                onClick={(e: React.MouseEvent) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onShowDescription(project);
+                                }}
+                                className="p-1 text-gray-400 hover:text-gray-700 transition relative z-20"
+                                title="프로젝트 설명 보기"
+                            >
+                                <MoreVertical className="w-5 h-5" />
+                            </button>
+                        </div>
                     ) : null )}
                 </div>
             </div>
@@ -228,7 +239,7 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
 
             <div className="flex items-center space-x-[-4px] pt-2 border-t border-gray-100">
                 {visibleMembers.map((member, index) => (
-                    <Image
+                    <img
                         key={member.id || index}
                         src={member.imageUrl}
                         title={member.name}
@@ -250,13 +261,13 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
                 <div
                     onClick={(e) => e.stopPropagation()}
                     className="absolute top-10 right-2 bg-gray-800 text-white rounded-lg shadow-2xl z-[100] w-28 overflow-hidden transform origin-top-right transition-all duration-150 ease-out border border-gray-700"
-                    style={{ zIndex: 100 }}
+                    style={{zIndex: 100}}
                 >
                     {dropdownItems.map(item => (
                         <button
                             key={item.label}
                             className={`w-full text-left px-3 py-2 text-sm transition 
-            ${item.isDestructive ? 'text-red-400 hover:bg-gray-700/50' : 'hover:bg-gray-700'}`}
+                            ${item.isDestructive ? 'text-red-400 hover:bg-gray-700/50' : 'hover:bg-gray-700'}`}
                             onClick={(e: React.MouseEvent) => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -342,13 +353,13 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
                 className="flex items-center space-x-2 cursor-pointer p-1"
                 onClick={() => setIsOpen(!isOpen)}
             >
-                <Image
+                <img
                     src={user.imageUrl.replace('96x96', '40x40')}
                     alt={user.name}
                     width={40}
                     height={40}
                     className="w-10 h-10 rounded-full object-cover shadow-inner ring-1 ring-gray-200"
-                    // onError={(e) => { e.currentTarget.src = 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User' }}
+                    onError={(e) => { e.currentTarget.src = 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User' }}
                 />
                 <div className="flex-col text-xs hidden sm:block">
                     <span className="font-semibold text-gray-900 block">
@@ -395,34 +406,20 @@ const ProfileDropdown: FC<ProfileDropdownProps> = ({ user, onOpenSettings, onLog
 };
 
 // --- Main Dashboard Page ---
-/*
-const calculateProjectStatus = (startDateStr: string, endDateStr: string): 'In Progress' | 'Completed' => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const start = new Date(startDateStr);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDateStr);
-    end.setHours(0, 0, 0, 0);
-
-    // IN_PROGRESS가 서버에서는 현재 날짜가 시작일과 종료일 사이일 때를 의미한다고 가정
-    if (end.getTime() < today.getTime()) {
-        return 'Completed';
-    }
-    return 'In Progress';
-};
-*/
 const ProjectDashboardPage: React.FC = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { user, isLoading: isLoadingUser, logout } = useUser();
     const [isLoadingProjects, setIsLoadingProjects] = useState(false);
     const [projects, setProjects] = useState<Project[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('All');
     const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
+    const [editingProject, setEditingProject] = useState<Project | null>(null);
     // --- 모달 상태 관리 ---
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    const [descriptionModalProject, setDescriptionModalProject] = useState<Project | null>(null);
 
     const handleLogout = useCallback(async () => {
         await logout();
@@ -620,6 +617,14 @@ const ProjectDashboardPage: React.FC = () => {
         }
     };
 
+    const handleOpenDescriptionModal = useCallback((project: Project) => {
+        setDescriptionModalProject(project);
+    }, []);
+
+    const handleCloseDescriptionModal = useCallback(() => {
+        setDescriptionModalProject(null);
+    }, []);
+
     const handleDeleteProject = async (projectId: number) => {
         if (window.confirm('정말로 이 프로젝트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
             try {
@@ -643,10 +648,27 @@ const ProjectDashboardPage: React.FC = () => {
         }
     };
 
+/*
+    // 이미 열려 있는 드롭다운이 있다면 닫고, 현재 드롭다운을 열거나 닫습니다.
     const handleToggleDropdown = (projectId: number, active: boolean) => {
-        // 이미 열려 있는 드롭다운이 있다면 닫고, 현재 드롭다운을 열거나 닫습니다.
         setActiveDropdownId(active ? projectId : null);
     };
+*/
+
+    // 초대 수락 감지
+    useEffect(() => {
+        const inviteAccepted = searchParams.get('inviteAccepted');
+
+        // 쿼리 파라미터가 있고, user.id가 로드되었을 때만 실행
+        if (inviteAccepted === 'true' && user.id) {
+            console.log("Invite accepted: Forcing project list refresh.");
+            fetchProjects();
+
+            // 한 번 사용한 쿼리 파라미터를 제거하여 새로고침 루프를 방지
+            router.replace('/dashboard', { scroll: false });
+        }
+        // user.id, fetchProjects, searchParams는 의존성 배열에 포함되어야 함
+    }, [searchParams, user.id, fetchProjects, router]);
 
     // 외부 클릭 감지 로직 (드롭다운을 닫기 위해 필요)
     const projectGridRef = useRef<HTMLDivElement>(null);
@@ -682,15 +704,11 @@ const ProjectDashboardPage: React.FC = () => {
                 const statusB = mapServerStatusToUI(b.status);
 
                 // 'In Progress'를 'Completed'보다 앞에 두도록 정렬합니다.
-                if (statusA === 'In Progress' && statusB === 'Completed') {
-                    return -1; // a가 먼저 (진행 중)
-                }
-                if (statusA === 'Completed' && statusB === 'In Progress') {
-                    return 1; // b가 먼저 (진행 중)
-                }
+                if (statusA === 'In Progress' && statusB === 'Completed') { return -1; }
+                if (statusA === 'Completed' && statusB === 'In Progress') { return 1; }
                 // 동일 상태일 경우 이름 순(선택 사항) 또는 다른 기준(예: 시작일)으로 정렬
                 return 0;
-                // return new Date(a.startDate).getTime() - new Date(b.startDate).getTime(); // 시작일 오름차순 정렬
+                return new Date(a.startDate).getTime() - new Date(b.startDate).getTime(); // 시작일 오름차순 정렬
             });
         }
         return filtered;
@@ -710,6 +728,7 @@ const ProjectDashboardPage: React.FC = () => {
         );
     }
     const currentUserName = user.name || 'Guest';
+
     const displayUser: CurrentUser = {
         id: user.id,
         name: user.name || DEFAULT_USER.name,
@@ -759,8 +778,9 @@ const ProjectDashboardPage: React.FC = () => {
                                     onEdit={handleOpenEditModal}
                                     onDelete={handleDeleteProject}
                                     isDropdownActive={activeDropdownId === project.id}
-                                    onToggleDropdown={(active) => handleToggleDropdown(project.id, active)}
+                                    onToggleDropdown={(isActive) => setActiveDropdownId(isActive ? project.id : null)}
                                     status={mapServerStatusToUI(project.status)}
+                                    onShowDescription={handleOpenDescriptionModal}
                             />
                             </div>
                         ))}
@@ -799,6 +819,13 @@ const ProjectDashboardPage: React.FC = () => {
                     projectToEdit={editingProject}
                 />
                 </>
+            )}
+            {descriptionModalProject && (
+                <ProjectDescriptionModal
+                    isOpen={true}
+                    onClose={handleCloseDescriptionModal}
+                    projectName={descriptionModalProject.name}
+                    description={descriptionModalProject.description || ''}                />
             )}
         </div>
     );

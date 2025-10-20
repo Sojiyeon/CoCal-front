@@ -1,39 +1,21 @@
-// 홈페이지(로그인 리디렉션)
-"use client";
+import { Suspense } from 'react';
+// 새로 생성된 클라이언트 컴포넌트를 임포트합니다. 경로를 확인해주세요.
 import Login from '@/components/login/Login';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
-// Mock 함수 (실제로는 쿠키/로컬 스토리지에서 토큰을 확인해야 함)
-const checkAuthStatus = () => {
-    if (typeof window !== 'undefined') {
-        // 유효한 토큰이 있는지 확인 (클라이언트 환경)
-        return localStorage.getItem('refreshToken') !== null;
-    } return false;
-};
+// Next.js App Router에서 클라이언트 전용 훅(useSearchParams 등)을 
+// 서버 컴포넌트(이 page.tsx)에서 안전하게 사용하기 위한 표준 구조입니다.
 
-const LoginPage = () => {
-    const router = useRouter();
-
-    useEffect(() => {
-        const isLoggedIn = checkAuthStatus();
-
-        if (isLoggedIn) {
-            console.log("Token found, redirecting to /dashboard.");
-            router.replace('/dashboard'); // 현재 경로를 대체하며 리디렉션
-        }
-    }, [router]);
-
-    // 이미 로그인 상태일 때 리디렉션 되는 동안 빈 화면을 보여주지 않기 위해 null 반환
-    if (checkAuthStatus()) {
-        return null;
-    }
-
+export default function HomePage() {
     return (
-        <main>
+        // Suspense로 감싸서 useSearchParams를 사용하는 LoginClient 컴포넌트가
+        // 서버에서 렌더링 되는 것을 방지하고 클라이언트에서 로드되게 합니다.
+        // fallback은 클라이언트 컴포넌트가 로드될 때까지 표시됩니다.
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen text-gray-700 dark:text-dark-text-secondary bg-gray-50 dark:bg-dark-bg">
+                <p>인증 상태를 확인하는 중입니다...</p>
+            </div>
+        }>
             <Login />
-        </main>
+        </Suspense>
     );
-};
-
-export default LoginPage;
+}
