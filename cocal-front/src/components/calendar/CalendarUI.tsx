@@ -466,7 +466,8 @@ export default function CalendarUI() {
         );
     };
 
-    const handleUpdateTodo = (todoId: number, newData:
+    // todo 수정
+    const handleUpdateTodo = async (todoId: number, newData:
         {
             title: string;
             description: string;
@@ -474,125 +475,103 @@ export default function CalendarUI() {
             url: string;
             date?: string;
             offsetMinutes?: number | null;
+            eventId?: number | null;
         }) => {
-        let originalTodo: (EventTodo & { parentEventId?: number }) | PrivateTodo | null = null;
-        let originalType: 'EVENT' | 'PRIVATE' | null = null;
-        let parentEvent: CalendarEvent | null = null;
 
-        // 먼저 events 배열(Public To-do)에서 To-do를 찾음
-        for (const event of events) {
-            const foundTodo = event.todos?.find(t => t.id === todoId);
-            if (foundTodo) {
-                originalTodo = {...foundTodo, parentEventId: event.id};
-                originalType = 'EVENT';
-                parentEvent = event;
-                break;
-            }
-        }
-
-        // events 배열에 없으면 privateTodos 배열(Private To-do)에서 찾음
-        if (!originalTodo) {
-            const foundPrivateTodo = privateTodos.find(t => t.id === todoId);
-            if (foundPrivateTodo) {
-                originalTodo = foundPrivateTodo;
-                originalType = 'PRIVATE';
-            }
-        }
-
-        if (!originalTodo || !originalType) {
-            console.error("업데이트할 To-do를 찾지 못했습니다.");
+        if (!todoToEdit || todoToEdit.id !== todoId) {
+            console.error("수정할 Todo 상태(todoToEdit)가 잘못되었습니다.");
             return;
         }
 
-        const newType = newData.visibility === 'PUBLIC' ? 'EVENT' : 'PRIVATE';
+        const originalType = todoToEdit.type;
+        const requestedVisibility = newData.visibility;
 
-        // Case 1: 공개 상태 변경 없음
-        if (originalType === newType) {
-            if (newType === 'PRIVATE') {
+        const isTypeChangeAttempted =
+            (originalType === 'EVENT' && requestedVisibility === 'PRIVATE') ||
+            (originalType === 'PRIVATE' && requestedVisibility === 'PUBLIC');
+
+        if (isTypeChangeAttempted) {
+            alert("타입 변경은 현재 지원되지 않습니다. 내용을 수정한 후 다시 저장해주세요.");
+            return;
+        }
+
+        const payload: any = {
+            title: newData.title,
+            description: newData.description,
+            url: newData.url,
+            status: todoToEdit.status,
+            type: originalType,
+            projectId: projectId,
+            offsetMinutes: newData.offsetMinutes,
+        };
+
+        if (originalType === 'PRIVATE') {
+            payload.date = newData.date ? new Date(newData.date).toISOString() : todoToEdit.date;
+        } else { // 'EVENT'
+            // 모달에서 받은 새로운 eventId를 payload에 담습니다.
+            payload.eventId = newData.eventId;
+        }
+
+        try {
+            await api.put(`/projects/${projectId}/todos/${todoId}`, payload);
+
+            if (originalType === 'PRIVATE') {
                 setPrivateTodos(prev => prev.map(todo =>
                     todo.id === todoId ? {
                         ...todo,
                         title: newData.title,
                         description: newData.description,
                         url: newData.url,
-                        date: newData.date || todo.date,
+                        date: payload.date,
                         offsetMinutes: newData.offsetMinutes,
                     } : todo
                 ));
-            } else { // EVENT (PUBLIC)
-                setEvents(prev => prev.map(event => ({
-                    ...event,
-                    todos: (event.todos || []).map(todo =>
-                        todo.id === todoId ? {
-                            ...todo,
-                            title: newData.title,
-                            description: newData.description,
-                            url: newData.url
-                        } : todo
-                    )
-                })));
-            }
-        }
-        // Case 2: PUBLIC -> PRIVATE 으로 변경
-        else if (originalType === 'EVENT' && newType === 'PRIVATE') {
-            const newPrivate: PrivateTodo = {
-                id: originalTodo.id,
-                projectId: projectId,
-                userId: user?.id || 0,
-                title: newData.title,
-                description: newData.description,
-                date: parentEvent!.startAt,
-                status: originalTodo.status,
-                type: 'PRIVATE',
-                url: newData.url,
-                offsetMinutes: newData.offsetMinutes,
-            };
-            setPrivateTodos(prev => [...prev, newPrivate]);
+            } else { // 'EVENT'
+                // eventId가 변경되었을 경우를 처리하는 로직
+                const oldEventId = todoToEdit.eventId;
+                const newEventId = newData.eventId;
 
-            // 기존 Public To-do는 삭제 만약 부모 이벤트가 To-do 래퍼였다면 함께 삭제
-            setEvents(prev => prev
-                .map(event => {
-                    if (event.id === (originalTodo as EventTodo & { parentEventId: number }).parentEventId) {
-                        return {...event, todos: event.todos?.filter(t => t.id !== todoId)};
+                setEvents(prevEvents => {
+                    let updatedEvents = [...prevEvents];
+                    let todoItem: EventTodo | undefined;
+
+                    // 1. 기존 이벤트에서 투두를 찾아서 제거합니다.
+                    updatedEvents = updatedEvents.map(event => {
+                        if (event.id === oldEventId) {
+                            const foundTodo = (event.todos || []).find(t => t.id === todoId);
+                            if (foundTodo) {
+                                todoItem = { ...foundTodo, ...newData, eventId: newEventId! }; // 업데이트될 투두 정보 저장
+                            }
+                            return {
+                                ...event,
+                                todos: (event.todos || []).filter(t => t.id !== todoId)
+                            };
+                        }
+                        return event;
+                    });
+
+                    // 2. 새로운 이벤트에 업데이트된 투두를 추가합니다.
+                    if (todoItem && newEventId) {
+                        updatedEvents = updatedEvents.map(event => {
+                            if (event.id === newEventId) {
+                                return {
+                                    ...event,
+                                    todos: [...(event.todos || []), todoItem!]
+                                };
+                            }
+                            return event;
+                        });
                     }
-                    return event;
-                })
-                .filter(event => !(event.title.startsWith('Todo:') && (!event.todos || event.todos.length === 0)))
-            );
-        }
-        // Case 3: PRIVATE -> PUBLIC 으로 변경
-        else if (originalType === 'PRIVATE' && newType === 'EVENT') {
-            setPrivateTodos(prev => prev.filter(todo => todo.id !== todoId));
 
-            const newPublicTodo: EventTodo = {
-                id: originalTodo.id,
-                eventId: Date.now(),
-                title: newData.title,
-                description: newData.description,
-                status: originalTodo.status,
-                type: 'EVENT',
-                url: newData.url, // url 추가
-                authorId: user?.id || 0,
-                orderNo: 0,
-            };
+                    return updatedEvents;
+                });
+            }
 
-            const wrapperEvent: CalendarEvent = {
-                id: newPublicTodo.eventId,
-                projectId: projectId,
-                title: `Todo: ${newData.title}`,
-                startAt: (originalTodo as PrivateTodo).date,
-                endAt: (originalTodo as PrivateTodo).date.replace('T00:00:00', 'T23:59:59'),
-                color: 'transparent',
-                todos: [newPublicTodo],
-                description: null,
-                location: null,
-                visibility: 'PRIVATE',
-                urlId: 0,
-                offsetMinutes: 0,
-                allDay: true,
-                authorId: user?.id || 0,
-            };
-            setEvents(prev => [...prev, wrapperEvent]);
+            setTodoVersion(v => v + 1);
+
+        } catch (error) {
+            console.error("Todo 업데이트 API 호출 실패:", error);
+            alert("Todo 저장에 실패했습니다. 다시 시도해 주세요.");
         }
     };
 
