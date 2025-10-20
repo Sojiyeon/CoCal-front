@@ -20,6 +20,7 @@ interface ProfileSettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
     apiEndpoints: ApiEndpoints;
+    onChanged?: () => void;
 }
 
 interface InputFieldProps {
@@ -145,7 +146,7 @@ const PasswordEditModal: FC<PasswordEditModalProps> = ({ onSave, onCancel }) => 
 };
 
 // --- Main Modal Component ---
-const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, apiEndpoints }) => {
+const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, apiEndpoints, onChanged }) => {
     const { user, setUser, logout, isLoading } = useUser();
     const [isEditingName, setIsEditingName] = useState(false);
     const [isEditingPassword, setIsEditingPassword] = useState(false);
@@ -201,7 +202,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                 }));
                 console.log('프로필 사진 업데이트 성공:', data);
                 alert('프로필 사진이 성공적으로 변경되었습니다.');
-
+                if (onChanged) onChanged();
             } else {
                 const responseText = await response.text();
                 let message = response.statusText;
@@ -247,6 +248,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                 // 성공 시, user 상태에서 프로필 이미지 URL을 null로 업데이트
                 setUser(prev => ({...prev, profileImageUrl: null}));
                 alert('프로필 이미지가 삭제되었습니다.');
+                if (onChanged) onChanged();
             } else {
                 const errorData = await response.json();
                 alert(`이미지 삭제 실패: ${errorData.message || '서버 오류'}`);
@@ -283,6 +285,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                 setUser(prev => ({ ...prev, name: data.name }));
                 console.log('이름 수정 성공:', data);
                 alert("이름이 성공적으로 변경되었습니다.");
+                if (onChanged) onChanged();
             } else {
                 const errorData = await response.json();
                 alert(`이름 수정 실패: ${errorData.message || response.statusText}`);

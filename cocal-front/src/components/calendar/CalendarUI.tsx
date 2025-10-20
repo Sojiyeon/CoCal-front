@@ -52,7 +52,7 @@ const API_ENDPOINTS = {
 // 메인 캘린더 UI 컴포넌트
 export default function CalendarUI() {
     // --- 훅(Hooks) 초기화 ---
-    const {user, logout, isLoading: isUserLoading} = useUser();
+    const {user, logout, isLoading: isUserLoading, fetchUserProfile} = useUser();
     // 고유 ID 생성을 위한 ref 카운터 추가
     // 초기값을 Date.now()로 설정하여 페이지를 새로고침해도 겹칠 확률을 줄이기 위함
     const nextId = useRef(Date.now());
@@ -61,6 +61,7 @@ export default function CalendarUI() {
 
     const projectIdParam = Array.isArray(params?.projectId) ? params.projectId[0] : params?.projectId;
     const projectId = projectIdParam ? Number(projectIdParam) : NaN;
+    const [isChanged, setIsChanged] = useState(false); // 변경 여부 상태(이름,프로필사진)
 
     // --- 상태(State) 관리 ---
     // 메인 캘린더의 연도와 월 상태
@@ -131,6 +132,18 @@ export default function CalendarUI() {
     const [todoVersion, setTodoVersion] = useState(0);
 
     // --- useEffect 훅 ---
+    // 이름, 프로필이 변경된 경우 유저 정보 재조회
+    useEffect(() => {
+        // 모달이 닫히고, 이름, 프로필이 변경된 경우만 재조회
+        if (!isSettingsModalOpen && isChanged) {
+            const token = localStorage.getItem("accessToken");
+            if (token) {
+                console.log("유저 정보 변경 감지됨 → 유저 정보 다시 조회 중...");
+                fetchUserProfile(token);
+                setIsChanged(false); // 한 번만 실행되도록 초기화
+            }
+        }
+    }, [isSettingsModalOpen, isChanged, fetchUserProfile]);
     // 왼쪽 사이드바의 'To do' 목록을 업데이트
     useEffect(() => {
         const selectedDateKey = formatYMD(selectedSidebarDate.getFullYear(), selectedSidebarDate.getMonth(), selectedSidebarDate.getDate());
@@ -1134,16 +1147,30 @@ export default function CalendarUI() {
             )}
 
             {isTeamModalOpen && (<TeamModal projectId={projectId} onClose={handleCloseTeamModal}/>)}
-            <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal}
-                                  apiEndpoints={API_ENDPOINTS}/>
+            <ProfileSettingsModal
+                isOpen={isSettingsModalOpen}
+                onClose={handleCloseSettingsModal}
+                apiEndpoints={API_ENDPOINTS}
+                onChanged={() => setIsChanged(true)}
+            />
 
 
             {/*{isTeamModalOpen && (<TeamModal projectId={projectId} onClose={handleCloseTeamModal}/>)}*/}
             {/*<ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal} apiEndpoints={API_ENDPOINTS}/>*/}
             {isProjectSettingsModalOpen &&
-                <SettingsModal onClose={handleCloseProjectSettingsModal} projectId={projectId} userId={user?.id || 0}/>}
-            <ProfileSettingsModal isOpen={isSettingsModalOpen} onClose={handleCloseSettingsModal}
-                                  apiEndpoints={API_ENDPOINTS}/>
+                <SettingsModal
+                    onClose={handleCloseProjectSettingsModal}
+                    projectId={projectId}
+                    userId={user?.id || 0}
+                />}
+
+            <ProfileSettingsModal
+                isOpen={isSettingsModalOpen}
+                onClose={handleCloseSettingsModal}
+                apiEndpoints={API_ENDPOINTS}
+                onChanged={() => setIsChanged(true)}
+            />
+
             {todoToEdit && (
                 <TodoEditModal
                     projectId={projectId}
