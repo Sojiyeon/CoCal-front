@@ -466,6 +466,9 @@ export default function CalendarUI() {
                 );
 
             }
+            // Todo 생성이 완료되었으므로, todoVersion을 증가시켜
+            // SidebarLeft가 데이터를 새로고침하도록 신호를 보냅니다.
+            setTodoVersion(v => v + 1);
         }
     };
 
