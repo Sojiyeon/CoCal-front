@@ -14,7 +14,7 @@ const checkAuthStatus = () => {
     } return false;
 };
 
-export default function LoginPage = () => {
+export default function LoginPage () {
     const router = useRouter();
     // useSearchParams를 Client Component 내부에서 안전하게 사용
     const searchParams = useSearchParams();
@@ -47,6 +47,6 @@ export default function LoginPage = () => {
             <Login />
         </Suspense>
     );
-};
+}
 
 export default LoginPage;
