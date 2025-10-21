@@ -1,5 +1,6 @@
 // 홈페이지(로그인 리디렉션)
 "use client";
+import { Suspense } from 'react';
 import Login from '@/components/login/Login';
 import React, { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -13,7 +14,7 @@ const checkAuthStatus = () => {
     } return false;
 };
 
-const LoginPage = () => {
+export default function LoginPage = () => {
     const router = useRouter();
     // useSearchParams를 Client Component 내부에서 안전하게 사용
     const searchParams = useSearchParams();
@@ -41,10 +42,10 @@ const LoginPage = () => {
     }
 
     return (
-        <main>
+        <Suspense>
             {/* 실제 로그인 폼 컴포넌트 렌더링 */}
             <Login />
-        </main>
+        </Suspense>
     );
 };
 
