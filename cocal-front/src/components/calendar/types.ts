@@ -158,6 +158,10 @@ export interface ApiResponse<T> {
     path: string;
 }
 
+export interface MessageData {
+    message: string;
+}
+
 // 이벤트 생성 응답 형식(memberUserIds: number[] 사용)
 export interface EventCreateResponse {
     id: number;

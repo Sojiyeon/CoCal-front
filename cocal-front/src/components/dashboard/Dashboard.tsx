@@ -2,7 +2,7 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from "next/image";
-import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X} from 'lucide-react';
+import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X, Check, XCircle} from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
@@ -11,6 +11,7 @@ import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateP
 import EditProjectModal from '@/components/modals/EditProjectModal';
 import ProfileSettingsModal from '@/components/modals/ProfileSettingModal';
 import ProjectDescriptionModal from '@/components/modals/ProjectDescriptionModal';
+import {inviteAation} from "@/api/inviteApi";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 const API_PROJECTS_ENDPOINT = `${API_BASE_URL}/api/projects`;
@@ -461,16 +462,21 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
 // --- NotificationAndInviteIcons Component (새로 정의) ---
 interface NotificationAndInviteIconsProps {
     userId: number;
-    onInviteNotificationClick: () => void;
     handleLogout: () => void;
 }
-const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userId, onInviteNotificationClick, handleLogout }) => {
+const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userId, handleLogout }) => {
     // 일반 알림 상태 (INVITE 타입 제외)
     const [unreadNotifications, setUnreadNotifications] = useState<NotificationItem[]>([]);
     // 프로젝트 초대 수 상태 (전용 API 사용)
     const [unreadInviteCount, setUnreadInviteCount] = useState<number>(0);
     const [showAllNotifications, setShowAllNotifications] = useState(false);
+    const [showInviteNotifications, setShowInviteNotifications] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const inviteDropdownRef = useRef<HTMLDivElement>(null);
+    // 초대 목록 상태
+    const [invites, setInvites] = useState<ProjectInviteItem[]>([]);
+    // "Pending" 상태인 초대 목록 상태
+    const pendingInvites:ProjectInviteItem[] = invites.filter((inv) => inv.status === "PENDING");
 
     // Fetch General Notifications (Bell Icon)
         const fetchGeneralNotifications = useCallback(async () => {
@@ -513,7 +519,12 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
                 if (response.ok) {
                     const result = await response.json();
                     const inviteData: ProjectInviteResponse = result.data;
-                    // totalElements를 사용하여 초대장 수를 계산합니다.
+
+                    // 초대 목록 상태에 저장
+                    const inviteList = inviteData.content || [];
+                    setInvites(inviteList);
+
+                    // totalElements를 사용하여 초대장 수를 계산
                     const inviteCount = inviteData.totalElements || 0;
                     setUnreadInviteCount(inviteCount);
                     console.log('읽지 않은 프로젝트 초대 조회 성공:', inviteCount, '개');
@@ -548,21 +559,53 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setShowAllNotifications(false);
             }
+            if(inviteDropdownRef.current && !inviteDropdownRef.current.contains(event.target as Node)) {
+                setShowInviteNotifications(false);
+            }
         };
-
         if (showAllNotifications) {
             document.addEventListener('mousedown', handleClickOutside);
+        }
+        if (showInviteNotifications) {
+            document.addEventListener("mousedown", handleClickOutside);
         }
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showAllNotifications]);
+    }, [showAllNotifications, showInviteNotifications]);
     // 알림 클릭 시 (예시)
     const handleNotificationClick = (notification: NotificationItem) => {
         console.log(`알림 클릭: ID ${notification.id}, 타입 ${notification.type}`);
         // 실제 구현: 알림 읽음 처리 API 호출 후, 타입에 따라 페이지 이동/모달 띄우기 등의 로직 구현
         setShowAllNotifications(false);
     }
+
+    const handleInviteAction = async (inviteId: number, action: string)=> {
+        if (!inviteId) {
+            console.log("inviteId 없음");
+            return
+        };
+        try {
+            const msg = await inviteAation(inviteId, action);
+            console.log("msg: ", msg);
+            alert("Action successful.");
+            fetchProjectInvites();
+
+        } catch (err:unknown) {
+            console.error("프로젝트 수락/거절 실패:", err);
+            alert("Failed");
+        };
+    };
+
+    // 날짜 포맷 함수
+    const formatDate = (dateString: string) =>
+        new Date(dateString).toLocaleString("ko-KR", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+
 
     // 날짜 포맷팅 헬퍼 함수
     const formatSentAt = (dateStr: string) => {
@@ -573,18 +616,74 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
     return (
         <div className="flex items-center space-x-3 sm:space-x-5">
             {/* 1. 초대 보관함 아이콘 */}
-            <button
-                onClick={onInviteNotificationClick}
-                className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition duration-150 rounded-full hover:bg-gray-100 dark:hover:bg-dark-surface-alt"
-                aria-label="초대 보관함"
-            >
-                <Mail className="w-6 h-6" />
-                {unreadInviteCount > 0 && ( // unreadInviteCount 상태 사용
-                    <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full min-w-[1.2rem]">
-                        {unreadInviteCount}
-                    </span>
+            <div className="relative" ref={inviteDropdownRef}>
+                <button
+                    onClick={() => setShowInviteNotifications(prev => !prev)}
+                    className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition duration-150 rounded-full hover:bg-gray-100 dark:hover:bg-dark-surface-alt"
+                    aria-label="초대 보관함"
+                >
+                    <Mail className="w-6 h-6" />
+                    {pendingInvites.length > 0 && ( // unreadInviteCount 상태 사용
+                        <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full min-w-[1.2rem]">
+                            {pendingInvites.length}
+                        </span>
+                    )}
+                </button>
+                {showInviteNotifications && (
+                    <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-dark-surface rounded-xl shadow-2xl z-[120] p-2 border border-gray-100 dark:border-gray-700 transform origin-top-right transition-all duration-150 ease-out max-h-96 overflow-y-auto">
+                        <div className="flex justify-between items-center px-3 py-2 border-b border-gray-100 dark:border-gray-700 ">
+                            <h4 className="text-sm font-semibold text-gray-800 dark:text-white">Invitations ({pendingInvites.length})</h4>
+                            <button
+                                onClick={() => setShowInviteNotifications(false)}
+                                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                                aria-label="닫기"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        {/* 비어 있을 때 */}
+                        {pendingInvites.length === 0 ? (
+                            <p className="p-3 text-sm text-gray-500 text-center">
+                                Nothing here😢
+                            </p>
+                        ) : (
+                            pendingInvites.map((invite, idx) => (
+                                <div
+                                    key={idx}
+                                    className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition duration-150 border-b dark:border-gray-700 last:border-b-0"
+                                >
+                                    <p className="text-sm font-medium text-gray-800 dark:text-white truncate">
+                                        {invite.projectName}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                        초대한 사람: {invite.email}
+                                    </p>
+
+                                    <div className="flex justify-between items-center mt-2">
+                                        <div className="flex flex-col text-xs text-gray-500 dark:text-gray-400">
+                                            <span>만료일: {formatDate(invite.expiresAt)}</span>
+                                        </div>
+                                        <div className="flex justify-end gap-1 mt-3">
+                                            <button
+                                                onClick={() => handleInviteAction(invite.id, "accept")}
+                                                className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 px-2 py-1 rounded-md hover:bg-green-50 dark:hover:bg-green-900/30 transition"
+                                            >
+                                                <Check className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleInviteAction(invite.id, "decline")}
+                                                className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 transition"
+                                            >
+                                                <XCircle className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 )}
-            </button>
+            </div>
 
             {/* 2. 전체 알림 아이콘 (초대 제외) */}
             <div className="relative" ref={dropdownRef}>
@@ -682,13 +781,6 @@ const ProjectDashboardPage: React.FC = () => {
         await logout();
         router.push('/');
     }, [logout, router]);
-
-    // 초대 보관함 버튼 클릭 핸들러 (현재는 콘솔 로그)
-    const handleOpenInviteInbox = useCallback(() => {
-        // 실제 구현에서는 초대 보관함 모달을 열거나, 초대 목록 페이지로 라우팅하는 로직이 들어갑니다.
-        console.log("초대 보관함 버튼 클릭됨: INVITE 타입 알림 목록 표시 또는 전용 페이지로 이동");
-        // router.push('/invitations');
-    }, []);
 
     const fetchProjects = useCallback(async () => {
         // ... (API 호출 및 응답 처리 로직은 그대로 유지)
@@ -984,12 +1076,11 @@ const ProjectDashboardPage: React.FC = () => {
         {/* 상단 통합 헤더 영역 */}
         <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 dark:border-gray-800 bg-light-surface dark:bg-dark-surface sticky top-0 z-[110] shadow-sm">
             <h1 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary">My projects</h1>
-
                 <div className="flex items-center space-x-4"> {/* 유저 프로필 */}
+                    {/*초대함, 알림 아이콘*/}
                     {user.id && (
                         <NotificationAndInviteIcons
                             userId={user.id}
-                            onInviteNotificationClick={handleOpenInviteInbox}
                             handleLogout={handleLogout}
                         />
                     )}
