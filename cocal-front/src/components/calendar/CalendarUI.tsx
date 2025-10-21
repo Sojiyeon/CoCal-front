@@ -860,7 +860,9 @@ export default function CalendarUI() {
         setIsWeekMobileOpen(true);
     };
 
-
+    const handleSelectEvent = (event: CalendarEvent) => {
+        setSelectedEventId(event.id);
+    };
     const selectedEvent = events.find(event => event.id === selectedEventId);
     // [추가] 주간 뷰에 표시할 이벤트를 미리 필터링합니다.
     const weekEvents = useMemo(() => {
@@ -1123,77 +1125,153 @@ export default function CalendarUI() {
                                                     })}
 
                                                     <div className="absolute top-6 md:top-8 left-0 right-0 h-full">
-                                                        {weekEvents.map((event, eventIndex) => {
-                                                            const eventStart = new Date(event.startAt.split('T')[0]);
-                                                            const eventEnd = new Date(event.endAt.split('T')[0]);
-                                                            let startCol = 0;
-                                                            let endCol = 6;
-                                                            let foundStart = false;
+                                                        {(() => {
+                                                            // --- 1. & 2. 이벤트 정보 처리 (span, cols 계산) ---
+                                                            const processedEvents = weekEvents.map(event => {
+                                                                const eventStart = new Date(event.startAt.split('T')[0]);
+                                                                const eventEnd = new Date(event.endAt.split('T')[0]);
+                                                                let startCol = 0;
+                                                                let endCol = 6;
+                                                                let foundStart = false;
 
-                                                            for (let i = 0; i < 7; i++) {
-                                                                const dayInWeek = week[i];
-                                                                if (dayInWeek === null) continue;
-                                                                const currentWeekDate = new Date(viewYear, viewMonth, dayInWeek);
-                                                                if (eventStart.toDateString() === currentWeekDate.toDateString()) {
-                                                                    startCol = i;
-                                                                    foundStart = true;
+                                                                for (let i = 0; i < 7; i++) {
+                                                                    const dayInWeek = week[i];
+                                                                    if (dayInWeek === null) continue;
+                                                                    const currentWeekDate = new Date(viewYear, viewMonth, dayInWeek);
+                                                                    if (eventStart.toDateString() === currentWeekDate.toDateString()) {
+                                                                        startCol = i;
+                                                                        foundStart = true;
+                                                                    }
+                                                                    if (eventEnd.toDateString() === currentWeekDate.toDateString()) {
+                                                                        endCol = i;
+                                                                    }
                                                                 }
-                                                                if (eventEnd.toDateString() === currentWeekDate.toDateString()) {
-                                                                    endCol = i;
+                                                                if (!foundStart && week[0] && eventStart < new Date(viewYear, viewMonth, week[0])) {
+                                                                    startCol = 0;
+                                                                }
+                                                                const lastDayInWeek = week.filter(d => d).pop();
+                                                                if (lastDayInWeek && eventEnd > new Date(viewYear, viewMonth, lastDayInWeek)) {
+                                                                    endCol = 6;
+                                                                }
+
+                                                                const span = endCol - startCol + 1;
+                                                                const showTitle = foundStart || (week[0] && new Date(viewYear, viewMonth, week[0]) > eventStart);
+                                                                const roundedClass =
+                                                                    (foundStart ? 'rounded-l ' : '') +
+                                                                    (endCol < 6 || eventEnd.toDateString() === new Date(viewYear, viewMonth, week[endCol]!).toDateString() ? 'rounded-r' : '');
+
+                                                                return { event, span, startCol, endCol, showTitle, roundedClass, renderRowIndex: 0 };
+                                                            });
+
+                                                            // --- 3. 정렬: (1) 시작일(startCol) 오름차순, (2) 길이(span) 내림차순 ---
+                                                            processedEvents.sort((a, b) => {
+                                                                if (a.startCol !== b.startCol) {
+                                                                    return a.startCol - b.startCol;
+                                                                }
+                                                                return b.span - a.span;
+                                                            });
+
+                                                            // --- 4. 레이아웃 알고리즘: 각 이벤트에 올바른 row 할당 ---
+                                                            const rowBumper = [0, 0, 0, 0, 0, 0, 0]; // 요일별 다음 이벤트가 시작될 row
+
+                                                            for (const event of processedEvents) {
+                                                                let targetRow = 0;
+                                                                for (let i = event.startCol; i <= event.endCol; i++) {
+                                                                    targetRow = Math.max(targetRow, rowBumper[i]);
+                                                                }
+                                                                event.renderRowIndex = targetRow;
+
+                                                                // 이벤트가 배치되었으므로, 해당 공간의 row 인덱스를 1 증가
+                                                                for (let i = event.startCol; i <= event.endCol; i++) {
+                                                                    rowBumper[i] = targetRow + 1;
                                                                 }
                                                             }
-                                                            // (기존 로직) startCol이 0이고, foundStart가 false이면, 이 주 이전에 시작한 것입니다.
-                                                            if (!foundStart && week[0] && eventStart < new Date(viewYear, viewMonth, week[0])) {
-                                                                startCol = 0;
+
+                                                            // --- 5. 렌더링: 이벤트 (최대 3줄) + "+N more" 버튼 ---
+
+                                                            // [수정] 렌더링할 이벤트 필터링 (0, 1, 2번 줄)
+                                                            const eventsToRender = processedEvents.filter(event => event.renderRowIndex < 3);
+
+                                                            // [수정] "+N more" 버튼 계산
+                                                            const moreButtons = [];
+                                                            for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+                                                                const day = week[dayIndex];
+                                                                if (!day) continue; // 빈 날짜 칸은 스킵
+
+                                                                const totalEventsOnDay = rowBumper[dayIndex]; // 이 날짜의 총 이벤트 수
+
+                                                                if (totalEventsOnDay > 3) {
+                                                                    // 3개를 초과하는 경우, 숨겨진 이벤트 수 계산
+                                                                    const eventsOnDay = processedEvents.filter(e => e.startCol <= dayIndex && e.endCol >= dayIndex);
+                                                                    const hiddenCount = eventsOnDay.filter(e => e.renderRowIndex >= 3).length;
+
+                                                                    if (hiddenCount > 0) {
+                                                                        moreButtons.push({
+                                                                            day,
+                                                                            dayIndex,
+                                                                            count: hiddenCount
+                                                                        });
+                                                                    }
+                                                                }
                                                             }
 
-                                                            // (기존 로직) endCol이 6이고, 이 주의 마지막 날짜보다 이벤트 종료일이 늦으면, span은 6까지입니다.
-                                                            const lastDayInWeek = week.filter(d => d).pop();
-                                                            if (lastDayInWeek && eventEnd > new Date(viewYear, viewMonth, lastDayInWeek)) {
-                                                                endCol = 6;
-                                                            }
-                                                            const span = endCol - startCol + 1;
-                                                            const showTitle = foundStart || (week[0] && new Date(viewYear, viewMonth, week[0]) > eventStart);
-                                                            const roundedClass =
-                                                                (foundStart ? 'rounded-l ' : '') +
-                                                                (endCol < 6 || eventEnd.toDateString() === new Date(viewYear, viewMonth, week[endCol]!).toDateString() ? 'rounded-r' : '');
-                                                            return {
-                                                                event,
-                                                                span,
-                                                                startCol,
-                                                                showTitle,
-                                                                roundedClass
-                                                            };
-                                                        })
-                                                            .sort((a, b) => b.span - a.span) // --- 3. span 기준으로 내림차순 정렬합니다. ---
-                                                            .map((processedEvent, eventIndex) => { // --- 4. 정렬된 순서대로 렌더링합니다. ---
-
-                                                                // 미리 계산된 값을 사용합니다.
-                                                                const { event, span, startCol, showTitle, roundedClass } = processedEvent;
+                                                            // [수정] 렌더링 부분을 <></> (Fragment)로 감싸고 2개의 map을 실행
                                                             return (
-                                                                <div
-                                                                    key={event.id}
-                                                                    className={`absolute h-5 px-2 text-xs text-white cursor-pointer truncate ${roundedClass}`}
-                                                                    // ✅ [MOBILE WEEKVIEW] 모바일에선 이벤트 탭 시 WeekViewMobile 열기, 데스크톱은 기존 상세 모달
-                                                                    onClick={() => {
-                                                                        if (isMobile) {
-                                                                            const d = new Date(event.startAt);
-                                                                            openWeekMobileForDate(d);
-                                                                        } else {
-                                                                            setSelectedEventId(event.id);
-                                                                        }
-                                                                    }}
-                                                                    style={{
-                                                                        backgroundColor: event.color,
-                                                                        top: `${eventIndex * 22}px`,
-                                                                        left: `calc(${(startCol / 7) * 100}% + 2px)`,
-                                                                        width: `calc(${(span / 7) * 100}% - 4px)`,
-                                                                    }}
-                                                                >
-                                                                    {showTitle && event.title}
-                                                                </div>
+                                                                <>
+                                                                    {/* 5a. 렌더링할 이벤트 (0, 1, 2번 줄) */}
+                                                                    {eventsToRender.map((processedEvent) => {
+                                                                        const { event, span, startCol, showTitle, roundedClass, renderRowIndex } = processedEvent;
+                                                                        return (
+                                                                            <div
+                                                                                key={event.id}
+                                                                                className={`absolute h-5 px-2 text-xs text-white cursor-pointer truncate ${roundedClass}`}
+                                                                                onClick={() => {
+                                                                                    if (isMobile) {
+                                                                                        const d = new Date(event.startAt);
+                                                                                        openWeekMobileForDate(d);
+                                                                                    } else {
+                                                                                        setSelectedEventId(event.id);
+                                                                                    }
+                                                                                }}
+                                                                                style={{
+                                                                                    backgroundColor: event.color,
+                                                                                    top: `${renderRowIndex * 22}px`, // 0px, 22px, 44px
+                                                                                    left: `calc(${(startCol / 7) * 100}% + 2px)`,
+                                                                                    width: `calc(${(span / 7) * 100}% - 4px)`,
+                                                                                }}
+                                                                            >
+                                                                                {showTitle && event.title}
+                                                                            </div>
+                                                                        );
+                                                                    })}
+
+                                                                    {/* 5b. "+N more" 버튼 렌더링 (3번 줄) */}
+                                                                    {moreButtons.map(({ day, dayIndex, count }) => {
+                                                                        // [수정] Day 뷰로 이동하는 핸들러
+                                                                        const handleMoreClick = () => {
+                                                                            const newDate = new Date(viewYear, viewMonth, day);
+                                                                            setSelectedDate(newDate);
+                                                                            setViewMode("day");
+                                                                        };
+
+                                                                        return (
+                                                                            <div
+                                                                                key={`more-${dayIndex}`}
+                                                                                className="absolute h-5 px-2 text-xs text-slate-600 font-medium cursor-pointer truncate hover:bg-slate-100 rounded"
+                                                                                onClick={handleMoreClick}
+                                                                                style={{
+                                                                                    top: `${3 * 22}px`, // 3번 줄 (66px)
+                                                                                    left: `calc(${(dayIndex / 7) * 100}% + 2px)`,
+                                                                                    width: `calc(${(1 / 7) * 100}% - 4px)`,
+                                                                                }}
+                                                                            >
+                                                                                +{count} more
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </>
                                                             );
-                                                        })}
+                                                        })()}
                                                     </div>
                                                 </div>
                                             );
@@ -1206,6 +1284,7 @@ export default function CalendarUI() {
                                     events={weekEvents}
                                     weekStartDate={weekStartDate}
                                     onNavigateToDay={handleNavigateToDay}
+                                    onSelectEvent={handleSelectEvent}
                                 />
                             )}
                             {viewMode === "day" && <DayView events={events} date={selectedDate}/>}

@@ -8,6 +8,7 @@ interface WeekViewProps {
     events: CalendarEvent[];
     weekStartDate: Date; // 현재 보고 있는 주의 시작 날짜 (월요일)
     onNavigateToDay: (date: Date) => void; // Day 뷰로 전환하는 함수
+    onSelectEvent: (event: CalendarEvent) => void;
 }
 
 interface PositionedEvent {
@@ -28,7 +29,7 @@ interface MoreButton {
 // MAX_VISIBLE_EVENTS를 컴포넌트 스코프로 이동
 const MAX_VISIBLE_EVENTS = 3; // 한 번에 보여줄 최대 이벤트 수
 
-export default function WeekView({ events, weekStartDate, onNavigateToDay }: WeekViewProps) {
+export default function WeekView({ events, weekStartDate, onNavigateToDay,onSelectEvent }: WeekViewProps) {
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const hours = Array.from({ length: 24 }, (_, i) => i);
     const today = useMemo(() => new Date(), []); // [추가] 오늘 날짜 확인용
@@ -230,7 +231,8 @@ export default function WeekView({ events, weekStartDate, onNavigateToDay }: Wee
                         {allDayLayout.positionedEvents.map(({ event, startDayIndex, span, topIndex }) => (
                             <div
                                 key={event.id}
-                                className="absolute h-[22px] rounded p-1 text-xs text-white shadow overflow-hidden"
+                                onClick={() => onSelectEvent(event)}
+                                className="absolute h-[22px] rounded p-1 text-xs text-white shadow overflow-hidden cursor-pointer"
                                 style={{
                                     top: `${topIndex * allDayEventHeight + 1}px`,
                                     left: `calc(${(startDayIndex / 7) * 100}% + 1px)`,
@@ -297,7 +299,8 @@ export default function WeekView({ events, weekStartDate, onNavigateToDay }: Wee
                                     return (
                                     <div
                                         key={event.id}
-                                        className="absolute rounded p-1 text-xs text-white shadow overflow-hidden"
+                                        onClick={() => onSelectEvent(event)}
+                                        className="absolute rounded p-1 text-xs text-white shadow overflow-hidden cursor-pointer"
                                         style={{
                                             top: `${top}px`,
                                             height: `${height}px`,
