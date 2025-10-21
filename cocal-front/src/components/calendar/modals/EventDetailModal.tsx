@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState,useEffect } from "react";
-import {CalendarEvent, EventData, EventTodo, ProjectMember, RealEventTodo} from "../types";
+import {CalendarEvent, EventData, ProjectMember, RealEventTodo} from "../types";
 import { getReminderLabel } from "../utils/reminderUtils";
 import {getEvent} from "@/api/eventApi";
 import {getEventTodoAll, updateTodo, updateTodoRequest} from "@/api/todoApi";
@@ -14,14 +14,15 @@ interface Props {
     onToggleTodo?: (todoId: number) => void;
     onEditTodo?: (todo: RealEventTodo) => void;
     onDeleteTodo?: (projectId: number,  todoId: number, eventId: number, type: "EVENT" | "PRIVATE") => void;
+    onDeleteEvent?: (projectId: number, eventId: number) => void;
     members?: ProjectMember[];
 }
 
 // /** 레거시 호환: event.eventTodos / event.publicTodos를 허용 */
-type LegacyCalendarEvent = CalendarEvent & {
-    eventTodos?: EventTodo[];
-    publicTodos?: EventTodo[];
-};
+// type LegacyCalendarEvent = CalendarEvent & {
+//     eventTodos?: EventTodo[];
+//     publicTodos?: EventTodo[];
+// };
 
 ///**  이름에서 이니셜 생성(이미지 없을 때 표시) */
 const getInitials = (name?: string) => {
@@ -36,12 +37,26 @@ const getInitials = (name?: string) => {
 const AVATAR_FALLBACK =
     "https://placehold.co/100x100/A0BFFF/FFFFFF?text=User";
 
+const EditIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+    </svg>
+);
+
+const TrashIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 6h18"></path>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+    </svg>
+);
+
 // --- START: 아이콘 컴포넌트 정의 추가 ---
 
 
-const DeleteIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-);
+// const DeleteIcon = () => (
+//     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+// );
 
 const ChevronLeftIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -52,7 +67,7 @@ const ChevronRightIcon = () => (
 
 
 // /** To-do 탭: todos 안전 합성 + 콜백 타입 명시 */
-const TodoListTab = ({ event,  onDeleteTodo, onSelectTodo }: Props & { onSelectTodo?: (todo: RealEventTodo) => void }) => {
+const TodoListTab = ({ event, onSelectTodo }: Props & { onSelectTodo?: (todo: RealEventTodo) => void }) => {
     // 이벤트 투두 상태
     const [eventTodos, setEventTodos] = useState<RealEventTodo[]>([]);
     // 이벤트 투두 index 상태
@@ -168,7 +183,7 @@ const TodoListTab = ({ event,  onDeleteTodo, onSelectTodo }: Props & { onSelectT
                         </div>
                     )}
 
-                    <button onClick={() => onDeleteTodo?.(event.projectId, currentTodo.id, event.id, "EVENT")} className="hover:text-red-600"><DeleteIcon /></button>
+                {/*    <button onClick={() => onDeleteTodo?.(event.projectId, currentTodo.id, event.id, "EVENT")} className="hover:text-red-600"><DeleteIcon /></button>*/}
                 </div>
             </div>
 
@@ -268,10 +283,11 @@ export function EventDetailModal({
                                      onToggleTodo,
                                      onEditTodo,
                                      onDeleteTodo,
+                                     onDeleteEvent,
                                      members,
                                  }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
-    const [currentTodoIndex, setCurrentTodoIndex] = useState(0);
+   // const [currentTodoIndex, setCurrentTodoIndex] = useState(0);
     const [currentTodo, setCurrentTodo] = useState<RealEventTodo | null>(null);
     // 이벤트 정보 담는 상태
     const [eventData, setEventData] = useState<EventData | null>(null);
@@ -303,6 +319,19 @@ export function EventDetailModal({
             console.log("수정할 todo: ", currentTodo);
         } else {
             alert("No To-do items to edit.");
+        }
+    };
+    const handleMainDeleteClick = () => {
+        if (activeTab === "Event") {
+            if (window.confirm("Are you sure you want to delete this event? All associated to-dos will also be deleted.")) {
+                onDeleteEvent?.(event.projectId, event.id);
+            }
+        } else if (activeTab === "Todo" && currentTodo) {
+            if (window.confirm("Are you sure you want to delete this to-do?")) {
+                onDeleteTodo?.(event.projectId, currentTodo.id, event.id, "EVENT");
+            }
+        } else if (activeTab === "Todo" && !currentTodo) {
+            alert("There is no to-do to delete.");
         }
     };
 
@@ -417,13 +446,23 @@ export function EventDetailModal({
                         <div className="flex items-center gap-2 flex-shrink-0">
                             {/* --- START: 수정된 부분 --- */}
                             {/* 메인 Edit 버튼에 새로운 핸들러를 연결합니다. */}
-                            <button onClick={handleMainEditClick}
-                                    className="text-xs font-semibold text-slate-500 hover:text-slate-800">
-                                Edit
+                            <button
+                                onClick={handleMainEditClick}
+                                className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors duration-150"
+                                aria-label="Edit item"
+                            >
+                                <EditIcon/>
                             </button>
-                            {/* --- END: 수정된 부분 --- */}
+                            <button
+                                onClick={handleMainDeleteClick}
+                                className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-red-600 transition-colors duration-150"
+                                aria-label="Delete item"
+                            >
+                                <TrashIcon/>
+                            </button>
                             <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl">×
                             </button>
+
                         </div>
                     </div>
                 </div>
@@ -446,6 +485,7 @@ export function EventDetailModal({
                             onToggleTodo={onToggleTodo}
                             onEditTodo={onEditTodo}
                             onDeleteTodo={onDeleteTodo}
+                            onDeleteEvent={onDeleteEvent}
                             members={members} // 전달은 되지만 TodoListTab에서 사용하지 않음(무시됨)
                             onSelectTodo={setCurrentTodo} // 현재 보고 있는 Todo를 상위로 전달
                         />

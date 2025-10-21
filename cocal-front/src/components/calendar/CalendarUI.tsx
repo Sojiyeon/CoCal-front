@@ -641,7 +641,27 @@ export default function CalendarUI() {
             alert('삭제에 실패했습니다.');
         }
     };
+    const handleDeleteEvent = async (projectId: number, eventId: number) => {
+        try {
+            // 1. API를 호출하여 서버에서 이벤트를 삭제합니다.
+            // (API 엔드포인트는 실제 명세에 맞게 확인해주세요. /projects/projectId/events/eventId로 가정했습니다.)
+            await api.delete(`/projects/${projectId}/events/${eventId}`);
 
+            // 2. API 호출 성공 시, 프론트엔드 상태(events)에서도 해당 이벤트를 제거합니다.
+            setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
+
+            // 3. 이벤트 상세 모달을 닫습니다.
+            setSelectedEventId(null);
+
+            // 4. (선택 사항) 이벤트가 삭제되면 연결된 To-do도 사라지므로,
+            // 사이드바 목록을 갱신하기 위해 todoVersion을 업데이트합니다.
+            setTodoVersion(v => v + 1);
+
+        } catch (err) {
+            console.error("이벤트 삭제 실패:", err);
+            alert('이벤트 삭제에 실패했습니다.');
+        }
+    };
     // 미니 캘린더 월 이동 함수
     function prevMiniMonth() {
         if (miniMonth === 0) {
@@ -1213,6 +1233,8 @@ export default function CalendarUI() {
                     members={currentProject?.members ?? []}
                     onDeleteTodo={handleDeleteTodo}
                     onToggleTodo={handleToggleTodoStatus}
+                    onDeleteEvent={handleDeleteEvent}
+
                 />
             )}
 
