@@ -465,7 +465,7 @@ interface NotificationAndInviteIconsProps {
     handleLogout: () => void;
 }
 
-export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userId, onInviteNotificationClick, handleLogout }) => {
+const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userId, onInviteNotificationClick, handleLogout }) => {
     // 일반 알림 상태 (INVITE 타입 제외)
     const [unreadNotifications, setUnreadNotifications] = useState<NotificationItem[]>([]);
     // 프로젝트 초대 수 상태 (전용 API 사용)
