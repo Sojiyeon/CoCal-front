@@ -98,7 +98,7 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
         return (
             <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="grid grid-cols-2 border-b border border-gray-200 bg-slate-50 text-sm font-medium">
-                    <div className="p-2 text-left text-slate-400">시간</div>
+                    <div className="p-2 text-left text-slate-400">Time</div>
                     <div className="p-2 text-left text-slate-400">
 
                         {date.toLocaleDateString("ko-KR", {

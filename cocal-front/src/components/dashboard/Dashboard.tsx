@@ -2,7 +2,7 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from "next/image";
-import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X, Check, XCircle} from 'lucide-react';
+import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X, Check, XCircle, Dog } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
@@ -642,8 +642,8 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
                         </div>
                         {/* 비어 있을 때 */}
                         {pendingInvites.length === 0 ? (
-                            <p className="p-3 text-sm text-gray-500 text-center">
-                                Nothing here😢
+                            <p className="p-3 text-sm text-gray-500 text-center inline-flex items-center justify-center gap-1">
+                                Nothing here<Dog className="stroke-1"/>
                             </p>
                         ) : (
                             pendingInvites.map((invite, idx) => (
