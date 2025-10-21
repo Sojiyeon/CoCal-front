@@ -34,7 +34,7 @@ import {
 import { getMonthMatrix, formatYMD, weekdays } from "./utils";
 import { sampleEvents, sampleMemos } from "./sampleData";
 import {api} from "@/components/calendar/utils/api";
-import {deleteTodo} from "@/api/todoApi";
+import {deleteTodo, TodoUpdatePayload} from "@/api/todoApi";
 
 
 // 오늘 날짜를 저장하는 상수
@@ -293,7 +293,20 @@ export default function CalendarUI() {
         setSelectedDate(newDate);
         setViewMode("day");
     };
+    // [추가] WeekView에 전달할 weekStartDate 계산
+    const getMonday = (d: Date) => {
+        d = new Date(d);
+        const day = d.getDay(),
+            diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is Sunday
+        return new Date(d.setDate(diff));
+    }
+    const weekStartDate = getMonday(selectedDate);
 
+    // [추가] WeekView에서 Day 뷰로 전환하는 핸들러
+    const handleNavigateToDay = (date: Date) => {
+        setSelectedDate(date);
+        setViewMode("day");
+    };
     // 이벤트 '생성' 모달 열기
     const handleOpenEventModal = (dateStr?: string) => {
         setModalInitialDate(dateStr || null);
@@ -479,7 +492,8 @@ export default function CalendarUI() {
         );
     };
 
-    const handleUpdateTodo = (todoId: number, newData:
+    // todo 수정
+    const handleUpdateTodo = async (todoId: number, newData:
         {
             title: string;
             description: string;
@@ -487,125 +501,114 @@ export default function CalendarUI() {
             url: string;
             date?: string;
             offsetMinutes?: number | null;
+            eventId?: number | null;
         }) => {
-        let originalTodo: (EventTodo & { parentEventId?: number }) | PrivateTodo | null = null;
-        let originalType: 'EVENT' | 'PRIVATE' | null = null;
-        let parentEvent: CalendarEvent | null = null;
 
-        // 먼저 events 배열(Public To-do)에서 To-do를 찾음
-        for (const event of events) {
-            const foundTodo = event.todos?.find(t => t.id === todoId);
-            if (foundTodo) {
-                originalTodo = {...foundTodo, parentEventId: event.id};
-                originalType = 'EVENT';
-                parentEvent = event;
-                break;
-            }
-        }
-
-        // events 배열에 없으면 privateTodos 배열(Private To-do)에서 찾음
-        if (!originalTodo) {
-            const foundPrivateTodo = privateTodos.find(t => t.id === todoId);
-            if (foundPrivateTodo) {
-                originalTodo = foundPrivateTodo;
-                originalType = 'PRIVATE';
-            }
-        }
-
-        if (!originalTodo || !originalType) {
-            console.error("업데이트할 To-do를 찾지 못했습니다.");
+        if (!todoToEdit || todoToEdit.id !== todoId) {
+            console.error("수정할 Todo 상태(todoToEdit)가 잘못되었습니다.");
             return;
         }
 
-        const newType = newData.visibility === 'PUBLIC' ? 'EVENT' : 'PRIVATE';
+        const originalType = todoToEdit.type;
+        const requestedVisibility = newData.visibility;
 
-        // Case 1: 공개 상태 변경 없음
-        if (originalType === newType) {
-            if (newType === 'PRIVATE') {
-                setPrivateTodos(prev => prev.map(todo =>
-                    todo.id === todoId ? {
-                        ...todo,
-                        title: newData.title,
-                        description: newData.description,
-                        url: newData.url,
-                        date: newData.date || todo.date,
-                        offsetMinutes: newData.offsetMinutes,
-                    } : todo
-                ));
-            } else { // EVENT (PUBLIC)
-                setEvents(prev => prev.map(event => ({
-                    ...event,
-                    todos: (event.todos || []).map(todo =>
-                        todo.id === todoId ? {
-                            ...todo,
-                            title: newData.title,
-                            description: newData.description,
-                            url: newData.url
-                        } : todo
+        const isTypeChangeAttempted =
+            (originalType === 'EVENT' && requestedVisibility === 'PRIVATE') ||
+            (originalType === 'PRIVATE' && requestedVisibility === 'PUBLIC');
+
+        if (isTypeChangeAttempted) {
+            alert("타입 변경은 현재 지원되지 않습니다. 내용을 수정한 후 다시 저장해주세요.");
+            return;
+        }
+
+        // 기존 any 제거, TodoUpdatePayload 기반 payload 구성
+        const payload: TodoUpdatePayload = {
+            title: newData.title,
+            description: newData.description,
+            url: newData.url,
+            status: todoToEdit.status,
+            type: originalType,      // type은 변경하지 않음
+            projectId: projectId,
+            offsetMinutes: newData.offsetMinutes,
+            visibility: newData.visibility,
+            date: originalType === 'PRIVATE'
+                ? newData.date ? new Date(newData.date).toISOString() : todoToEdit.date
+                : undefined,
+            eventId: originalType === 'EVENT' ? newData.eventId ?? todoToEdit.eventId : undefined,
+        };
+
+
+        if (originalType === 'PRIVATE') {
+            payload.date = newData.date ? new Date(newData.date).toISOString() : todoToEdit.date;
+        } else { // 'EVENT'
+            // 모달에서 받은 새로운 eventId를 payload에 담습니다.
+            payload.eventId = newData.eventId ?? 0;
+        }
+
+        try {
+            await api.put(`/projects/${projectId}/todos/${todoId}`, payload);
+
+            if (originalType === 'PRIVATE') {
+                setPrivateTodos(prev =>
+                    prev.map(todo =>
+                        todo.id === todoId
+                            ? {
+                                ...todo,
+                                title: newData.title,
+                                description: newData.description,
+                                url: newData.url,
+                                date: payload.date || todo.date,          // ✅ 항상 string
+                                offsetMinutes: newData.offsetMinutes ?? todo.offsetMinutes,
+                            }
+                            : todo
                     )
-                })));
-            }
-        }
-        // Case 2: PUBLIC -> PRIVATE 으로 변경
-        else if (originalType === 'EVENT' && newType === 'PRIVATE') {
-            const newPrivate: PrivateTodo = {
-                id: originalTodo.id,
-                projectId: projectId,
-                userId: user?.id || 0,
-                title: newData.title,
-                description: newData.description,
-                date: parentEvent!.startAt,
-                status: originalTodo.status,
-                type: 'PRIVATE',
-                url: newData.url,
-                offsetMinutes: newData.offsetMinutes,
-            };
-            setPrivateTodos(prev => [...prev, newPrivate]);
+                );
+            } else { // 'EVENT'
+                // eventId가 변경되었을 경우를 처리하는 로직
+                const oldEventId = todoToEdit.eventId;
+                const newEventId = newData.eventId;
 
-            // 기존 Public To-do는 삭제 만약 부모 이벤트가 To-do 래퍼였다면 함께 삭제
-            setEvents(prev => prev
-                .map(event => {
-                    if (event.id === (originalTodo as EventTodo & { parentEventId: number }).parentEventId) {
-                        return {...event, todos: event.todos?.filter(t => t.id !== todoId)};
+                setEvents(prevEvents => {
+                    let updatedEvents = [...prevEvents];
+                    let todoItem: EventTodo | undefined;
+
+                    // 1. 기존 이벤트에서 투두를 찾아서 제거합니다.
+                    updatedEvents = updatedEvents.map(event => {
+                        if (event.id === oldEventId) {
+                            const foundTodo = (event.todos || []).find(t => t.id === todoId);
+                            if (foundTodo) {
+                                todoItem = { ...foundTodo, ...newData, eventId: newEventId! }; // 업데이트될 투두 정보 저장
+                            }
+                            return {
+                                ...event,
+                                todos: (event.todos || []).filter(t => t.id !== todoId)
+                            };
+                        }
+                        return event;
+                    });
+
+                    // 2. 새로운 이벤트에 업데이트된 투두를 추가합니다.
+                    if (todoItem && newEventId) {
+                        updatedEvents = updatedEvents.map(event => {
+                            if (event.id === newEventId) {
+                                return {
+                                    ...event,
+                                    todos: [...(event.todos || []), todoItem!]
+                                };
+                            }
+                            return event;
+                        });
                     }
-                    return event;
-                })
-                .filter(event => !(event.title.startsWith('Todo:') && (!event.todos || event.todos.length === 0)))
-            );
-        }
-        // Case 3: PRIVATE -> PUBLIC 으로 변경
-        else if (originalType === 'PRIVATE' && newType === 'EVENT') {
-            setPrivateTodos(prev => prev.filter(todo => todo.id !== todoId));
 
-            const newPublicTodo: EventTodo = {
-                id: originalTodo.id,
-                eventId: Date.now(),
-                title: newData.title,
-                description: newData.description,
-                status: originalTodo.status,
-                type: 'EVENT',
-                url: newData.url, // url 추가
-                authorId: user?.id || 0,
-                orderNo: 0,
-            };
+                    return updatedEvents;
+                });
+            }
 
-            const wrapperEvent: CalendarEvent = {
-                id: newPublicTodo.eventId,
-                projectId: projectId,
-                title: `Todo: ${newData.title}`,
-                startAt: (originalTodo as PrivateTodo).date,
-                endAt: (originalTodo as PrivateTodo).date.replace('T00:00:00', 'T23:59:59'),
-                color: 'transparent',
-                todos: [newPublicTodo],
-                description: null,
-                location: null,
-                visibility: 'PRIVATE',
-                urlId: 0,
-                offsetMinutes: 0,
-                allDay: true,
-                authorId: user?.id || 0,
-            };
-            setEvents(prev => [...prev, wrapperEvent]);
+            setTodoVersion(v => v + 1);
+
+        } catch (error) {
+            console.error("Todo 업데이트 API 호출 실패:", error);
+            alert("Todo 저장에 실패했습니다. 다시 시도해 주세요.");
         }
     };
 
@@ -664,9 +667,54 @@ export default function CalendarUI() {
         setViewMonth(viewMonth === 11 ? 0 : viewMonth + 1);
         setViewYear(viewMonth === 11 ? viewYear + 1 : viewYear);
     }
+    // --- [추가] 뷰 모드에 따라 탐색을 처리하는 새로운 통합 핸들러 ---
+    const handlePrev = () => {
+        if (viewMode === 'month') {
+            prevMonth();
+        } else if (viewMode === 'week') {
+            const newDate = new Date(selectedDate);
+            newDate.setDate(newDate.getDate() - 7);
+            setSelectedDate(newDate);
+        } else { // 'day'
+            const newDate = new Date(selectedDate);
+            newDate.setDate(newDate.getDate() - 1);
+            setSelectedDate(newDate);
+        }
+    };
 
+    const handleNext = () => {
+        if (viewMode === 'month') {
+            nextMonth();
+        } else if (viewMode === 'week') {
+            const newDate = new Date(selectedDate);
+            newDate.setDate(newDate.getDate() + 7);
+            setSelectedDate(newDate);
+        } else { // 'day'
+            const newDate = new Date(selectedDate);
+            newDate.setDate(newDate.getDate() + 1);
+            setSelectedDate(newDate);
+        }
+    };
     // --- 렌더링 ---
+    let weekHeaderTitle = '';
+    if (viewMode === 'week') {
+        const monday = weekStartDate;
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
 
+        const startMonth = monday.toLocaleDateString('en-US', { month: 'long' });
+        const endMonth = sunday.toLocaleDateString('en-US', { month: 'long' });
+        const monthLabel = startMonth === endMonth ? startMonth : `${startMonth} - ${endMonth}`;
+
+        const year = monday.getFullYear();
+
+        // 해당 월의 첫 날을 기준으로 몇 번째 주인지 계산
+        const firstDayOfMonth = new Date(monday.getFullYear(), monday.getMonth(), 1);
+        const firstMonday = getMonday(firstDayOfMonth);
+        const weekNum = Math.floor((monday.getTime() - firstMonday.getTime()) / (1000 * 60 * 60 * 24 * 7)) + 1;
+
+        weekHeaderTitle = `${monthLabel}${year}`;
+    }
     // 이벤트가 해당 주에 걸쳐 있는지 확인하고, 시작 및 끝 요일을 계산하는 헬퍼 함수
     const getWeekEvents = (week: (number | null)[]) => {
         const weekStart = new Date(viewYear, viewMonth, week.find(day => day !== null)!);
@@ -791,7 +839,27 @@ export default function CalendarUI() {
         setWeekMobileData(data);
         setIsWeekMobileOpen(true);
     };
+
+
     const selectedEvent = events.find(event => event.id === selectedEventId);
+    // [추가] 주간 뷰에 표시할 이벤트를 미리 필터링합니다.
+    const weekEvents = useMemo(() => {
+        if (viewMode !== 'week') return [];
+
+        const weekStart = new Date(weekStartDate);
+        weekStart.setHours(0, 0, 0, 0);
+
+        const weekEnd = new Date(weekStartDate);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+
+        return events.filter(event => {
+            const eventStart = new Date(event.startAt);
+            const eventEnd = new Date(event.endAt);
+            return eventStart <= weekEnd && eventEnd >= weekStart;
+        });
+    }, [events, weekStartDate, viewMode]);
+
     return (
         <div className="h-screen w-screen flex flex-col bg-white">
             {/*  --- 데스크톱 헤더 ---  */}
@@ -910,7 +978,7 @@ export default function CalendarUI() {
                     />
                 </div>
 
-                {/* 메인 캘린더 영역 */}
+                {/* 메인 캘린더  영역 */}
                 <main className="flex-1 p-2 md:p-5 overflow-auto">
                     {/* 메인 캘린더 헤더 */}
                     <div className="flex items-center justify-between mb-4">
@@ -920,7 +988,7 @@ export default function CalendarUI() {
                                 isMobile && (viewMode === "week" || isWeekMobileOpen) ? "invisible" : ""
                             }`}
                         >
-                            <button onClick={prevMonth}
+                            <button onClick={handlePrev}
                                     className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-lg md:text-xl p-2 rounded-full hover:bg-slate-100">
                                 &#x276E;
                             </button>
@@ -931,12 +999,14 @@ export default function CalendarUI() {
                                         day: 'numeric',
                                         year: 'numeric'
                                     })
-                                    : new Date(viewYear, viewMonth).toLocaleString('en-US', {
-                                        month: 'long',
-                                        year: 'numeric'
-                                    })}
+                                    : viewMode === 'week'
+                                        ? weekHeaderTitle
+                                        : new Date(viewYear, viewMonth).toLocaleString('en-US', {
+                                            month: 'long',
+                                            year: 'numeric'
+                                        })}
                             </h2>
-                            <button onClick={nextMonth}
+                            <button onClick={handleNext}
                                     className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-lg md:text-xl p-2 rounded-full hover:bg-slate-100">
                                 &#x276F;
                             </button>
@@ -1052,12 +1122,34 @@ export default function CalendarUI() {
                                                                     endCol = i;
                                                                 }
                                                             }
+                                                            // (기존 로직) startCol이 0이고, foundStart가 false이면, 이 주 이전에 시작한 것입니다.
+                                                            if (!foundStart && week[0] && eventStart < new Date(viewYear, viewMonth, week[0])) {
+                                                                startCol = 0;
+                                                            }
+
+                                                            // (기존 로직) endCol이 6이고, 이 주의 마지막 날짜보다 이벤트 종료일이 늦으면, span은 6까지입니다.
+                                                            const lastDayInWeek = week.filter(d => d).pop();
+                                                            if (lastDayInWeek && eventEnd > new Date(viewYear, viewMonth, lastDayInWeek)) {
+                                                                endCol = 6;
+                                                            }
                                                             const span = endCol - startCol + 1;
                                                             const showTitle = foundStart || (week[0] && new Date(viewYear, viewMonth, week[0]) > eventStart);
                                                             const roundedClass =
                                                                 (foundStart ? 'rounded-l ' : '') +
                                                                 (endCol < 6 || eventEnd.toDateString() === new Date(viewYear, viewMonth, week[endCol]!).toDateString() ? 'rounded-r' : '');
+                                                            return {
+                                                                event,
+                                                                span,
+                                                                startCol,
+                                                                showTitle,
+                                                                roundedClass
+                                                            };
+                                                        })
+                                                            .sort((a, b) => b.span - a.span) // --- 3. span 기준으로 내림차순 정렬합니다. ---
+                                                            .map((processedEvent, eventIndex) => { // --- 4. 정렬된 순서대로 렌더링합니다. ---
 
+                                                                // 미리 계산된 값을 사용합니다.
+                                                                const { event, span, startCol, showTitle, roundedClass } = processedEvent;
                                                             return (
                                                                 <div
                                                                     key={event.id}
@@ -1089,7 +1181,13 @@ export default function CalendarUI() {
                                     </div>
                                 </>
                             )}
-                            {viewMode === "week" && <WeekView events={events}/>}
+                            {viewMode === "week" && (
+                                <WeekView
+                                    events={weekEvents}
+                                    weekStartDate={weekStartDate}
+                                    onNavigateToDay={handleNavigateToDay}
+                                />
+                            )}
                             {viewMode === "day" && <DayView events={events} date={selectedDate}/>}
                         </>
                     )}

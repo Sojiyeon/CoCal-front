@@ -21,21 +21,21 @@ export default function SidebarRight({
             <h2 className="text-lg font-semibold text-slate-800 mb-2 hidden lg:block"></h2>
 
             <button
-                className="px-4 py-2 hover:bg-slate-200 text-slate-800 text-sm text-left"
+                className="px-4 py-2 hover:bg-slate-200 text-slate-800 text-sm text-center"
                 onClick={onOpenTeamModal}
             >
-                ➕
+                👥
             </button>
 
             <button
-                className="px-4 py-2 hover:bg-slate-200 text-slate-800 text-sm text-left"
+                className="px-4 py-2 hover:bg-slate-200 text-slate-800 text-sm text-center"
                 onClick={onOpenEventModal}
             >
                 📅
             </button>
 
             <button
-                className="px-4 py-2 hover:bg-slate-200 text-slate-800 text-sm text-left"
+                className="px-4 py-2 hover:bg-slate-200 text-slate-800 text-sm text-center"
                 onClick={onOpenSettingsModal}
             >
                 ⚙️
