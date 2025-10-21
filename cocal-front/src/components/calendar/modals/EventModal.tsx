@@ -388,6 +388,11 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                 // 날짜 넘어가는 이벤트인지 확인
                 const start = new Date(formData.startAt);
                 const end = new Date(formData.endAt);
+                if (end < start) {
+                    alert("The end time cannot be earlier than the start time.");
+                    console.log("종료 시간이 시작 시간보다 이전입니다.");
+                    return;
+                }
                 const allDay:boolean = start.toDateString() !== end.toDateString();
                 // Date/time 으로 분리
                 const [startDate, startTime] = formData.startAt.split("T");
