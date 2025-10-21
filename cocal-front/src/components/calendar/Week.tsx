@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { CalendarEvent, DateMemo } from "./types";
 import { formatYMD } from "./utils";
-// Day 뷰로 이동하기 위한 props를 포함하여 인터페이스를 하나로 합칩니다.
+
 interface WeekViewProps {
     events: CalendarEvent[];
     memos: DateMemo[];
@@ -101,64 +101,100 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
     }, [allDayOrMultiDayEvents, weekStartDate]);
 
     // "시간 지정" 이벤트만으로 레이아웃 계산
+    // "시간 지정" 이벤트만으로 레이아웃 계산
     const dailyLayouts = useMemo(() => {
-        // layouts 변수의 타입을 명시적으로 지정
+        // [수정] layouts 변수의 타입을 확장하여 totalMoreCount와 currentDay를 포함
         const layouts: {
             eventsToRender: PositionedEvent[];
-            moreButtons: MoreButton[];
+            moreButtons: MoreButton[]; // 이 moreButtons는 이제 사용되지 않지만, 기존 로직 유지를 위해 남겨둘 수 있습니다.
+            totalMoreCount: number; // [추가]
+            currentDay: Date; // [추가]
         }[] = Array.from({ length: 7 }, () => ({
             eventsToRender: [],
             moreButtons: [],
+            totalMoreCount: 0, // [추가]
+            currentDay: new Date(), // [추가]
         }));
-
         // ... (이하 로직은 timedEvents를 사용하도록 수정)
-        const weekEvents = timedEvents
-            .map(event => ({
-                event,
-                start: new Date(event.startAt),
-                end: new Date(event.endAt || event.startAt),
-                column: -1,
-                totalColumns: 1,
-            }))
-            .sort((a, b) => a.start.getTime() - b.start.getTime());
-
-        const columns: Array<Array<typeof weekEvents[0]>> = [];
-        weekEvents.forEach(pEvent => {
-            let placed = false;
-            for (let i = 0; i < columns.length; i++) {
-                const col = columns[i];
-                const lastEventInCol = col[col.length - 1];
-                if (!lastEventInCol || pEvent.start >= lastEventInCol.end) {
-                    col.push(pEvent);
-                    pEvent.column = i;
-                    placed = true;
-                    break;
-                }
-            }
-            if (!placed) {
-                pEvent.column = columns.length;
-                columns.push([pEvent]);
-            }
-        });
-
-        weekEvents.forEach(pEvent => {
-            const overlappingEvents = weekEvents.filter(other =>
-                pEvent.start < other.end && pEvent.end > other.start
-            );
-            const maxColumn = overlappingEvents.reduce((max, item) => Math.max(max, item.column), -1);
-            pEvent.totalColumns = maxColumn + 1;
-        });
-
         for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
             const currentDay = new Date(weekStartDate);
             currentDay.setDate(weekStartDate.getDate() + dayIdx);
             const dayStart = new Date(currentDay); dayStart.setHours(0, 0, 0, 0);
             const dayEnd = new Date(currentDay); dayEnd.setHours(23, 59, 59, 999);
+            layouts[dayIdx].currentDay = currentDay;
 
-            const eventsForThisDay = weekEvents.filter(pEvent =>
-                pEvent.start <= dayEnd && pEvent.end >= dayStart
-            );
+            // 1. 해당 날짜에 속하는 시간 지정 이벤트만 필터링
+            const eventsForThisDay = timedEvents
+                .filter(event => {
+                    const start = new Date(event.startAt);
+                    const end = new Date(event.endAt || event.startAt);
+                    return start <= dayEnd && end >= dayStart;
+                })
+                .map(event => ({
+                    event,
+                    start: new Date(event.startAt),
+                    end: new Date(event.endAt || event.startAt),
+                    column: -1, // -1: 아직 처리되지 않음
+                    totalColumns: 1,
+                }))
+                .sort((a, b) => a.start.getTime() - b.start.getTime());
 
+            // 2. 겹치는 이벤트 그룹을 찾아 열(column)을 할당 (하루 단위로 실행)
+            for (let i = 0; i < eventsForThisDay.length; i++) {
+                const pEvent = eventsForThisDay[i];
+
+                // 이미 다른 그룹에 속해 처리되었으면 건너뜀
+                if (pEvent.column !== -1) continue;
+
+                // 3. pEvent와 겹치는 모든 연결된 이벤트 그룹 찾기
+                const group: (typeof eventsForThisDay[0])[] = [];
+                const q = [pEvent]; // 큐
+                pEvent.column = 0; // 임시 방문 표시
+
+                while(q.length > 0) {
+                    const current = q.shift()!;
+                    group.push(current);
+
+                    eventsForThisDay.forEach(other => {
+                        if (other.column === -1) { // 아직 그룹에 속하지 않은 이벤트
+                            // 겹치는지 확인
+                            if (current.start < other.end && current.end > other.start) {
+                                other.column = 0; // 임시 방문 표시
+                                q.push(other);
+                            }
+                        }
+                    });
+                }
+
+                // 4. 찾은 그룹 내에서 열(column) 재할당
+                group.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+                const groupColumns: { endTime: Date }[] = [];
+                group.forEach(eventInGroup => {
+                    let placed = false;
+                    for (let colIdx = 0; colIdx < groupColumns.length; colIdx++) {
+                        // 이 열의 마지막 이벤트와 겹치지 않으면
+                        if (eventInGroup.start >= groupColumns[colIdx].endTime) {
+                            groupColumns[colIdx].endTime = eventInGroup.end;
+                            eventInGroup.column = colIdx;
+                            placed = true;
+                            break;
+                        }
+                    }
+                    if (!placed) {
+                        eventInGroup.column = groupColumns.length;
+                        groupColumns.push({ endTime: eventInGroup.end });
+                    }
+                });
+
+                // 5. 그룹 내 모든 이벤트에 총 열 개수(totalColumns) 설정
+                const totalGroupColumns = groupColumns.length;
+                group.forEach(eventInGroup => {
+                    eventInGroup.totalColumns = totalGroupColumns;
+                });
+            }
+
+            // 6. 렌더링할 이벤트와 "+N more" 버튼 계산
             const moreEventsMap = new Map();
 
             layouts[dayIdx].eventsToRender = eventsForThisDay.filter(pEvent => {
@@ -174,6 +210,7 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
                 return true;
             });
 
+            let totalMoreCount = 0;
             moreEventsMap.forEach((value, key) => {
                 layouts[dayIdx].moreButtons.push({
                     id: `more-${dayIdx}-${key}`,
@@ -181,12 +218,16 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
                     top: (value.start.getHours() + value.start.getMinutes() / 60) * hourSlotHeight,
                     date: currentDay,
                 });
+                totalMoreCount += value.count;
             });
+            layouts[dayIdx].totalMoreCount = totalMoreCount;
         }
         return layouts;
 
     }, [timedEvents, weekStartDate]);
-
+    const showMoreButtonRow = useMemo(() => {
+        return dailyLayouts.some(layout => layout.totalMoreCount > 0);
+    }, [dailyLayouts]);
 
     return (
         <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -205,13 +246,15 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
                             today.getDate() === currentDay.getDate();
                         const dateKey = formatYMD(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate());
                         const dayMemos = memos.filter(m => m.memoDate === dateKey);
-
+                        //  해당 날짜의 "more" 이벤트 정보 가져오기
+                        const layoutForThisDay = dailyLayouts[idx];
+                        const totalMoreCount = layoutForThisDay.totalMoreCount;
                         return (
                             //flex-col로 변경하여 요일과 날짜를 세로로 배치
                             <div key={idx}
                                  className="p-2 text-center border-l border-gray-200 flex flex-col items-center gap-0.5">
 
-                                {/* [수정] 요일과 메모 닷(dot)을 묶는 div 추가 */}
+                                {/* 요일과 메모 닷(dot)을 묶는 div 추가 */}
                                 <div className="relative h-4">
                                     <span className={`text-xs ${
                                         isToday ? 'text-blue-600' : 'text-slate-700'
@@ -238,10 +281,23 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
                                 <span className={`text-sm font-medium ${
                                     isToday
                                         ? 'text-blue-600 bg-blue-100 rounded-full w-6 h-6 flex items-center justify-center'
-                                        : 'text-slate-700'
+                                        : 'text-slate-700 w-6 h-6 flex items-center justify-center' // 크기 고정
                                 }`}>
                                     {dateNum}
                                 </span>
+                                {showMoreButtonRow && (
+                                    <div className="h-4">
+                                        {totalMoreCount > 0 && (
+                                            <button
+                                                onClick={() => onNavigateToDay(layoutForThisDay.currentDay)}
+                                                className="text-xs text-blue-600 hover:underline z-20"
+                                                title={`${totalMoreCount} more events`}
+                                            >
+                                                +{totalMoreCount} more
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
 
                             </div>
                         );
@@ -289,16 +345,24 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
                     {days.map((_, dayIdx) => {
                         const currentDay = new Date(weekStartDate);
                         currentDay.setDate(weekStartDate.getDate() + dayIdx);
-                        const dayStart = new Date(currentDay); dayStart.setHours(0, 0, 0, 0);
-                        const dayEnd = new Date(currentDay); dayEnd.setHours(23, 59, 59, 999);
+                        const dayStart = new Date(currentDay);
+                        dayStart.setHours(0, 0, 0, 0);
+                        const dayEnd = new Date(currentDay);
+                        dayEnd.setHours(23, 59, 59, 999);
 
                         return (
                             <div key={dayIdx} className="relative border-l border-gray-200">
                                 {hours.map((_, h) => (
-                                    <div key={h} className="h-12 border-b border-gray-200" />
+                                    <div key={h} className="h-12 border-b border-gray-200"/>
                                 ))}
 
-                                {dailyLayouts[dayIdx].eventsToRender.map(({ event, start, end, column, totalColumns }) => {
+                                {dailyLayouts[dayIdx].eventsToRender.map(({
+                                                                              event,
+                                                                              start,
+                                                                              end,
+                                                                              column,
+                                                                              totalColumns
+                                                                          }) => {
                                     const eventStart = new Date(start);
                                     const eventEnd = new Date(end);
 
@@ -324,37 +388,24 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
                                     const left = column * width;
 
                                     return (
-                                    <div
-                                        key={event.id}
-                                        onClick={() => onSelectEvent(event)}
-                                        className="absolute rounded p-1 text-xs text-white shadow overflow-hidden cursor-pointer"
-                                        style={{
-                                            top: `${top}px`,
-                                            height: `${height}px`,
-                                            left: `calc(${left}% + 2px)`,
-                                            width: `calc(${width}% - 4px)`,
-                                            backgroundColor: event.color || "#6366f1",
-                                            zIndex: 10 + column,
-                                        }}
-                                    >
-                                        <div className="font-medium truncate">{event.title}</div>
-                                    </div>
-                                );
-                            })}
+                                        <div
+                                            key={event.id}
+                                            onClick={() => onSelectEvent(event)}
+                                            className="absolute rounded p-1 text-xs text-white shadow overflow-hidden cursor-pointer"
+                                            style={{
+                                                top: `${top}px`,
+                                                height: `${height}px`,
+                                                left: `calc(${left}% + 2px)`,
+                                                width: `calc(${width}% - 4px)`,
+                                                backgroundColor: event.color || "#6366f1",
+                                                zIndex: 10 + column,
+                                            }}
+                                        >
+                                            <div className="font-medium truncate">{event.title}</div>
+                                        </div>
+                                    );
+                                })}
 
-                            {dailyLayouts[dayIdx].moreButtons.map(button => (
-                                <button
-                                    key={button.id}
-                                    onClick={() => onNavigateToDay(button.date)}
-                                    className="absolute h-5 px-1 text-xs text-slate-600 font-semibold hover:underline z-20 text-left"
-                                    style={{
-                                        top: `${button.top}px`,
-                                        left: '2px'
-                                    }}
-                                >
-                                    +{button.count} more
-                                </button>
-                            ))}
                             </div>
                         );
                     })}

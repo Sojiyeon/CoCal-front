@@ -1266,7 +1266,7 @@ export default function CalendarUI() {
                                                                             } else {
                                                                                 // 데스크톱에서는 Week 뷰로 이동합니다.
                                                                                 setSelectedDate(clickedDate);
-                                                                                setViewMode("week");
+                                                                                setViewMode("day");
                                                                             }
                                                                         };
 
