@@ -8,7 +8,7 @@ import Login from '@/components/login/Login';
 export default function HomePage() {
     return (
         <Suspense fallback={
-            <div className="flex items-center justify-center min-h-screen text-gray-700 dark:text-dark-text-secondary bg-gray-50 dark:bg-dark-bg">
+            <div className="flex items-center justify-center min-h-screen text-gray-700 dark:text-white bg-gray-50 dark:bg-neutral-900">
                 <p>인증 상태를 확인하는 중입니다...</p>
             </div>
         }>

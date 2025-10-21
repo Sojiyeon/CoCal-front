@@ -2,7 +2,7 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from "next/image";
-import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X, Check, XCircle} from 'lucide-react';
+import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X, Check, XCircle, Dog, Loader2 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
@@ -31,6 +31,7 @@ const API_ENDPOINTS = {
 type ProjectCategory = 'All' | 'In Progress' | 'Completed';
 // 서버에서 내려주는 상태 타입
 type ServerProjectStatus = 'IN_PROGRESS' | 'COMPLETED';
+type MemberStatus = 'ACTIVE' | 'LEFT' | 'KICKED';
 
 interface TeamMemberForCard {
     id: number;
@@ -43,26 +44,28 @@ interface ServerMember {
     name: string;
     profileImageUrl: string | null | undefined;
 }
-interface ServerProjectItem {
+export interface ServerProjectItem {
     id: number;
     name: string;
     description: string | null;
     startDate: string;
     endDate: string;
     ownerId: number;
+    status: ServerProjectStatus;
     members: ServerMember[]; // 타입 안정성 확보
-    status: ServerProjectStatus; // 서버 응답에 status 포함
+    memberStatus: MemberStatus; // 서버 응답에 status 포함
 }
 
-interface Project {
+export interface Project {
     id: number;
     name: string;
     description?: string;
     startDate: string;
     endDate: string;
+    ownerId: number;
     status: ServerProjectStatus; // 서버 상태 그대로 저장
     members: TeamMemberForCard[];
-    ownerId: number;
+    memberStatus: MemberStatus;
 }
 
 interface CurrentUser {
@@ -221,11 +224,11 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
     const cardZIndex = isDropdownActive ? 'z-50' : 'z-10';
 
     return (
-        <div className={`bg-white dark:bg-dark-surface p-4 rounded-xl shadow-md hover:shadow-lg transition duration-200 relative border border-gray-100 dark:border-gray-700 ${cardZIndex}`}>
+        <div className={`bg-white dark:bg-neutral-900 p-4 rounded-xl shadow-md dark:shadow-lg  hover:shadow-lg transition duration-200 relative border border-gray-100 dark:border-gray-700 ${cardZIndex}`}>
             {/* 상단 (이름, 날짜, 드롭다운 버튼) */}
             <div className="flex justify-between items-start mb-4">
                 <div className="flex flex-col flex-grow min-w-0">
-                    <h3 className="font-semibold text-gray-900 truncate">{project.name}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white truncate">{project.name}</h3>
                     <p className="text-xs text-gray-500 mt-1">
                         {formatDates(project.startDate, project.endDate)}
                     </p>
@@ -417,7 +420,7 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
                     className="w-10 h-10 rounded-full object-cover shadow-inner ring-1 ring-gray-200"
                 />
                 <div className="flex-col text-xs hidden sm:block">
-                    <span className="font-semibold text-gray-900 block">
+                    <span className="font-semibold text-gray-900 dark:text-white block">
                         {user.name}
                     </span>
                     <span className="text-gray-500 block">
@@ -428,7 +431,7 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
 
             {isOpen && (
                 <div
-                    className="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-surface rounded-xl shadow-2xl z-40 p-2 border border-gray-100 dark:border-gray-700 transform origin-top-right transition-all duration-150 ease-out"
+                    className="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl z-40 p-2 border border-gray-100 dark:border-gray-700 transform origin-top-right transition-all duration-150 ease-out"
                     role="menu"
                 >
                     {menuItems.map((item, index) => (
@@ -449,7 +452,7 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
                             {item.isToggle && (
                                 <label className="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" checked={isDarkMode} className="sr-only peer" onChange={toggleTheme} />
-                                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-neutral-900 after:border after:border-gray-300 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             )}
                         </div>
@@ -519,11 +522,10 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
                 if (response.ok) {
                     const result = await response.json();
                     const inviteData: ProjectInviteResponse = result.data;
-
+                    // totalElements를 사용하여 초대장 수를 계산합니다.
                     // 초대 목록 상태에 저장
                     const inviteList = inviteData.content || [];
                     setInvites(inviteList);
-
                     // totalElements를 사용하여 초대장 수를 계산
                     const inviteCount = inviteData.totalElements || 0;
                     setUnreadInviteCount(inviteCount);
@@ -606,7 +608,6 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
             minute: "2-digit",
         });
 
-
     // 날짜 포맷팅 헬퍼 함수
     const formatSentAt = (dateStr: string) => {
         const date = new Date(dateStr);
@@ -615,7 +616,7 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
 
     return (
         <div className="flex items-center space-x-3 sm:space-x-5">
-            {/* 1. 초대 보관함 아이콘 */}
+            {/* 초대 보관함 아이콘 */}
             <div className="relative" ref={inviteDropdownRef}>
                 <button
                     onClick={() => setShowInviteNotifications(prev => !prev)}
@@ -643,8 +644,8 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
                         </div>
                         {/* 비어 있을 때 */}
                         {pendingInvites.length === 0 ? (
-                            <p className="p-3 text-sm text-gray-500 text-center">
-                                Nothing here😢
+                            <p className="p-3 text-sm text-gray-500 text-center inline-flex items-center justify-center gap-1">
+                                Nothing here<Dog className="stroke-1"/>
                             </p>
                         ) : (
                             pendingInvites.map((invite, idx) => (
@@ -685,7 +686,7 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
                 )}
             </div>
 
-            {/* 2. 전체 알림 아이콘 (초대 제외) */}
+            {/* 알림 아이콘 */}
             <div className="relative" ref={dropdownRef}>
                 <button
                     onClick={() => setShowAllNotifications(prev => !prev)}
@@ -702,7 +703,7 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
 
                 {/* 알림 드롭다운 메뉴 */}
                 {showAllNotifications && (
-                    <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-dark-surface rounded-xl shadow-2xl z-[120] p-2 border border-gray-100 dark:border-gray-700 transform origin-top-right transition-all duration-150 ease-out max-h-96 overflow-y-auto">
+                    <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl z-[120] p-2 border border-gray-100 dark:border-gray-700 transform origin-top-right transition-all duration-150 ease-out max-h-96 overflow-y-auto">
                         <div className="flex justify-between items-center px-3 py-2 border-b border-gray-100 dark:border-gray-700 ">
                             <h4 className="text-sm font-semibold text-gray-800 dark:text-white">New Notifications ({unreadNotifications.length})</h4>
                             <button
@@ -751,6 +752,7 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
 const ProjectDashboardPage: React.FC = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
+    // const { theme } = useTheme();
     const { user, isLoading: isLoadingUser, logout, fetchUserProfile } = useUser();
     const [isLoadingProjects, setIsLoadingProjects] = useState(false);
     const [projects, setProjects] = useState<Project[]>([]);
@@ -783,7 +785,7 @@ const ProjectDashboardPage: React.FC = () => {
     }, [logout, router]);
 
     const fetchProjects = useCallback(async () => {
-        // ... (API 호출 및 응답 처리 로직은 그대로 유지)
+        if (!user) return;
         setIsLoadingProjects(true);
         try {
             console.log(`API 호출: ${API_PROJECTS_ENDPOINT}로 프로젝트 목록 조회 요청`);
@@ -792,6 +794,7 @@ const ProjectDashboardPage: React.FC = () => {
                 const result = await response.json();
                 const rawData = (result.data as { content: ServerProjectItem[] | ServerProjectItem })?.content;
                 const rawDataArray = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
+
                 const projectsData: Project[] = rawDataArray.map((item: ServerProjectItem) => ({
                     id: item.id,
                     name: item.name,
@@ -800,6 +803,7 @@ const ProjectDashboardPage: React.FC = () => {
                     endDate: item.endDate,
                     ownerId: item.ownerId,
                     status: item.status,
+                    memberStatus: item.memberStatus,
                     members: Array.isArray(item.members) ?
                         item.members.map((member: ServerMember): TeamMemberForCard => ({
                             id: member.userId,
@@ -808,6 +812,9 @@ const ProjectDashboardPage: React.FC = () => {
                             imageUrl: member.profileImageUrl || DEFAULT_USER.profileImageUrl,
                         })) : [],
                 }));
+                const activeProjects = projectsData.filter((project: Project) =>
+                    project.memberStatus === 'ACTIVE'
+                );
                 setProjects(projectsData);
                 console.log('프로젝트 목록 조회 성공:', projectsData.length, '개');
             } else if (response.status === 401) {
@@ -876,6 +883,7 @@ const ProjectDashboardPage: React.FC = () => {
                     endDate: serverProject.endDate || data.endDate,
                     ownerId: serverProject.ownerId || user.id || 0,
                     status: serverProject.status as ServerProjectStatus,
+                    memberStatus: serverProject.memberStatus,
                     members: Array.isArray(serverProject.members)
                         ? serverProject.members.map((m: ServerMember): TeamMemberForCard => ({
                             id: m.userId,
@@ -1070,12 +1078,16 @@ const ProjectDashboardPage: React.FC = () => {
         );
     }
     const currentUserName = user.name || 'Guest';
+    const handleProjectLeft = () => {
+        fetchProjects();
+        setProjects(prev => prev.filter(p => p.id !== descriptionModalProject?.id));
+    };
 
     return (
-    <div className="min-h-screen transition-colors duration-300 font-sans">
+    <div className="min-h-screen transition-colors duration-300 font-sans bg-gray-50 dark:bg-neutral-900">
         {/* 상단 통합 헤더 영역 */}
-        <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 dark:border-gray-800 bg-light-surface dark:bg-dark-surface sticky top-0 z-[110] shadow-sm">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary">My projects</h1>
+        <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-neutral-900 sticky top-0 z-[110] shadow-md">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">My projects</h1>
                 <div className="flex items-center space-x-4"> {/* 유저 프로필 */}
                     {/*초대함, 알림 아이콘*/}
                     {user.id && (
@@ -1168,7 +1180,10 @@ const ProjectDashboardPage: React.FC = () => {
                     isOpen={true}
                     onClose={handleCloseDescriptionModal}
                     projectName={descriptionModalProject.name}
-                    description={descriptionModalProject.description || ''}                />
+                    description={descriptionModalProject.description || ''}
+                    projectId={descriptionModalProject.id}
+                    onProjectLeft={handleProjectLeft}
+                />
             )}
         </div>
     );

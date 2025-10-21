@@ -1,7 +1,7 @@
 "use client"
 
 import {fetchJsonWithAuth} from "@/utils/authService";
-import {ApiResponse, Project} from "@/components/calendar/types";
+import {ApiResponse, MessageData, Project} from "@/components/calendar/types";
 
 const PROJECT_URL: string = "/api/projects/";
 
@@ -56,3 +56,45 @@ export async function editProject (
 
     return project;
 };
+
+// 프로젝트 자발적 나가기
+export async function leaveProject(projectId: number): Promise<string> {
+    const url = `${PROJECT_URL}${projectId}/team/leave`
+    // api 호출
+    const result = await fetchJsonWithAuth<ApiResponse<MessageData>>(url, {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    if (!result) {
+        throw new Error("빈 응답을 받았습니다.");
+    }
+    if (!result.success) {
+        throw new Error(result.error?.message || "프로젝트를 나가지 못했습니다.");
+    }
+    console.log(result.data);
+    // data만 추출 후 반환
+    return result.data.message;
+}
+
+// 프로젝트 삭제
+export async function deleteProject(projectId: number): Promise<string> {
+    const url = `${PROJECT_URL}${projectId}`
+    // api 호출
+    const result = await fetchJsonWithAuth<ApiResponse<MessageData>>(url, {
+        method: "DELETE",
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    if (!result) {
+        throw new Error("빈 응답을 받았습니다.");
+    }
+    if (!result.success) {
+        throw new Error(result.error?.message || "프로젝트를 삭제하지 못했습니다.");
+    }
+    console.log(result.data);
+    // data만 추출 후 반환
+    return result.data.message;
+}
