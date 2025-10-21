@@ -293,7 +293,20 @@ export default function CalendarUI() {
         setSelectedDate(newDate);
         setViewMode("day");
     };
+    // [추가] WeekView에 전달할 weekStartDate 계산
+    const getMonday = (d: Date) => {
+        d = new Date(d);
+        const day = d.getDay(),
+            diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is Sunday
+        return new Date(d.setDate(diff));
+    }
+    const weekStartDate = getMonday(selectedDate);
 
+    // [추가] WeekView에서 Day 뷰로 전환하는 핸들러
+    const handleNavigateToDay = (date: Date) => {
+        setSelectedDate(date);
+        setViewMode("day");
+    };
     // 이벤트 '생성' 모달 열기
     const handleOpenEventModal = (dateStr?: string) => {
         setModalInitialDate(dateStr || null);
@@ -654,9 +667,54 @@ export default function CalendarUI() {
         setViewMonth(viewMonth === 11 ? 0 : viewMonth + 1);
         setViewYear(viewMonth === 11 ? viewYear + 1 : viewYear);
     }
+    // --- [추가] 뷰 모드에 따라 탐색을 처리하는 새로운 통합 핸들러 ---
+    const handlePrev = () => {
+        if (viewMode === 'month') {
+            prevMonth();
+        } else if (viewMode === 'week') {
+            const newDate = new Date(selectedDate);
+            newDate.setDate(newDate.getDate() - 7);
+            setSelectedDate(newDate);
+        } else { // 'day'
+            const newDate = new Date(selectedDate);
+            newDate.setDate(newDate.getDate() - 1);
+            setSelectedDate(newDate);
+        }
+    };
 
+    const handleNext = () => {
+        if (viewMode === 'month') {
+            nextMonth();
+        } else if (viewMode === 'week') {
+            const newDate = new Date(selectedDate);
+            newDate.setDate(newDate.getDate() + 7);
+            setSelectedDate(newDate);
+        } else { // 'day'
+            const newDate = new Date(selectedDate);
+            newDate.setDate(newDate.getDate() + 1);
+            setSelectedDate(newDate);
+        }
+    };
     // --- 렌더링 ---
+    let weekHeaderTitle = '';
+    if (viewMode === 'week') {
+        const monday = weekStartDate;
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
 
+        const startMonth = monday.toLocaleDateString('en-US', { month: 'long' });
+        const endMonth = sunday.toLocaleDateString('en-US', { month: 'long' });
+        const monthLabel = startMonth === endMonth ? startMonth : `${startMonth} - ${endMonth}`;
+
+        const year = monday.getFullYear();
+
+        // 해당 월의 첫 날을 기준으로 몇 번째 주인지 계산
+        const firstDayOfMonth = new Date(monday.getFullYear(), monday.getMonth(), 1);
+        const firstMonday = getMonday(firstDayOfMonth);
+        const weekNum = Math.floor((monday.getTime() - firstMonday.getTime()) / (1000 * 60 * 60 * 24 * 7)) + 1;
+
+        weekHeaderTitle = `${monthLabel}${year}`;
+    }
     // 이벤트가 해당 주에 걸쳐 있는지 확인하고, 시작 및 끝 요일을 계산하는 헬퍼 함수
     const getWeekEvents = (week: (number | null)[]) => {
         const weekStart = new Date(viewYear, viewMonth, week.find(day => day !== null)!);
@@ -781,7 +839,27 @@ export default function CalendarUI() {
         setWeekMobileData(data);
         setIsWeekMobileOpen(true);
     };
+
+
     const selectedEvent = events.find(event => event.id === selectedEventId);
+    // [추가] 주간 뷰에 표시할 이벤트를 미리 필터링합니다.
+    const weekEvents = useMemo(() => {
+        if (viewMode !== 'week') return [];
+
+        const weekStart = new Date(weekStartDate);
+        weekStart.setHours(0, 0, 0, 0);
+
+        const weekEnd = new Date(weekStartDate);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+
+        return events.filter(event => {
+            const eventStart = new Date(event.startAt);
+            const eventEnd = new Date(event.endAt);
+            return eventStart <= weekEnd && eventEnd >= weekStart;
+        });
+    }, [events, weekStartDate, viewMode]);
+
     return (
         <div className="h-screen w-screen flex flex-col bg-white">
             {/*  --- 데스크톱 헤더 ---  */}
@@ -900,7 +978,7 @@ export default function CalendarUI() {
                     />
                 </div>
 
-                {/* 메인 캘린더 영역 */}
+                {/* 메인 캘린더  영역 */}
                 <main className="flex-1 p-2 md:p-5 overflow-auto">
                     {/* 메인 캘린더 헤더 */}
                     <div className="flex items-center justify-between mb-4">
@@ -910,7 +988,7 @@ export default function CalendarUI() {
                                 isMobile && (viewMode === "week" || isWeekMobileOpen) ? "invisible" : ""
                             }`}
                         >
-                            <button onClick={prevMonth}
+                            <button onClick={handlePrev}
                                     className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-lg md:text-xl p-2 rounded-full hover:bg-slate-100">
                                 &#x276E;
                             </button>
@@ -921,12 +999,14 @@ export default function CalendarUI() {
                                         day: 'numeric',
                                         year: 'numeric'
                                     })
-                                    : new Date(viewYear, viewMonth).toLocaleString('en-US', {
-                                        month: 'long',
-                                        year: 'numeric'
-                                    })}
+                                    : viewMode === 'week'
+                                        ? weekHeaderTitle
+                                        : new Date(viewYear, viewMonth).toLocaleString('en-US', {
+                                            month: 'long',
+                                            year: 'numeric'
+                                        })}
                             </h2>
-                            <button onClick={nextMonth}
+                            <button onClick={handleNext}
                                     className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-lg md:text-xl p-2 rounded-full hover:bg-slate-100">
                                 &#x276F;
                             </button>
@@ -1042,12 +1122,34 @@ export default function CalendarUI() {
                                                                     endCol = i;
                                                                 }
                                                             }
+                                                            // (기존 로직) startCol이 0이고, foundStart가 false이면, 이 주 이전에 시작한 것입니다.
+                                                            if (!foundStart && week[0] && eventStart < new Date(viewYear, viewMonth, week[0])) {
+                                                                startCol = 0;
+                                                            }
+
+                                                            // (기존 로직) endCol이 6이고, 이 주의 마지막 날짜보다 이벤트 종료일이 늦으면, span은 6까지입니다.
+                                                            const lastDayInWeek = week.filter(d => d).pop();
+                                                            if (lastDayInWeek && eventEnd > new Date(viewYear, viewMonth, lastDayInWeek)) {
+                                                                endCol = 6;
+                                                            }
                                                             const span = endCol - startCol + 1;
                                                             const showTitle = foundStart || (week[0] && new Date(viewYear, viewMonth, week[0]) > eventStart);
                                                             const roundedClass =
                                                                 (foundStart ? 'rounded-l ' : '') +
                                                                 (endCol < 6 || eventEnd.toDateString() === new Date(viewYear, viewMonth, week[endCol]!).toDateString() ? 'rounded-r' : '');
+                                                            return {
+                                                                event,
+                                                                span,
+                                                                startCol,
+                                                                showTitle,
+                                                                roundedClass
+                                                            };
+                                                        })
+                                                            .sort((a, b) => b.span - a.span) // --- 3. span 기준으로 내림차순 정렬합니다. ---
+                                                            .map((processedEvent, eventIndex) => { // --- 4. 정렬된 순서대로 렌더링합니다. ---
 
+                                                                // 미리 계산된 값을 사용합니다.
+                                                                const { event, span, startCol, showTitle, roundedClass } = processedEvent;
                                                             return (
                                                                 <div
                                                                     key={event.id}
@@ -1079,7 +1181,13 @@ export default function CalendarUI() {
                                     </div>
                                 </>
                             )}
-                            {viewMode === "week" && <WeekView events={events}/>}
+                            {viewMode === "week" && (
+                                <WeekView
+                                    events={weekEvents}
+                                    weekStartDate={weekStartDate}
+                                    onNavigateToDay={handleNavigateToDay}
+                                />
+                            )}
                             {viewMode === "day" && <DayView events={events} date={selectedDate}/>}
                         </>
                     )}
