@@ -2,7 +2,7 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from "next/image";
-import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X, Check, XCircle, Dog } from 'lucide-react';
+import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X, Check, XCircle, Dog, Loader2 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
@@ -31,6 +31,7 @@ const API_ENDPOINTS = {
 type ProjectCategory = 'All' | 'In Progress' | 'Completed';
 // 서버에서 내려주는 상태 타입
 type ServerProjectStatus = 'IN_PROGRESS' | 'COMPLETED';
+type MemberStatus = 'ACTIVE' | 'LEFT' | 'KICKED';
 
 interface TeamMemberForCard {
     id: number;
@@ -43,27 +44,28 @@ interface ServerMember {
     name: string;
     profileImageUrl: string | null | undefined;
 }
-interface ServerProjectItem {
+export interface ServerProjectItem {
     id: number;
     name: string;
     description: string | null;
     startDate: string;
     endDate: string;
     ownerId: number;
+    status: ServerProjectStatus;
     members: ServerMember[]; // 타입 안정성 확보
     memberStatus: MemberStatus; // 서버 응답에 status 포함
 }
 
-interface Project {
+export interface Project {
     id: number;
     name: string;
     description?: string;
     startDate: string;
     endDate: string;
+    ownerId: number;
     status: ServerProjectStatus; // 서버 상태 그대로 저장
     members: TeamMemberForCard[];
-    ownerId: number;
-    memberStatus: MemberStatus
+    memberStatus: MemberStatus;
 }
 
 interface CurrentUser {
@@ -750,7 +752,7 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
 const ProjectDashboardPage: React.FC = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { theme } = useTheme();
+    // const { theme } = useTheme();
     const { user, isLoading: isLoadingUser, logout, fetchUserProfile } = useUser();
     const [isLoadingProjects, setIsLoadingProjects] = useState(false);
     const [projects, setProjects] = useState<Project[]>([]);
@@ -810,7 +812,7 @@ const ProjectDashboardPage: React.FC = () => {
                             imageUrl: member.profileImageUrl || DEFAULT_USER.profileImageUrl,
                         })) : [],
                 }));
-                const activeProjects = allProjectsData.filter(project =>
+                const activeProjects = projectsData.filter((project: Project) =>
                     project.memberStatus === 'ACTIVE'
                 );
                 setProjects(projectsData);
@@ -881,6 +883,7 @@ const ProjectDashboardPage: React.FC = () => {
                     endDate: serverProject.endDate || data.endDate,
                     ownerId: serverProject.ownerId || user.id || 0,
                     status: serverProject.status as ServerProjectStatus,
+                    memberStatus: serverProject.memberStatus,
                     members: Array.isArray(serverProject.members)
                         ? serverProject.members.map((m: ServerMember): TeamMemberForCard => ({
                             id: m.userId,
@@ -1077,7 +1080,7 @@ const ProjectDashboardPage: React.FC = () => {
     const currentUserName = user.name || 'Guest';
     const handleProjectLeft = () => {
         fetchProjects();
-        setProjects(prev => prev.filter(p => p.id !== descriptionModalProject.id));
+        setProjects(prev => prev.filter(p => p.id !== descriptionModalProject?.id));
     };
 
     return (
