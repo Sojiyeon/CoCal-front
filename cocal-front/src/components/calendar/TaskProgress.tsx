@@ -38,7 +38,7 @@ export default function TaskProgress({ todos, projectStartDate, projectEndDate }
     }, [todos, projectStartDate, projectEndDate]);
 
     return (
-        <div className="p-6 max-w-md mx-auto">
+        <div className="py-2 px-6 max-w-md mx-auto">
             {/* 제목 + 완료율 배지 */}
             <div className="flex items-center justify-between mb-2">
                 <h2 className="text-gray-600 font-semibold text-sm">IN PROGRESS</h2>
