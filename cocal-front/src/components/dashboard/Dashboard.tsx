@@ -2,9 +2,10 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from "next/image";
-import { Folder, MoreVertical, Moon, Settings, LogOut, Plus } from 'lucide-react';
+import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X} from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTheme } from '@/components/ThemeProvider';
 import { fetchWithAuth } from '@/utils/authService';
 import CreateProjectModal, { ProjectFormData } from '@/components/modals/CreateProjectModal';
 import EditProjectModal from '@/components/modals/EditProjectModal';
@@ -19,6 +20,8 @@ const API_ENDPOINTS = {
     UPDATE_USER_PASSWORD: `${API_BASE_URL}/api/users/edit-pwd`,
     UPDATE_USER_PHOTO: `${API_BASE_URL}/api/users/profile-image`,
     DELETE_USER_PHOTO: `${API_BASE_URL}/api/users/profile-image`,
+    FETCH_UNREAD_NOTIFICATIONS_BY_USER: (userId: number) => `${API_BASE_URL}/api/notifications/unread/${userId}`,
+    FETCH_PROJECT_INVITES_ME: `${API_BASE_URL}/api/team/invites/me`,
 };
 
 // --- DUMMY DATA & TYPES ---
@@ -93,6 +96,36 @@ interface ProfileSettingsModalProps {
 // ProfileSettingsModal의 prop 타입 오류 방지를 위해 임시 타입 정의 사용
 const ProfileSettingsModalTyped: FC<ProfileSettingsModalProps> = ProfileSettingsModal;
 
+type NotificationType = 'INVITE' | 'PRIVATE_TODO' | 'EVENT';
+
+interface NotificationItem {
+    id: number;
+    userId: number;
+    type: NotificationType;
+    referenceId: number;
+    title: string;
+    message: string;
+    sentAt: string;
+    isRead: boolean;
+}
+
+interface ProjectInviteItem {
+    id: number;
+    projectId: number;
+    projectName: string;
+    email: string;
+    status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+    createdAt: string;
+    expiresAt: string;
+    inviterEmail: string;
+}
+
+interface ProjectInviteResponse {
+    content: ProjectInviteItem[];
+    totalElements: number;
+    // ... other pageable info
+}
+
 // --- 헬퍼 함수: 서버 상태를 UI 표시용으로 변환 ---
 const mapServerStatusToUI = (serverStatus: ServerProjectStatus): 'In Progress' | 'Completed' => {
     switch (serverStatus) {
@@ -141,7 +174,7 @@ const ProjectCategoryFilter: FC<ProjectCategoryFilterProps> = ({
                     <button
                         key={category}
                         onClick={() => onSelectCategory(category)}
-                        className={`py-2 text-lg font-medium transition duration-200 
+                        className={`py-2 text-lg font-medium transition duration-200
                 ${selectedCategory === category
                             ? 'text-blue-600 border-b-2 border-blue-600'
                             : 'text-gray-500 hover:text-gray-700'
@@ -187,7 +220,7 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
     const cardZIndex = isDropdownActive ? 'z-50' : 'z-10';
 
     return (
-        <div className={`bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition duration-200 relative border border-gray-100 ${cardZIndex}`}>
+        <div className={`bg-white dark:bg-dark-surface p-4 rounded-xl shadow-md hover:shadow-lg transition duration-200 relative border border-gray-100 dark:border-gray-700 ${cardZIndex}`}>
             {/* 상단 (이름, 날짜, 드롭다운 버튼) */}
             <div className="flex justify-between items-start mb-4">
                 <div className="flex flex-col flex-grow min-w-0">
@@ -231,7 +264,7 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
 
             {/* 상태 태그 표시 (status prop 사용) */}
             <div className="mb-4">
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full 
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full
                     ${status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`
                 }>
                     {status}
@@ -267,7 +300,7 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
                     {dropdownItems.map(item => (
                         <button
                             key={item.label}
-                            className={`w-full text-left px-3 py-2 text-sm transition 
+                            className={`w-full text-left px-3 py-2 text-sm transition
                             ${item.isDestructive ? 'text-red-400 hover:bg-gray-700/50' : 'hover:bg-gray-700'}`}
                             onClick={(e: React.MouseEvent) => {
                                 e.preventDefault();
@@ -307,6 +340,7 @@ interface ProfileDropdownProps {
 export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLogout }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [user, setUser] = useState<CurrentUser | null>(null);
+    const { isDarkMode, toggleTheme } = useTheme();
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // localStorage에서 유저 정보 불러오기
@@ -341,9 +375,9 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
         {
             label: 'Dark Mode',
             icon: Moon,
-            action: () => console.log('Dark Mode toggled'),
+            action: toggleTheme,
             isToggle: true,
-            isToggled: false
+            isToggled: isDarkMode
         },
         {
             label: 'Profile Settings',
@@ -359,7 +393,7 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
             action: onLogout,
             isDestructive: true
         },
-    ], [onOpenSettings, onLogout]);
+    ], [onOpenSettings, onLogout, isDarkMode, toggleTheme]);
 
     // 아직 유저 정보가 없을 경우 (로딩 상태)
     if (!user) {
@@ -393,14 +427,14 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
 
             {isOpen && (
                 <div
-                    className="fixed top-[72px] right-8 z-[9999] mt-2 w-56 bg-white dark:bg-slate-800 dark:text-gray-100 rounded-xl shadow-2xl p-2 border border-gray-100 dark:border-slate-700 transform origin-top-right transition-all duration-150 ease-out"
+                    className="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-surface rounded-xl shadow-2xl z-40 p-2 border border-gray-100 dark:border-gray-700 transform origin-top-right transition-all duration-150 ease-out"
                     role="menu"
                 >
                     {menuItems.map((item, index) => (
                         <div
                             key={index}
                             onClick={() => { item.action(); if (!item.isToggle) setIsOpen(false); }}
-                            className={`flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer transition duration-150 
+                            className={`flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer transition duration-150
                                 ${item.isDestructive ? 'text-red-500 hover:bg-red-50' : 'text-gray-700 hover:bg-gray-50'}
                             `}
                             role="menuitem"
@@ -413,7 +447,7 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
                             {/* 토글 스위치 (Dark Mode) */}
                             {item.isToggle && (
                                 <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" checked={item.isToggled} className="sr-only peer" onChange={() => {}} />
+                                    <input type="checkbox" checked={isDarkMode} className="sr-only peer" onChange={toggleTheme} />
                                     <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             )}
@@ -421,6 +455,196 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
                     ))}
                 </div>
             )}
+        </div>
+    );
+};
+// --- NotificationAndInviteIcons Component (새로 정의) ---
+interface NotificationAndInviteIconsProps {
+    userId: number;
+    onInviteNotificationClick: () => void;
+    handleLogout: () => void;
+}
+
+export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userId, onInviteNotificationClick, handleLogout }) => {
+    // 일반 알림 상태 (INVITE 타입 제외)
+    const [unreadNotifications, setUnreadNotifications] = useState<NotificationItem[]>([]);
+    // 프로젝트 초대 수 상태 (전용 API 사용)
+    const [unreadInviteCount, setUnreadInviteCount] = useState<number>(0);
+    const [showAllNotifications, setShowAllNotifications] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Fetch General Notifications (Bell Icon)
+        const fetchGeneralNotifications = useCallback(async () => {
+            if (!userId) return;
+
+            try {
+                const endpoint = API_ENDPOINTS.FETCH_UNREAD_NOTIFICATIONS_BY_USER(userId);
+                console.log(`API 호출: ${endpoint}로 읽지 않은 일반 알림 조회 요청`);
+                const response = await fetchWithAuth(endpoint, { method: 'GET' });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const notifications: NotificationItem[] = Array.isArray(result.data) ? result.data : [];
+                    // INVITE 타입은 별도로 처리되므로, 일반 알림 목록에서 필터링하여 제외합니다.
+                    const generalNotifications = notifications.filter(n => n.type !== 'INVITE');
+                    setUnreadNotifications(generalNotifications);
+                    console.log('읽지 않은 일반 알림 조회 성공:', generalNotifications.length, '개');
+                } else if (response.status === 401) {
+                    handleLogout();
+                } else {
+                    console.error('읽지 않은 일반 알림 로드 실패:', response.status);
+                }
+            } catch (_error) {
+                console.error("일반 알림 목록 로드 중 오류:", _error);
+                if (_error instanceof Error && _error.message.includes("SESSION_EXPIRED")) {
+                     await handleLogout();
+                }
+            }
+        }, [userId, handleLogout]);
+
+    // Fetch Project Invites (Mail Icon) - 전용 API 사용
+       const fetchProjectInvites = useCallback(async () => {
+            if (!userId) return;
+
+            try {
+                const endpoint = API_ENDPOINTS.FETCH_PROJECT_INVITES_ME;
+                console.log(`API 호출: ${endpoint}로 프로젝트 초대 목록 조회 요청`);
+                const response = await fetchWithAuth(endpoint, { method: 'GET' });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const inviteData: ProjectInviteResponse = result.data;
+                    // totalElements를 사용하여 초대장 수를 계산합니다.
+                    const inviteCount = inviteData.totalElements || 0;
+                    setUnreadInviteCount(inviteCount);
+                    console.log('읽지 않은 프로젝트 초대 조회 성공:', inviteCount, '개');
+                } else if (response.status === 401) {
+                    handleLogout();
+                } else {
+                    console.error('프로젝트 초대 로드 실패:', response.status);
+                }
+            } catch (_error) {
+                console.error("프로젝트 초대 목록 로드 중 오류:", _error);
+                if (_error instanceof Error && _error.message.includes("SESSION_EXPIRED")) {
+                     await handleLogout();
+                }
+            }
+        }, [userId, handleLogout]);
+
+    useEffect(() => {
+            fetchGeneralNotifications();
+            fetchProjectInvites();
+
+            // 1분(60000ms)마다 알림 목록 갱신
+            const intervalId = setInterval(() => {
+                fetchGeneralNotifications();
+                fetchProjectInvites();
+            }, 60000);
+
+            return () => clearInterval(intervalId);
+        }, [fetchGeneralNotifications, fetchProjectInvites]);
+    // 외부 클릭 감지 로직 (드롭다운을 닫기 위해 필요)
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowAllNotifications(false);
+            }
+        };
+
+        if (showAllNotifications) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showAllNotifications]);
+    // 알림 클릭 시 (예시)
+    const handleNotificationClick = (notification: NotificationItem) => {
+        console.log(`알림 클릭: ID ${notification.id}, 타입 ${notification.type}`);
+        // 실제 구현: 알림 읽음 처리 API 호출 후, 타입에 따라 페이지 이동/모달 띄우기 등의 로직 구현
+        setShowAllNotifications(false);
+    }
+
+    // 날짜 포맷팅 헬퍼 함수
+    const formatSentAt = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    return (
+        <div className="flex items-center space-x-3 sm:space-x-5">
+            {/* 1. 초대 보관함 아이콘 */}
+            <button
+                onClick={onInviteNotificationClick}
+                className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition duration-150 rounded-full hover:bg-gray-100 dark:hover:bg-dark-surface-alt"
+                aria-label="초대 보관함"
+            >
+                <Mail className="w-6 h-6" />
+                {unreadInviteCount > 0 && ( // unreadInviteCount 상태 사용
+                    <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full min-w-[1.2rem]">
+                        {unreadInviteCount}
+                    </span>
+                )}
+            </button>
+
+            {/* 2. 전체 알림 아이콘 (초대 제외) */}
+            <div className="relative" ref={dropdownRef}>
+                <button
+                    onClick={() => setShowAllNotifications(prev => !prev)}
+                    className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition duration-150 rounded-full hover:bg-gray-100 dark:hover:bg-dark-surface-alt"
+                    aria-label="알림"
+                >
+                    <Bell className="w-6 h-6" />
+                    {unreadNotifications.length > 0 && ( // unreadNotifications 상태 사용
+                        <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-blue-100 transform translate-x-1/2 -translate-y-1/2 bg-blue-600 rounded-full min-w-[1.2rem]">
+                            {unreadNotifications.length}
+                        </span>
+                    )}
+                </button>
+
+                {/* 알림 드롭다운 메뉴 */}
+                {showAllNotifications && (
+                    <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-dark-surface rounded-xl shadow-2xl z-[120] p-2 border border-gray-100 dark:border-gray-700 transform origin-top-right transition-all duration-150 ease-out max-h-96 overflow-y-auto">
+                        <div className="flex justify-between items-center px-3 py-2 border-b border-gray-100 dark:border-gray-700 ">
+                            <h4 className="text-sm font-semibold text-gray-800 dark:text-white">New Notifications ({unreadNotifications.length})</h4>
+                            <button
+                                onClick={() => setShowAllNotifications(false)}
+                                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                                aria-label="닫기"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        {unreadNotifications.length === 0 ? (
+                            <p className="p-3 text-sm text-gray-500 text-center">읽지 않은 새 알림이 없습니다.</p>
+                        ) : (
+                            unreadNotifications.map((n) => (
+                                <div
+                                    key={n.id}
+                                    onClick={() => handleNotificationClick(n)}
+                                    className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition duration-150 border-b dark:border-gray-700 last:border-b-0"
+                                >
+                                    <p className="text-sm font-medium text-gray-800 dark:text-white truncate">
+                                        {n.title}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                                        {n.message}
+                                    </p>
+                                    <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
+                                        {formatSentAt(n.sentAt)}
+                                    </p>
+                                </div>
+                            ))
+                        )}
+                        {/* 더미 '모두 읽음' 버튼 */}
+                        <div className='p-2'>
+                             <button className='w-full text-center text-sm text-blue-600 hover:text-blue-700 py-1 rounded-md hover:bg-blue-50 transition'>
+                                 모든 알림 읽음으로 표시
+                             </button>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
@@ -459,6 +683,13 @@ const ProjectDashboardPage: React.FC = () => {
         await logout();
         router.push('/');
     }, [logout, router]);
+
+    // 초대 보관함 버튼 클릭 핸들러 (현재는 콘솔 로그)
+    const handleOpenInviteInbox = useCallback(() => {
+        // 실제 구현에서는 초대 보관함 모달을 열거나, 초대 목록 페이지로 라우팅하는 로직이 들어갑니다.
+        console.log("초대 보관함 버튼 클릭됨: INVITE 타입 알림 목록 표시 또는 전용 페이지로 이동");
+        // router.push('/invitations');
+    }, []);
 
     const fetchProjects = useCallback(async () => {
         // ... (API 호출 및 응답 처리 로직은 그대로 유지)
@@ -628,13 +859,6 @@ const ProjectDashboardPage: React.FC = () => {
                         description: updatedServerProject.description || data.description,
                         startDate: updatedServerProject.startDate || data.startDate,
                         endDate: updatedServerProject.endDate || data.endDate,
-                        // 서버 응답의 날짜를 사용하여 상태 재계산
-                        /*
-                        status: calculateProjectStatus(
-                            updatedServerProject.startDate || data.startDate,
-                            updatedServerProject.endDate || data.endDate
-                        ),
-*/
                         status: updatedServerProject.status as ServerProjectStatus,
                     };
                     return updatedProject;
@@ -681,14 +905,6 @@ const ProjectDashboardPage: React.FC = () => {
             }
         }
     };
-
-/*
-    // 이미 열려 있는 드롭다운이 있다면 닫고, 현재 드롭다운을 열거나 닫습니다.
-    const handleToggleDropdown = (projectId: number, active: boolean) => {
-        setActiveDropdownId(active ? projectId : null);
-    };
-*/
-
 
     // 초대 수락 감지
     useEffect(() => {
@@ -765,12 +981,21 @@ const ProjectDashboardPage: React.FC = () => {
     const currentUserName = user.name || 'Guest';
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans">
-            {/* 상단 통합 헤더 영역 */}
-            <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 bg-white sticky top-0 z-50 shadow-sm">
-                <h1 className="text-2xl font-bold text-gray-800">My projects</h1>
+    <div className="min-h-screen transition-colors duration-300 font-sans">
+        {/* 상단 통합 헤더 영역 */}
+        <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 dark:border-gray-800 bg-light-surface dark:bg-dark-surface sticky top-0 z-[110] shadow-sm">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-dark-text-primary">My projects</h1>
 
-                <div className="flex items-center space-x-4 z-50"> {/* 유저 프로필 */}
+                <div className="flex items-center space-x-4"> {/* 유저 프로필 */}
+                    {user.id && (
+                        <NotificationAndInviteIcons
+                            userId={user.id}
+                            onInviteNotificationClick={handleOpenInviteInbox}
+                            handleLogout={handleLogout}
+                        />
+                    )}
+
+                    {/* 유저 프로필 */}
                     <ProfileDropdown
                         onOpenSettings={handleOpenSettingsModal}
                         onLogout={handleLogout}

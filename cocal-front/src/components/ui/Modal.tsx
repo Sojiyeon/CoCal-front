@@ -30,14 +30,14 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, className, ti
     return (
         // 배경 (Overlay)
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 z-[500] flex items-center justify-center"
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
             ref={modalRef}
             onClick={handleOutsideClick}
         >
             {/* 모달 내용 컨테이너 */}
             <div
-                className={`bg-white rounded-xl shadow-2xl w-full max-w-lg transition-all transform duration-300 scale-100 ${className}`}
+                className={`bg-white p-6 rounded-xl z-[510] shadow-2xl w-full max-w-lg transition-all transform duration-300 scale-100 ${className}`}
                 onClick={e => e.stopPropagation()} // 내부 클릭 시 닫히지 않도록 방지
             >
                 {/* 모달 헤더 */}
