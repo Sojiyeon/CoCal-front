@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { CalendarEvent } from "./types";
-
+import { CalendarEvent, DateMemo } from "./types";
+import { formatYMD } from "./utils";
 // Day 뷰로 이동하기 위한 props를 포함하여 인터페이스를 하나로 합칩니다.
 interface WeekViewProps {
     events: CalendarEvent[];
+    memos: DateMemo[];
     weekStartDate: Date; // 현재 보고 있는 주의 시작 날짜 (월요일)
     onNavigateToDay: (date: Date) => void; // Day 뷰로 전환하는 함수
     onSelectEvent: (event: CalendarEvent) => void;
+    onSelectMemo: (memo: DateMemo) => void;
 }
 
 interface PositionedEvent {
@@ -29,7 +31,7 @@ interface MoreButton {
 // MAX_VISIBLE_EVENTS를 컴포넌트 스코프로 이동
 const MAX_VISIBLE_EVENTS = 3; // 한 번에 보여줄 최대 이벤트 수
 
-export default function WeekView({ events, weekStartDate, onNavigateToDay,onSelectEvent }: WeekViewProps) {
+export default function WeekView({events, memos, weekStartDate, onNavigateToDay, onSelectEvent, onSelectMemo}: WeekViewProps) {
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const hours = Array.from({ length: 24 }, (_, i) => i);
     const today = useMemo(() => new Date(), []); // [추가] 오늘 날짜 확인용
@@ -201,23 +203,46 @@ export default function WeekView({ events, weekStartDate, onNavigateToDay,onSele
                         const isToday = today.getFullYear() === currentDay.getFullYear() &&
                             today.getMonth() === currentDay.getMonth() &&
                             today.getDate() === currentDay.getDate();
+                        const dateKey = formatYMD(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate());
+                        const dayMemos = memos.filter(m => m.memoDate === dateKey);
 
                         return (
-                            // [수정] flex-col로 변경하여 요일과 날짜를 세로로 배치
+                            //flex-col로 변경하여 요일과 날짜를 세로로 배치
                             <div key={idx}
                                  className="p-2 text-center border-l border-gray-200 flex flex-col items-center gap-0.5">
-                            <span className={`text-xs ${
-                                isToday ? 'text-blue-600' : 'text-slate-700' // text-slate-500 -> text-slate-700
-                            }`}>
-                                    {day}
-                                </span>
-                                <span className={`text-sm font-medium ${ // 1. text-base -> text-sm
+
+                                {/* [수정] 요일과 메모 닷(dot)을 묶는 div 추가 */}
+                                <div className="relative h-4">
+                                    <span className={`text-xs ${
+                                        isToday ? 'text-blue-600' : 'text-slate-700'
+                                    }`}>
+                                        {day}
+                                    </span>
+
+                                    {/* [이동] 메모 닷 렌더링 */}
+                                    {dayMemos.length > 0 && (
+                                        <div className="absolute left-full top-0 pl-1 flex space-x-0.5">
+                                            {dayMemos.map(memo => (
+                                                <div
+                                                    key={memo.id}
+                                                    onClick={() => onSelectMemo(memo)}
+                                                    className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
+                                                    title={memo.content}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 날짜 번호 */}
+                                <span className={`text-sm font-medium ${
                                     isToday
-                                        ? 'text-blue-600 bg-blue-100 rounded-full w-6 h-6 flex items-center justify-center' // 2. w-7 h-7 -> w-6 h-6
+                                        ? 'text-blue-600 bg-blue-100 rounded-full w-6 h-6 flex items-center justify-center'
                                         : 'text-slate-700'
                                 }`}>
                                     {dateNum}
                                 </span>
+
                             </div>
                         );
                     })}
@@ -227,8 +252,9 @@ export default function WeekView({ events, weekStartDate, onNavigateToDay,onSele
             {allDayLayout.totalRows > 0 && (
                 <div className="flex border-b border-gray-200">
                     <div className="w-16 flex-shrink-0 p-1 text-center text-xs text-slate-400 self-stretch"></div>
-                    <div className="grid grid-cols-7 flex-1 relative border-l border-gray-200" style={{ minHeight: `${allDayLayout.totalRows * allDayEventHeight}px`}}>
-                        {allDayLayout.positionedEvents.map(({ event, startDayIndex, span, topIndex }) => (
+                    <div className="grid grid-cols-7 flex-1 relative border-l border-gray-200"
+                         style={{minHeight: `${allDayLayout.totalRows * allDayEventHeight}px`}}>
+                        {allDayLayout.positionedEvents.map(({event, startDayIndex, span, topIndex}) => (
                             <div
                                 key={event.id}
                                 onClick={() => onSelectEvent(event)}
@@ -253,7 +279,8 @@ export default function WeekView({ events, weekStartDate, onNavigateToDay,onSele
                         <div key={h} className="h-12 flex justify-end items-start pt-1 pr-2">
                             <span>
                                 {h === 0 ? '12' : h > 12 ? h - 12 : h}
-                                <span className="ml-0.5 text-[10px] border border-gray-200 rounded px-1 opacity-70 ">{h < 12 ? 'AM' : 'PM'}</span>
+                                <span
+                                    className="ml-0.5 text-[10px] border border-gray-200 rounded px-1 opacity-70 ">{h < 12 ? 'AM' : 'PM'}</span>
                             </span>
                         </div>
                     ))}

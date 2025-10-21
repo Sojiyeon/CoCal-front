@@ -1299,6 +1299,8 @@ export default function CalendarUI() {
                                     weekStartDate={weekStartDate}
                                     onNavigateToDay={handleNavigateToDay}
                                     onSelectEvent={handleSelectEvent}
+                                    memos={memos}
+                                    onSelectMemo={setSelectedMemo}
                                 />
                             )}
                             {viewMode === "day" && <DayView events={events} date={selectedDate}/>}
