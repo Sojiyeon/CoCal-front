@@ -1187,10 +1187,13 @@ export default function CalendarUI() {
                                                                 }
                                                             }
 
-                                                            // --- 5. 렌더링: 이벤트 (최대 3줄) + "+N more" 버튼 ---
+                                                            // --- 5. 렌더링: 이벤트 + "+N more" 버튼 ---
 
-                                                            // [수정] 렌더링할 이벤트 필터링 (0, 1, 2번 줄)
-                                                            const eventsToRender = processedEvents.filter(event => event.renderRowIndex < 3);
+                                                            // [수정] 모바일/데스크톱에 따라 최대 표시 줄 수 결정
+                                                            const MAX_EVENT_ROWS_TO_SHOW = isMobile ? 2 : 3;
+
+                                                            // [수정] 렌더링할 이벤트 필터링 (모바일: 0, 1번 줄 / 데스크톱: 0, 1, 2번 줄)
+                                                            const eventsToRender = processedEvents.filter(event => event.renderRowIndex < MAX_EVENT_ROWS_TO_SHOW);
 
                                                             // [수정] "+N more" 버튼 계산
                                                             const moreButtons = [];
@@ -1200,10 +1203,12 @@ export default function CalendarUI() {
 
                                                                 const totalEventsOnDay = rowBumper[dayIndex]; // 이 날짜의 총 이벤트 수
 
-                                                                if (totalEventsOnDay > 3) {
-                                                                    // 3개를 초과하는 경우, 숨겨진 이벤트 수 계산
+                                                                // [수정] 모바일/데스크톱 최대 줄 수를 초과하는 경우
+                                                                if (totalEventsOnDay > MAX_EVENT_ROWS_TO_SHOW) {
                                                                     const eventsOnDay = processedEvents.filter(e => e.startCol <= dayIndex && e.endCol >= dayIndex);
-                                                                    const hiddenCount = eventsOnDay.filter(e => e.renderRowIndex >= 3).length;
+
+                                                                    // [수정] 숨겨진 이벤트 수 계산 (최대 줄 수 이상인 이벤트)
+                                                                    const hiddenCount = eventsOnDay.filter(e => e.renderRowIndex >= MAX_EVENT_ROWS_TO_SHOW).length;
 
                                                                     if (hiddenCount > 0) {
                                                                         moreButtons.push({
@@ -1218,7 +1223,7 @@ export default function CalendarUI() {
                                                             // [수정] 렌더링 부분을 <></> (Fragment)로 감싸고 2개의 map을 실행
                                                             return (
                                                                 <>
-                                                                    {/* 5a. 렌더링할 이벤트 (0, 1, 2번 줄) */}
+                                                                    {/* 5a. 렌더링할 이벤트 */}
                                                                     {eventsToRender.map((processedEvent) => {
                                                                         const { event, span, startCol, showTitle, roundedClass, renderRowIndex } = processedEvent;
                                                                         return (
@@ -1245,22 +1250,31 @@ export default function CalendarUI() {
                                                                         );
                                                                     })}
 
-                                                                    {/* 5b. "+N more" 버튼 렌더링 (3번 줄) */}
+                                                                    {/* 5b. "+N more" 버튼 렌더링 */}
                                                                     {moreButtons.map(({ day, dayIndex, count }) => {
-                                                                        // [수정] Day 뷰로 이동하는 핸들러
+
+                                                                        // [수정] "+N more" 클릭 핸들러 (모바일/데스크톱 분기)
                                                                         const handleMoreClick = () => {
-                                                                            const newDate = new Date(viewYear, viewMonth, day);
-                                                                            setSelectedDate(newDate);
-                                                                            setViewMode("day");
+                                                                            const clickedDate = new Date(viewYear, viewMonth, day);
+
+                                                                            if (isMobile) {
+                                                                                // 모바일에서는 WeekViewMobile을 엽니다.
+                                                                                openWeekMobileForDate(clickedDate);
+                                                                            } else {
+                                                                                // 데스크톱에서는 Week 뷰로 이동합니다.
+                                                                                setSelectedDate(clickedDate);
+                                                                                setViewMode("week");
+                                                                            }
                                                                         };
 
                                                                         return (
                                                                             <div
                                                                                 key={`more-${dayIndex}`}
                                                                                 className="absolute h-5 px-2 text-xs text-slate-600 font-medium cursor-pointer truncate hover:bg-slate-100 rounded"
-                                                                                onClick={handleMoreClick}
+                                                                                onClick={handleMoreClick} // [수정] 클릭 핸들러 변경
                                                                                 style={{
-                                                                                    top: `${3 * 22}px`, // 3번 줄 (66px)
+                                                                                    // [수정] top 위치를 동적으로 설정
+                                                                                    top: `${MAX_EVENT_ROWS_TO_SHOW * 22}px`, // 모바일: 44px, 데스크톱: 66px
                                                                                     left: `calc(${(dayIndex / 7) * 100}% + 2px)`,
                                                                                     width: `calc(${(1 / 7) * 100}% - 4px)`,
                                                                                 }}
