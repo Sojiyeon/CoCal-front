@@ -22,35 +22,15 @@ interface LoginProps {
 
 const Login: React.FC<LoginProps> = ({ redirectUrl }) => {
     const router = useRouter();
-//  const searchParams = useSearchParams();
-//  const redirectUrl = searchParams.get('redirect');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-
+/*
     useEffect(() => {
         // useUser Context를 사용하지 않는다면 checkAuthStatus를 사용
         const isLoggedIn = checkAuthStatus();
         const redirectPath = searchParams.get('redirect');
-/*
-        if (isLoggedIn) {
-            if (redirectPath) {
-                // redirect 파라미터가 있으면 그곳으로 이동 (초대 링크 복귀)
-                console.log(`Token found, redirecting to ${redirectPath}.`);
-                // URL 인코딩된 경로를 디코딩하여 사용
-                router.replace(decodeURIComponent(redirectPath));
-            } else {
-                // redirect 파라미터가 없으면 기본 대시보드로 이동
-                console.log("Token found, redirecting to /dashboard.");
-                router.replace('/dashboard');
-            }
-        }
-    }, [router, searchParams]);
-
-    if (checkAuthStatus()) {
-        return null;
-    }
 */
     // 구글 소셜 로그인 핸들러
     const handleGoogleLogin = () => {
