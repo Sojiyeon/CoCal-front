@@ -1,7 +1,7 @@
 "use client";
 import React, {useEffect, useState} from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
 import Button from '../ui/Button';
 import Link from 'next/link';
@@ -16,10 +16,14 @@ const checkAuthStatus = () => {
     return false;
 };
 
-const Login: React.FC = () => {
+interface LoginProps {
+    redirectUrl?: string;
+}
+
+const Login: React.FC<LoginProps> = ({ redirectUrl }) => {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const redirectUrl = searchParams.get('redirect');
+//  const searchParams = useSearchParams();
+//  const redirectUrl = searchParams.get('redirect');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -29,7 +33,7 @@ const Login: React.FC = () => {
         // useUser Context를 사용하지 않는다면 checkAuthStatus를 사용
         const isLoggedIn = checkAuthStatus();
         const redirectPath = searchParams.get('redirect');
-
+/*
         if (isLoggedIn) {
             if (redirectPath) {
                 // redirect 파라미터가 있으면 그곳으로 이동 (초대 링크 복귀)
@@ -47,7 +51,7 @@ const Login: React.FC = () => {
     if (checkAuthStatus()) {
         return null;
     }
-
+*/
     // 구글 소셜 로그인 핸들러
     const handleGoogleLogin = () => {
         const url:string = authApi.getGoogleAuthUrl();
@@ -69,7 +73,7 @@ const Login: React.FC = () => {
                 console.log('사용자 정보 저장 완료:', user);
             }
             // 대시보드로 이동
-            router.push(redirectUrl || '/dashboard');
+            router.push(redirectUrl ? decodeURIComponent(redirectUrl) : '/dashboard');
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message || '로그인 중 문제가 발생했습니다.');
