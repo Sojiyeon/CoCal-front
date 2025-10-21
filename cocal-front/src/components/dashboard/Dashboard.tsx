@@ -464,7 +464,6 @@ interface NotificationAndInviteIconsProps {
     onInviteNotificationClick: () => void;
     handleLogout: () => void;
 }
-
 const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userId, onInviteNotificationClick, handleLogout }) => {
     // 일반 알림 상태 (INVITE 타입 제외)
     const [unreadNotifications, setUnreadNotifications] = useState<NotificationItem[]>([]);
