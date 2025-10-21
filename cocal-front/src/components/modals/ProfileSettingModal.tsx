@@ -157,8 +157,8 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
     // 모달 내용 내부에서 로딩 상태를 표시
     if (isLoading) {
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                 style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+            <div className="fixed inset-0 z-[500] flex items-center justify-center p-4"
+                     style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }} onClick={onClose}>
                 <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
                     <div className="flex justify-center items-center h-32">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -410,7 +410,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4"
              style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }} onClick={onClose}>
 
             <div
