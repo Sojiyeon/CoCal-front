@@ -131,6 +131,11 @@ export default function CalendarUI() {
     // Todo 데이터의 버전을 관리할 상태 추가
     const [todoVersion, setTodoVersion] = useState(0);
 
+    useEffect(() => {
+        if (isMobile && isWeekMobileOpen) {
+            setWeekMobileData(buildWeekViewMobileData(weekMobileAnchor));
+        }
+    }, [events, privateTodos, currentProject, isMobile, isWeekMobileOpen, weekMobileAnchor]);
     // --- useEffect 훅 ---
     // 이름, 프로필이 변경된 경우 유저 정보 재조회
     useEffect(() => {
@@ -184,23 +189,85 @@ export default function CalendarUI() {
 
         const fetchCalendarData = async () => {
             try {
+                // 1. 캘린더의 기본 데이터 (이벤트, 메모, 개인 할일)를 가져옵니다.
                 const json = await api.get(`/cal/${projectId}`);
-                if (json.success && json.data) {
-                    // API에서 받은 이벤트와 메모로 상태 초기화
-                    setEvents(json.data.events || []);
-                    // 메모 저장
-                    setMemos(json.data.memos || []);
-                    setPrivateTodos(json.data.privateTodos || []);
-                } else {
+
+                if (!json.success || !json.data) {
                     console.error("캘린더 데이터가 없습니다.");
+                    setEvents([]);
+                    setMemos([]);
+                    setPrivateTodos([]);
+                    return;
                 }
+
+                // 2. 기본 데이터를 상태에 우선 설정 (메모, 개인 할일)
+                const initialEvents: CalendarEvent[] = json.data.events || [];
+                setMemos(json.data.memos || []);
+                setPrivateTodos(json.data.privateTodos || []);
+
+                // 3. [추가] 각 이벤트의 상세 할일(Todo) 목록을 가져오는 Promise 배열 생성
+                const todoFetchPromises = initialEvents.map(event => {
+                    return api.get(`/projects/${projectId}/events/${event.id}/todos`)
+                        .then(todoJson => {
+                            if (todoJson.success && todoJson.data && todoJson.data.items) {
+                                // API 응답(items)을 프론트엔드 타입(EventTodo)으로 변환
+                                const mappedTodos: EventTodo[] = todoJson.data.items.map((item: {
+                                    id: number;
+                                    eventId: number;
+                                    title: string;
+                                    description: string | null;
+                                    status: "IN_PROGRESS" | "DONE";
+                                }) => ({ // <--- 'any' 타입 수정
+                                    id: item.id,
+                                    eventId: item.eventId,
+                                    title: item.title,
+                                    description: item.description,
+                                    status: item.status,
+                                    type: 'EVENT', // 이 API는 이벤트 할일만 반환하므로 'EVENT'로 지정
+                                    authorId: 0,   // API 응답에 없어 기본값 처리 (필요시 수정)
+                                    orderNo: 0,  // API 응답에 없어 기본값 처리 (필요시 수정)
+                                    url: null,     // API 응답에 없어 기본값 처리 (필요시 수정)
+                                }));
+                                return { eventId: event.id, todos: mappedTodos };
+                            }
+                            // 할일이 없거나 API 실패 시
+                            return { eventId: event.id, todos: [] };
+                        })
+                        .catch(err => {
+                            console.error(`Event ${event.id}의 Todo 로드 실패:`, err);
+                            return { eventId: event.id, todos: [] }; // 개별 실패 처리
+                        });
+                });
+
+                // 4. [추가] 모든 할일 목록 조회가 완료될 때까지 대기
+                const todoResults = await Promise.all(todoFetchPromises);
+
+                // 5. [추가] 조회된 할일 목록을 기존 이벤트 객체에 병합
+                //    (빠른 조회를 위해 Map 사용)
+                const todoMap = new Map<number, EventTodo[]>();
+                todoResults.forEach(result => {
+                    todoMap.set(result.eventId, result.todos);
+                });
+
+                const enrichedEvents = initialEvents.map(event => ({
+                    ...event,
+                    todos: todoMap.get(event.id) || [], // 조회된 todos를 주입
+                }));
+
+                // 6. [추가] 할일 목록이 포함된 완전한 events 배열로 상태 업데이트
+                setEvents(enrichedEvents);
+
             } catch (error) {
                 console.error("캘린더 API 호출 실패:", error);
+                // 실패 시에도 비어있는 배열로 초기화
+                setEvents([]);
+                setMemos([]);
+                setPrivateTodos([]);
             }
         };
 
         fetchCalendarData();
-    }, [projectId]);
+    }, [projectId]); // 의존성 배열은 그대로 [projectId]
 
 
     // 페이지 로드 시 프로젝트 정보를 가져오는 효과
@@ -827,13 +894,17 @@ export default function CalendarUI() {
                 return evStart <= cur && evEnd >= cur;
             });
 
-            // 해당 날짜의 public todos만 모아 표시 (기능 변경 없이 표시만)
-            const dayTodos = events.flatMap((ev) => {
-                const evDateKey = ev.startAt.split("T")[0];
-                if (evDateKey !== key || !ev.todos) return [];
-                return ev.todos.map((t) => ({id: t.id, title: t.title, status: t.status}));
-            });
+            const privateTodosForDate = privateTodos
+                .filter(todo => todo.date.startsWith(key)) // 'key'는 YYYY-MM-DD
+                .map(t => ({
+                    id: t.id,
+                    title: t.title,
+                    status: t.status,
+                    type: 'PRIVATE' // type을 명시
+                }));
 
+            // 2. dayTodos는 이제 Private Todo만 포함합니다.
+            const dayTodos = privateTodosForDate;
             return {
                 date: String(dd),
                 weekday,
@@ -938,7 +1009,7 @@ export default function CalendarUI() {
                 </h1>
 
                 {/* 프로필 드롭다운 (이미지만 표시) */}
-                <div className="z-10">
+                <div className="z-30">
                     {isUserLoading ? (
                         <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse"></div>) : user && user.id ? (
                         <ProfileDropdown
@@ -1004,7 +1075,9 @@ export default function CalendarUI() {
                 </div>
 
                 {/* 메인 캘린더  영역 */}
-                <main className="flex-1 p-2 md:p-5 overflow-auto">
+                <main className={`flex-1 overflow-auto ${
+                    isMobile && isWeekMobileOpen ? "" : "p-2 md:p-5"
+                }`}>
                     {/* 메인 캘린더 헤더 */}
                     <div className="flex items-center justify-between mb-4">
                         {/* ← 왼쪽 블록: 항상 렌더. 모바일에서 week(또는 WeekViewMobile 열림)일 때만 invisible */}
@@ -1060,6 +1133,7 @@ export default function CalendarUI() {
                                 days={weekMobileData.days}
                                 onPrevWeek={handlePrevMobileWeek}
                                 onNextWeek={handleNextMobileWeek}
+                                onToggleTodoStatus={handleToggleTodoStatus}
                             />
                         )
                     ) : (
@@ -1163,7 +1237,15 @@ export default function CalendarUI() {
                                                                     (foundStart ? 'rounded-l ' : '') +
                                                                     (endCol < 6 || eventEnd.toDateString() === new Date(viewYear, viewMonth, week[endCol]!).toDateString() ? 'rounded-r' : '');
 
-                                                                return { event, span, startCol, endCol, showTitle, roundedClass, renderRowIndex: 0 };
+                                                                return {
+                                                                    event,
+                                                                    span,
+                                                                    startCol,
+                                                                    endCol,
+                                                                    showTitle,
+                                                                    roundedClass,
+                                                                    renderRowIndex: 0
+                                                                };
                                                             });
 
                                                             // --- 3. 정렬: (1) 시작일(startCol) 오름차순, (2) 길이(span) 내림차순 ---
@@ -1228,7 +1310,14 @@ export default function CalendarUI() {
                                                                 <>
                                                                     {/* 5a. 렌더링할 이벤트 */}
                                                                     {eventsToRender.map((processedEvent) => {
-                                                                        const { event, span, startCol, showTitle, roundedClass, renderRowIndex } = processedEvent;
+                                                                        const {
+                                                                            event,
+                                                                            span,
+                                                                            startCol,
+                                                                            showTitle,
+                                                                            roundedClass,
+                                                                            renderRowIndex
+                                                                        } = processedEvent;
                                                                         return (
                                                                             <div
                                                                                 key={event.id}
@@ -1254,7 +1343,7 @@ export default function CalendarUI() {
                                                                     })}
 
                                                                     {/* 5b. "+N more" 버튼 렌더링 */}
-                                                                    {moreButtons.map(({ day, dayIndex, count }) => {
+                                                                    {moreButtons.map(({day, dayIndex, count}) => {
 
                                                                         // [수정] "+N more" 클릭 핸들러 (모바일/데스크톱 분기)
                                                                         const handleMoreClick = () => {

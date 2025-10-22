@@ -138,24 +138,35 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
             return (
                 <div
                     key={event.id}
-                    //  left-1, right-1 클래스 제거
-                    className="absolute rounded p-2 text-xs text-white shadow"
+                    // flex-col과 overflow-hidden 추가
+                    className="absolute rounded p-2 text-xs text-white shadow flex flex-col overflow-hidden"
                     style={{
                         top: `${top}px`,
                         height: `${height}px`,
-                        //  계산된 너비와 위치 적용 (이벤트 간 간격을 위해 calc 사용)
                         left: `calc(${left}% + 2px)`,
                         width: `calc(${width}% - 4px)`,
                         backgroundColor: event.color || "#6366f1",
                         zIndex: 10 + column,
                     }}
                 >
-                    <div className="font-medium">{event.title}</div>
-                    {event.description && (
-                        <div className="text-[11px] opacity-80">{event.description}</div>
-                    )}
+                    {/*  제목과 설명을 묶는 div 추가 (상단 고정) */}
+                    <div className="flex-shrink-0">
+                        <div className="font-medium">{event.title}</div>
+                        {event.description && (
+                            <div className="text-[11px] opacity-80">{event.description}</div>
+                        )}
+                    </div>
+
+                    {/*  할일 목록 컨테이너에 flex-1과 overflow-y-auto 추가 */}
                     {todos.length > 0 && (
-                        <div className="mt-1 space-y-1">
+
+                        <div className="mt-1 space-y-1 flex-1 overflow-y-auto
+                                    [&::-webkit-scrollbar]:w-1.5
+                                    [&::-webkit-scrollbar-track]:bg-transparent
+                                    [&::-webkit-scrollbar-thumb]:bg-white/40
+                                    [&::-webkit-scrollbar-thumb]:rounded-full
+                                    hover:[&::-webkit-scrollbar-thumb]:bg-white/60">
+
                             <h4 className="text-[11px] font-bold opacity-70">To do</h4>
                             {todos.map((todo) => (
                                 <div key={todo.id} className="flex items-center text-[11px] opacity-90">
@@ -174,10 +185,8 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
                 </div>
             );
         });
+
     };
-
-
-
     return (
         <div className="border border-gray-200 rounded-lg overflow-hidden">
             <div className="grid grid-cols-2 border-b border border-gray-200 bg-slate-50 text-sm font-medium">
@@ -204,18 +213,28 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
                             return (
                                 <div
                                     key={event.id}
-                                    // [수정] todo 목록이 보일 수 있도록 h-[22px]와 overflow-hidden 제거
-                                    className="rounded p-1 text-xs text-white shadow cursor-pointer"
+                                    // [수정] flex, flex-col, overflow-hidden, max-h-32 (128px) 추가
+                                    className="rounded p-1 text-xs text-white shadow cursor-pointer flex flex-col overflow-hidden max-h-32"
                                     style={{
                                         backgroundColor: event.color || "#6366f1",
                                         zIndex: 10,
                                     }}
                                 >
-                                    <div className="font-medium">{event.title}</div>
+                                    {/*  제목 영역을 flex-shrink-0로 묶음 */}
+                                    <div className="flex-shrink-0">
+                                        <div className="font-medium">{event.title}</div>
+                                    </div>
 
-                                    {/* [추가] 종일 이벤트의 할 일(todo) 목록 렌더링 */}
+                                    {/* 종일 이벤트의 할 일(todo) 목록 렌더링 */}
                                     {todos.length > 0 && (
-                                        <div className="mt-1 space-y-1 border-t border-white/20 pt-1">
+
+                                        <div className="mt-1 space-y-1 border-t border-white/20 pt-1 flex-1 overflow-y-auto
+                                                    [&::-webkit-scrollbar]:w-1.5
+                                                    [&::-webkit-scrollbar-track]:bg-transparent
+                                                    [&::-webkit-scrollbar-thumb]:bg-white/40
+                                                    [&::-webkit-scrollbar-thumb]:rounded-full
+                                                    hover:[&::-webkit-scrollbar-thumb]:bg-white/60">
+
                                             {todos.map((todo) => (
                                                 <div key={todo.id} className="flex items-center text-[11px] opacity-90">
                                                     <input
@@ -237,8 +256,6 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
                     </div>
                 </div>
             )}
-
-
             <div className="flex">
                 <div className="flex flex-col border-r border border-gray-200 text-xs text-slate-400">
                     {/*  시간 레이블 로직 변경 */}
