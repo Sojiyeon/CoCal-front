@@ -8,7 +8,7 @@ import InviteModal from '@/components/modals/InviteModal';
 import { fetchWithAuth } from '@/utils/authService'; // API 호출 유틸리티
 import { CheckCircle, XCircle } from 'lucide-react';
 
-const API_BASE_URL = 'https://cocal-server.onrender.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 // 모달에 보여줄 프로젝트 정보 타입 (서버에서 가져올 정보)
 interface ProjectInviteInfo {
