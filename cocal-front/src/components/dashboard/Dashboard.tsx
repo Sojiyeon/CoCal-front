@@ -12,6 +12,9 @@ import EditProjectModal from '@/components/modals/EditProjectModal';
 import ProfileSettingsModal from '@/components/modals/ProfileSettingModal';
 import ProjectDescriptionModal from '@/components/modals/ProjectDescriptionModal';
 import {inviteAation} from "@/api/inviteApi";
+import useNotificationSocket from "@/hooks/useNotificationSocket";
+import { NotificationItem } from "@/types/notification";
+import Toast from "@/components/common/Toast";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 const API_PROJECTS_ENDPOINT = `${API_BASE_URL}/api/projects`;
@@ -101,17 +104,6 @@ interface ProfileSettingsModalProps {
 const ProfileSettingsModalTyped: FC<ProfileSettingsModalProps> = ProfileSettingsModal;
 
 type NotificationType = 'INVITE' | 'PRIVATE_TODO' | 'EVENT';
-
-interface NotificationItem {
-    id: number;
-    userId: number;
-    type: NotificationType;
-    referenceId: number;
-    title: string;
-    message: string;
-    sentAt: string;
-    isRead: boolean;
-}
 
 interface ProjectInviteItem {
     id: number;
@@ -467,11 +459,9 @@ interface NotificationAndInviteIconsProps {
     userId: number;
     handleLogout: () => void;
 }
-const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userId, handleLogout }) => {
+export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userId, handleLogout }) => {
     // 일반 알림 상태 (INVITE 타입 제외)
     const [unreadNotifications, setUnreadNotifications] = useState<NotificationItem[]>([]);
-    // 프로젝트 초대 수 상태 (전용 API 사용)
-    const [unreadInviteCount, setUnreadInviteCount] = useState<number>(0);
     const [showAllNotifications, setShowAllNotifications] = useState(false);
     const [showInviteNotifications, setShowInviteNotifications] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -480,6 +470,8 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
     const [invites, setInvites] = useState<ProjectInviteItem[]>([]);
     // "Pending" 상태인 초대 목록 상태
     const pendingInvites:ProjectInviteItem[] = invites.filter((inv) => inv.status === "PENDING");
+    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+    const [toast, setToast] = useState<string | null>(null);
 
     // Fetch General Notifications (Bell Icon)
         const fetchGeneralNotifications = useCallback(async () => {
@@ -528,7 +520,6 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
                     setInvites(inviteList);
                     // totalElements를 사용하여 초대장 수를 계산
                     const inviteCount = inviteData.totalElements || 0;
-                    setUnreadInviteCount(inviteCount);
                     console.log('읽지 않은 프로젝트 초대 조회 성공:', inviteCount, '개');
                 } else if (response.status === 401) {
                     handleLogout();
@@ -554,7 +545,7 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
             }, 60000);
 
             return () => clearInterval(intervalId);
-        }, [fetchGeneralNotifications, fetchProjectInvites]);
+        }, [fetchGeneralNotifications, fetchProjectInvites, notifications]);
     // 외부 클릭 감지 로직 (드롭다운을 닫기 위해 필요)
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -614,8 +605,17 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
         return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
     };
 
+    // 실시간 알림을 위한 WebSocket 연결
+    useNotificationSocket(userId, (notification) => {
+        setNotifications((prev) => [notification, ...prev]);
+        setToast(notification.message);
+        console.log("새 알림 상태 반영:", notification);
+    });
+
     return (
         <div className="flex items-center space-x-3 sm:space-x-5">
+            {/* 알람 오면 뜸*/}
+            {toast && <Toast message={toast} onClose={() => setToast(null)} />}
             {/* 초대 보관함 아이콘 */}
             <div className="relative" ref={inviteDropdownRef}>
                 <button
@@ -730,7 +730,7 @@ const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = ({ userI
                                         {n.message}
                                     </p>
                                     <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
-                                        {formatSentAt(n.sentAt)}
+                                        {formatSentAt(n.createdAt)}
                                     </p>
                                 </div>
                             ))
