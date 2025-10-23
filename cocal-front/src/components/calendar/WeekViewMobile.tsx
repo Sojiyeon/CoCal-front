@@ -135,9 +135,11 @@ export default function WeekViewMobile({
 
                                     {/* 우측 콘텐츠 */}
                                     <div className="flex-1">
+                                        {/* === Private Todo 섹션 === */}
                                         <div className="pb-3">
                                             {privateTodos.length > 0 && (
                                                 <div className="mb-2">
+                                                    {/* 요청하신 "Private Todo" 제목입니다 */}
                                                     <p className="text-[11px] text-slate-500 font-semibold mb-1.5">Private
                                                         Todo</p>
                                                     <div className="space-y-1">
@@ -147,48 +149,10 @@ export default function WeekViewMobile({
                                                     </div>
                                                 </div>
                                             )}
-                                            {/* Public todo 렌더링 로직은 Event 섹션으로 이동 */}
                                         </div>
+
+
                                         {/* 할일 섹션 */}
-                                        <div className="pb-3">
-
-
-                                            <div className="space-y-1">
-                                                {day.todos.length === 0 && (
-                                                    <p className="text-[12px] text-slate-400"></p>
-                                                )}
-                                                {day.todos.map((todo) => (
-                                                    <div
-                                                        key={todo.id}
-                                                        className={`flex items-center gap-2 ${todo.status === "DONE" ? "opacity-60" : ""}`}
-                                                    >
-                                                        {/* 체크박스 (UI만, 기능 변경 X) */}
-                                                        <button
-                                                            onClick={() => onToggleTodoStatus?.(todo.id)}
-                                                            aria-label="toggle todo"
-                                                            className={`w-4 h-4 border-2 rounded-md flex items-center justify-center ${
-                                                                todo.status === "DONE" ? "border-slate-400" : "border-slate-300"
-                                                            }`}
-                                                        >
-                                                            {todo.status === "DONE" && (
-                                                                <div className="w-2 h-2 bg-slate-400 rounded-sm"/>
-                                                            )}
-                                                        </button>
-                                                        <span
-                                                            className={`text-[14px] ${
-                                                                todo.status === "DONE"
-                                                                    ? "line-through text-slate-400"
-                                                                    : "text-slate-700"
-                                                            }`}
-                                                        >
-                                                                  {todo.title}
-                                                                </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Event 섹션 */}
                                         <div className="pt-3">
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className="text-[13px] font-semibold text-slate-700"></span>
@@ -222,6 +186,7 @@ export default function WeekViewMobile({
                                                                     className="text-[14px] text-slate-800">{event.title}</span>
                                                             </div>
                                                         </div>
+                                                        {/* Public Todo 목록 */}
                                                         {event.todos && event.todos.length > 0 && (
                                                             <div className="pl-8 pt-2 space-y-1">
                                                                 {event.todos.map(todo => (

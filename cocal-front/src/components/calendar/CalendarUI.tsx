@@ -540,28 +540,108 @@ export default function CalendarUI() {
     };
 
     // 사이드바의 할일 완료 상태(체크박스)를 변경하는 함수
-    const handleToggleTodoStatus = (todoId: number) => {
+    const handleToggleTodoStatus = async (todoId: number) => {
 
-        // Public 할일 상태 업데이트
-        setEvents(prevEvents =>
-            prevEvents.map(event => {
-                if (!event.todos || !event.todos.some(t => t.id === todoId)) return event;
-                return {
-                    ...event,
-                    todos: event.todos.map(todo =>
-                        todo.id === todoId ? {...todo, status: todo.status === 'DONE' ? 'IN_PROGRESS' : 'DONE'} : todo
+        let todoToUpdate: (EventTodo | PrivateTodo | null) = null;
+        let originalType: ('EVENT' | 'PRIVATE' | null) = null;
+        let originalStatus: ('IN_PROGRESS' | 'DONE' | null) = null;
+
+        // 1. 상태(State)에서 토글할 Todo 객체를 찾습니다. (Public 또는 Private)
+        for (const event of events) {
+            const todo = event.todos?.find(t => t.id === todoId);
+            if (todo) {
+                todoToUpdate = todo;
+                originalType = 'EVENT';
+                originalStatus = todo.status;
+                break;
+            }
+        }
+        if (!todoToUpdate) {
+            const todo = privateTodos.find(t => t.id === todoId);
+            if (todo) {
+                todoToUpdate = todo;
+                originalType = 'PRIVATE';
+                originalStatus = todo.status;
+            }
+        }
+
+        // 1-1. Todo를 찾지 못하면 함수 종료
+        if (!todoToUpdate || !originalType || !originalStatus) {
+            console.error("handleToggleTodoStatus: 토글할 Todo를 찾지 못했습니다. ID:", todoId);
+            return;
+        }
+
+        const newStatus = originalStatus === 'DONE' ? 'IN_PROGRESS' : 'DONE';
+        const todo = todoToUpdate; // 편의를 위한 변수명 변경
+
+        // 2. [Optimistic Update] UI를 즉시 새로운 상태로 업데이트합니다.
+        if (originalType === 'EVENT') {
+            setEvents(prevEvents =>
+                prevEvents.map(event => {
+                    if (!event.todos || !event.todos.some(t => t.id === todoId)) return event;
+                    return {
+                        ...event,
+                        todos: event.todos.map(t =>
+                            t.id === todoId ? {...t, status: newStatus} : t
+                        )
+                    };
+                })
+            );
+        } else { // 'PRIVATE'
+            setPrivateTodos(prevPrivateTodos =>
+                prevPrivateTodos.map(t =>
+                    t.id === todoId ? {...t, status: newStatus} : t
+                )
+            );
+        }
+
+        // 3. API에 전송할 Payload를 생성합니다. (handleUpdateTodo 로직 참조)
+        //    (주의: 'any' 캐스팅은 EventTodo 타입에 offsetMinutes가 없어 임시방편으로 사용)
+        const payload: TodoUpdatePayload = {
+            title: todo.title,
+            description: todo.description || "",
+            url: todo.url || "",
+            status: newStatus, // <-- 변경된 상태
+            type: originalType,
+            projectId: projectId,
+            visibility: originalType === 'EVENT' ? 'PUBLIC' : 'PRIVATE',
+            date: originalType === 'PRIVATE' ? (todo as PrivateTodo).date : undefined,
+            eventId: originalType === 'EVENT' ? (todo as EventTodo).eventId : undefined,
+            offsetMinutes: (todo as any).offsetMinutes ?? null,
+        };
+
+        // 4. API를 호출하여 서버에 변경 사항을 저장합니다.
+        try {
+            await api.put(`/projects/${projectId}/todos/${todoId}`, payload);
+            // 성공: Optimistic Update가 확정되었습니다.
+            setTodoVersion(v => v + 1); // 사이드바 등 다른 컴포넌트에 갱신 알림
+
+        } catch (error) {
+            console.error("Todo 상태 업데이트 API 호출 실패:", error);
+            alert("할 일 상태 변경에 실패했습니다. 페이지를 새로고침합니다.");
+
+            // 5. [Rollback] API 호출 실패 시, UI를 원래 상태로 되돌립니다.
+            if (originalType === 'EVENT') {
+                setEvents(prevEvents =>
+                    prevEvents.map(event => {
+                        if (!event.todos || !event.todos.some(t => t.id === todoId)) return event;
+                        return {
+                            ...event,
+                            todos: event.todos.map(t =>
+                                t.id === todoId ? {...t, status: originalStatus} : t // 원래 상태로 복구
+                            )
+                        };
+                    })
+                );
+            } else { // 'PRIVATE'
+                setPrivateTodos(prevPrivateTodos =>
+                    prevPrivateTodos.map(t =>
+                        t.id === todoId ? {...t, status: originalStatus} : t // 원래 상태로 복구
                     )
-                };
-            })
-        );
-        // Private 할일 상태 업데이트
-        setPrivateTodos(prevPrivateTodos =>
-            prevPrivateTodos.map(todo =>
-                todo.id === todoId ? {...todo, status: todo.status === 'DONE' ? 'IN_PROGRESS' : 'DONE'} : todo
-            )
-        );
+                );
+            }
+        }
     };
-
     // todo 수정
     const handleUpdateTodo = async (todoId: number, newData:
         {
@@ -804,7 +884,9 @@ export default function CalendarUI() {
         const weekNum = Math.floor((monday.getTime() - firstMonday.getTime()) / (1000 * 60 * 60 * 24 * 7)) + 1;
 
         weekHeaderTitle = `${monthLabel}${year}`;
+
     }
+
     // 이벤트가 해당 주에 걸쳐 있는지 확인하고, 시작 및 끝 요일을 계산하는 헬퍼 함수
     const getWeekEvents = (week: (number | null)[]) => {
         const weekStart = new Date(viewYear, viewMonth, week.find(day => day !== null)!);
@@ -955,7 +1037,12 @@ export default function CalendarUI() {
             return eventStart <= weekEnd && eventEnd >= weekStart;
         });
     }, [events, weekStartDate, viewMode]);
-
+    const truncateText = (text: string, maxLength: number) => {
+        if (text.length <= maxLength) {
+            return text;
+        }
+        return text.substring(0, maxLength) + "...";
+    };
     return (
         <div className="h-screen w-screen flex flex-col bg-white">
             {/*  --- 데스크톱 헤더 ---  */}
@@ -967,7 +1054,9 @@ export default function CalendarUI() {
                                   strokeLinejoin="round"/>
                         </svg>
                     </button>
-                    <h1 className="text-xl font-medium">{currentProject ? currentProject.name : "Project"}</h1>
+                    <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold w-[calc(100%-8rem)] text-center">
+                        {currentProject ? truncateText(currentProject.name, 6) : "Project"}
+                    </h1>
                     <div className="flex items-center space-x-[-4px]">
                         {/*팀원 프로필 이미지*/}
                         {currentProject?.members.map((member, index) => (
@@ -1004,8 +1093,8 @@ export default function CalendarUI() {
                 </button>
 
                 {/* 프로젝트 이름 (가운데 정렬) */}
-                <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold whitespace-nowrap">
-                    {currentProject ? currentProject.name : "Project"}
+                <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold w-[calc(100%-8rem)] text-center">
+                    {currentProject ? truncateText(currentProject.name, 6) : "Project"}
                 </h1>
 
                 {/* 프로필 드롭다운 (이미지만 표시) */}
