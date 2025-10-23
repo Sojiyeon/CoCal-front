@@ -607,7 +607,7 @@ export default function CalendarUI() {
             visibility: originalType === 'EVENT' ? 'PUBLIC' : 'PRIVATE',
             date: originalType === 'PRIVATE' ? (todo as PrivateTodo).date : undefined,
             eventId: originalType === 'EVENT' ? (todo as EventTodo).eventId : undefined,
-            offsetMinutes: (todo as any).offsetMinutes ?? null,
+            offsetMinutes: originalType === 'PRIVATE' ? (todo as PrivateTodo).offsetMinutes ?? null : null,
         };
 
         // 4. API를 호출하여 서버에 변경 사항을 저장합니다.
