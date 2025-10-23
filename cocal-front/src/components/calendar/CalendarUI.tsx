@@ -11,6 +11,7 @@ import SidebarLeft from "./SidebarLeft";
 import SidebarRight from "./SidebarRight";
 import {EventDetailModal} from "./modals/EventDetailModal";
 import { ProfileDropdown } from "@/components/dashboard/Dashboard";
+import { NotificationAndInviteIcons } from "@/components/dashboard/Dashboard"
 import ProfileSettingsModal from '@/components/modals/ProfileSettingModal';
 import {SettingsModal} from "./modals/SettingsModal";
 import {EventModal} from "./modals/EventModal";
@@ -1072,14 +1073,23 @@ export default function CalendarUI() {
                     </div>
                 </div>
                 {isUserLoading ? (
-                    <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>) : user && user.id ? (
-                    <ProfileDropdown
-                        onOpenSettings={handleOpenSettingsModal}
-                        onLogout={logout}
-                    />
-                ) : (<div>
-                    <button onClick={() => router.push("/")}>Login</button>
-                </div>)}
+                    <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
+                ) : user && user.id ? (
+                    <div  className="flex items-center justify-end space-x-4">
+                        <NotificationAndInviteIcons
+                            userId={user.id}
+                            handleLogout={logout}
+                        />
+                        <ProfileDropdown
+                            onOpenSettings={handleOpenSettingsModal}
+                            onLogout={logout}
+                        />
+                    </div>
+                ) : (
+                    <div>
+                        <button onClick={() => router.push("/")}>Login</button>
+                    </div>
+                )}
             </div>
 
             {/*  --- 모바일 헤더 ---  */}
@@ -1101,10 +1111,10 @@ export default function CalendarUI() {
                 <div className="z-30">
                     {isUserLoading ? (
                         <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse"></div>) : user && user.id ? (
-                        <ProfileDropdown
-                            onOpenSettings={handleOpenSettingsModal}
-                            onLogout={logout}
-                        />
+                            <ProfileDropdown
+                                onOpenSettings={handleOpenSettingsModal}
+                                onLogout={logout}
+                            />
                     ) : (<div>
                         <button onClick={() => router.push("/")}>Login</button>
                     </div>)}
