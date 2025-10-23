@@ -142,6 +142,12 @@ export function TeamModal({ projectId, onClose }: Props) {
                         placeholder="Email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault(); // 폼 제출 막기
+                                handleInvite();
+                            }
+                        }}
                         className="flex-1 border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                     <button
