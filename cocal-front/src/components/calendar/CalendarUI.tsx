@@ -1102,10 +1102,16 @@ export default function CalendarUI() {
                     </svg>
                 </button>
 
-                {/* 프로젝트 이름 (가운데 정렬) */}
-                <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold w-[calc(100%-8rem)] text-center">
-                    {currentProject ? truncateText(currentProject.name, 6) : "Project"}
-                </h1>
+                {/* 헤더 가운데 */}
+                <div className="ml-auto mr-3">
+                    {user && (
+                        <NotificationAndInviteIcons
+                            userId={user.id!}
+                            handleLogout={logout}
+                        />
+                    )}
+                </div>
+
 
                 {/* 프로필 드롭다운 (이미지만 표시) */}
                 <div className="z-30">
