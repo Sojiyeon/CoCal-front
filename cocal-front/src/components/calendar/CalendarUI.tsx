@@ -1055,8 +1055,8 @@ export default function CalendarUI() {
                                   strokeLinejoin="round"/>
                         </svg>
                     </button>
-                    <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-semibold w-[calc(100%-8rem)] text-center">
-                        {currentProject ? truncateText(currentProject.name, 6) : "Project"}
+                    <h1 className="text-lg font-semibold text-slate-800 truncate">
+                        {currentProject ? currentProject.name : "Project"}
                     </h1>
                     <div className="flex items-center space-x-[-4px]">
                         {/*팀원 프로필 이미지*/}

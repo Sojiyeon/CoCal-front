@@ -357,11 +357,17 @@ export default function SidebarLeft({
             {/* --- 데스크톱 UI --- */}
             <div className="hidden md:flex flex-col flex-1 overflow-hidden">
                 {/* 1️⃣ 상단: mini calendar (고정) */}
-                <div className="mb-4">
+                <div className="mb-6">
+                    <div className="mb-4">
+                        <div
+                            className="w-full px-6 py-1.5 rounded-full border border-slate-300 text-lg font-bold text-slate-800 text-center">
+                            To do
+                        </div>
+                    </div>
                     <div className="flex items-center justify-between">
                         <button onClick={prevMiniMonth} className="text-xs">&#x276E;</button>
                         <div className="text-sm font-medium">
-                            {new Date(miniYear, miniMonth).toLocaleString("en-US", { month: "long", year: "numeric" })}
+                            {new Date(miniYear, miniMonth).toLocaleString("en-US", {month: "long", year: "numeric"})}
                         </div>
                         <button onClick={nextMiniMonth} className="text-xs">&#x276F;</button>
                     </div>
@@ -393,7 +399,7 @@ export default function SidebarLeft({
                 <div className="mb-2 flex items-center justify-between">
                     <h3 className="text-sm font-medium">To do</h3>
                     <div className="flex items-center gap-1">
-                        <button
+                    <button
                             onClick={() => setTodoFilter('ALL')}
                             className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'ALL' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}`}
                         >All</button>
