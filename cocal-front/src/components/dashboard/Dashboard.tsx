@@ -25,6 +25,9 @@ const API_ENDPOINTS = {
     UPDATE_USER_PHOTO: `${API_BASE_URL}/api/users/profile-image`,
     DELETE_USER_PHOTO: `${API_BASE_URL}/api/users/profile-image`,
     FETCH_UNREAD_NOTIFICATIONS_BY_USER: (userId: number) => `${API_BASE_URL}/api/notifications/unread/${userId}`,
+    // --- 알림읽기---
+    MARK_NOTIFICATION_AS_READ: (notificationId: number) => `${API_BASE_URL}/api/notifications/read/${notificationId}`,  // 단일
+    MARK_ALL_NOTIFICATIONS_AS_READ: `${API_BASE_URL}/api/notifications/all-read`,   // 전체
     FETCH_PROJECT_INVITES_ME: `${API_BASE_URL}/api/team/invites/me`,
 };
 
@@ -566,12 +569,81 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [showAllNotifications, showInviteNotifications]);
-    // 알림 클릭 시 (예시)
-    const handleNotificationClick = (notification: NotificationItem) => {
+
+    // 알림 클릭 시 (읽음 처리 API 호출)
+    const handleNotificationClick = async (notification: NotificationItem) => {
         console.log(`알림 클릭: ID ${notification.id}, 타입 ${notification.type}`);
-        // 실제 구현: 알림 읽음 처리 API 호출 후, 타입에 따라 페이지 이동/모달 띄우기 등의 로직 구현
+
+        try {
+            // 1. API 호출
+            const endpoint = API_ENDPOINTS.MARK_NOTIFICATION_AS_READ(notification.id);
+            console.log(`API 호출: ${endpoint}로 알림 읽음 처리 요청`);
+
+            const response = await fetchWithAuth(endpoint, {
+                method: 'POST', // @PostMapping과 일치
+                headers: { 'Content-Type': 'application/json' },
+                // @RequestBody가 없으므로 body는 보내지 않음 (정상)
+            });
+
+            if (response.ok) {
+                console.log('알림 읽음 처리 성공 (ID:', notification.id, ')');
+
+                // 2. UI에서 즉시 알림 제거
+                setUnreadNotifications(prevNotifications =>
+                    prevNotifications.filter(n => n.id !== notification.id)
+                );
+            } else if (response.status === 401) {
+                console.error("알림 읽음 처리 중 인증 오류, 로그아웃 처리");
+                handleLogout(); // 세션 만료 시 로그아웃
+            } else {
+                console.error('알림 읽음 처리 실패:', response.status);
+            }
+
+        } catch (_error) {
+            console.error("알림 읽음 처리 중 네트워크 오류:", _error);
+            if (_error instanceof Error && _error.message.includes("SESSION_EXPIRED")) {
+                await handleLogout();
+            }
+        }
+
+        // 4. 드롭다운 닫기
         setShowAllNotifications(false);
-    }
+    };
+
+    // [신규] '모두 읽음' 처리 함수
+    const handleMarkAllAsRead = async () => {
+        // 읽을 알림이 없으면 함수 종료
+        if (unreadNotifications.length === 0) return;
+
+        console.log('API 호출: 모든 알림 읽음 처리 요청');
+
+        try {
+            const endpoint = API_ENDPOINTS.MARK_ALL_NOTIFICATIONS_AS_READ;
+            const response = await fetchWithAuth(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (response.ok) {
+                console.log('모든 알림 읽음 처리 성공');
+                // 1. UI에서 즉시 모든 알림 제거
+                setUnreadNotifications([]);
+                // 2. 드롭다운 닫기
+                setShowAllNotifications(false);
+            } else if (response.status === 401) {
+                console.error("모든 알림 읽음 처리 중 인증 오류, 로그아웃 처리");
+                handleLogout();
+            } else {
+                console.error('모든 알림 읽음 처리 실패:', response.status);
+            }
+
+        } catch (_error) {
+            console.error("모든 알림 읽음 처리 중 네트워크 오류:", _error);
+            if (_error instanceof Error && _error.message.includes("SESSION_EXPIRED")) {
+                await handleLogout();
+            }
+        }
+    }; // <-- [수정] 여기서 함수가 닫혀야 합니다.
 
     const handleInviteAction = async (inviteId: number, action: string)=> {
         if (!inviteId) {
@@ -736,11 +808,17 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                             ))
                         )}
                         {/* 더미 '모두 읽음' 버튼 */}
-                        <div className='p-2'>
-                             <button className='w-full text-center text-sm text-blue-600 hover:text-blue-700 py-1 rounded-md hover:bg-blue-50 transition'>
-                                 모든 알림 읽음으로 표시
-                             </button>
-                        </div>
+                        {/* [수정] '모두 읽음' 버튼 (API 연결 및 조건부 렌더링) */}
+                        {unreadNotifications.length > 0 && (
+                            <div className='p-2 border-t border-gray-100 dark:border-gray-700 mt-1'>
+                                <button
+                                    onClick={handleMarkAllAsRead}
+                                    className='w-full text-center text-sm text-blue-600 hover:text-blue-700 py-1 rounded-md hover:bg-blue-50 dark:hover:bg-gray-800 transition'
+                                >
+                                    모든 알림 읽음으로 표시
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
