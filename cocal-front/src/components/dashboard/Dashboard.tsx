@@ -729,7 +729,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                                         {invite.projectName}
                                     </p>
                                     <p className="text-xs text-gray-500 dark:text-neutral-400 mt-0.5">
-                                        초대한 사람: {invite.email}
+                                        초대한 사람: {invite.inviterEmail}
                                     </p>
 
                                     <div className="flex justify-between items-center mt-2">
