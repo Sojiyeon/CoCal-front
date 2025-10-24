@@ -316,11 +316,10 @@ export default function SidebarLeft({
     });
 
     return (
-        <aside className="w-[280px] border-r p-4 overflow-auto h-full bg-white">
+        <aside className="w-[280px] border-r p-4 bg-white flex flex-col h-full">
             {/* --- 모바일 전용 UI --- */}
             <div className="md:hidden">
                 <div className="flex justify-between items-center mb-4">
-
                     <button onClick={onClose} className="p-2">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M18 6L6 18M6 6L18 18" stroke="#334155" strokeWidth="2" strokeLinecap="round"
@@ -328,18 +327,19 @@ export default function SidebarLeft({
                         </svg>
                     </button>
                 </div>
+
                 {/* 모바일 뷰 전환 탭 */}
                 <div className="flex justify-center items-center bg-slate-100 rounded-lg p-1 mb-6">
                     <button
                         onClick={onGoToMonthView}
-                        className={`flex-1 p-2 rounded-md flex justify-center items-center text-slate-500`}
+                        className="flex-1 p-2 rounded-md flex justify-center items-center text-slate-500"
                         aria-label="Month View"
                     >
                         <CalendarIcon/>
                     </button>
                     <button
                         onClick={onGoToWeekView}
-                        className={`flex-1 p-2 rounded-md flex justify-center items-center text-slate-500`}
+                        className="flex-1 p-2 rounded-md flex justify-center items-center text-slate-500"
                         aria-label="Week View"
                     >
                         <ListIcon/>
@@ -352,86 +352,91 @@ export default function SidebarLeft({
                     <ActionButton icon={ShareIcon} text="Share Calendar" onClick={onOpenTeamModal}/>
                     <ActionButton icon={SettingsIcon} text="Settings" onClick={onOpenSettingsModal}/>
                 </div>
-
             </div>
 
-            {/* --- 기존 UI (데스크톱에서는 항상 보이고, 모바일에서는 '캘린더' 뷰일 때만 보임) --- */}
-            <div className="hidden md:block">
+            {/* --- 데스크톱 UI --- */}
+            <div className="hidden md:flex flex-col flex-1 overflow-hidden">
+                {/* 1️⃣ 상단: mini calendar (고정) */}
                 <div className="mb-4">
-                    <div
-                        className="w-full px-6 py-1.5 rounded-full border border-slate-300 text-lg font-bold text-slate-800 text-center">
-                        To do
-                    </div>
-                </div>
-                {/* 1. 미니 캘린더 섹션 */}
-                <div className="mb-6">
                     <div className="flex items-center justify-between">
                         <button onClick={prevMiniMonth} className="text-xs">&#x276E;</button>
-                        <div className="text-sm font-medium">{new Date(miniYear, miniMonth).toLocaleString("en-US", {
-                            month: "long",
-                            year: "numeric"
-                        })}</div>
+                        <div className="text-sm font-medium">
+                            {new Date(miniYear, miniMonth).toLocaleString("en-US", { month: "long", year: "numeric" })}
+                        </div>
                         <button onClick={nextMiniMonth} className="text-xs">&#x276F;</button>
                     </div>
-                    <div
-                        className="mt-3 grid grid-cols-7 gap-1 text-[12px] text-slate-500">{["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
-                        <div key={i} className="text-center">{d}</div>))}</div>
-                    <div
-                        className="mt-2 grid grid-cols-7 gap-1 text-sm">{miniMatrix.map((week, ri) => week.map((day, ci) => {
-                        const isTodayDate = day && miniYear === today.getFullYear() && miniMonth === today.getMonth() && day === today.getDate();
-                        const isSelected = day && miniYear === selectedSidebarDate.getFullYear() && miniMonth === selectedSidebarDate.getMonth() && day === selectedSidebarDate.getDate();
-                        return (
-                            <div
-                                key={`${ri}-${ci}`}
-                                // onClick 핸들러가 내부 handleDateClick 대신
-                                // 부모의 handleSidebarDateSelect를 호출하도록 변경합니다.
-                                onClick={() => day && handleSidebarDateSelect(day)}
-                                className={`h-7 flex items-center justify-center rounded cursor-pointer ${isTodayDate ? "bg-slate-800 text-white" : isSelected ? "bg-slate-200 text-slate-800" : "text-slate-500 hover:bg-slate-100"}`}
-                            >{day ?? ""}</div>
-                        );
-                    }))}</div>
-                </div>
-
-                {/* 2. To-do 목록 섹션 */}
-                <div className="mb-6">
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-medium">To do</h3>
-                        <div className="flex items-center gap-1">
-                            <button onClick={() => setTodoFilter('ALL')}
-                                    className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'ALL' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}`}>All
-                            </button>
-                            <button onClick={() => setTodoFilter('PUBLIC')}
-                                    className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'PUBLIC' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}`}>Public
-                            </button>
-                            <button onClick={() => setTodoFilter('PRIVATE')}
-                                    className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'PRIVATE' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}`}>Private
-                            </button>
-                        </div>
+                    <div className="mt-3 grid grid-cols-7 gap-1 text-[12px] text-slate-500">
+                        {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+                            <div key={i} className="text-center">{d}</div>
+                        ))}
                     </div>
-                    <div className="space-y-3 text-sm">
-                        {filteredSidebarTodos.length > 0 ? (filteredSidebarTodos.map((todo) => (
-                            <div key={`${todo.type}-${todo.id}`}
-                                 className={`flex items-center gap-3 p-1 rounded-md ${todo.status === "DONE" ? "opacity-50" : ""}`}>
-                                <div className="w-2 h-7 rounded" style={{backgroundColor: todo.parentEventColor}}></div>
-                                <div className="flex-1 min-w-0 cursor-pointer" onDoubleClick={() => onEditTodo(todo)}>
+                    <div className="mt-2 grid grid-cols-7 gap-1 text-sm">
+                        {miniMatrix.map((week, ri) =>
+                            week.map((day, ci) => {
+                                const isTodayDate = day && miniYear === today.getFullYear() && miniMonth === today.getMonth() && day === today.getDate();
+                                const isSelected = day && miniYear === selectedSidebarDate.getFullYear() && miniMonth === selectedSidebarDate.getMonth() && day === selectedSidebarDate.getDate();
+                                return (
                                     <div
-                                        className={`font-medium truncate ${todo.status === "DONE" ? "line-through text-slate-400" : ""}`}>{todo.title}</div>
-
-                                    <div className="text-xs text-slate-400 truncate">
-                                        {todo.type === 'PRIVATE' ? (todo.description || 'No description') : `${user?.name || 'Unassigned'} - ${todo.description || ''}`}
+                                        key={`${ri}-${ci}`}
+                                        onClick={() => day && handleSidebarDateSelect(day)}
+                                        className={`h-7 flex items-center justify-center rounded cursor-pointer ${isTodayDate ? "bg-slate-800 text-white" : isSelected ? "bg-slate-200 text-slate-800" : "text-slate-500 hover:bg-slate-100"}`}
+                                    >
+                                        {day ?? ""}
                                     </div>
-
-                                </div>
-                                <button onClick={() => handleToggleTodoStatus(todo)}
-                                        className="w-5 h-5 border-2 rounded-full flex-shrink-0 flex items-center justify-center cursor-pointer">
-                                    {todo.status === "DONE" && (
-                                        <div className="w-2.5 h-2.5 bg-slate-400 rounded-full"></div>)}
-                                </button>
-                            </div>
-                        ))) : (<p className="text-xs text-slate-400 text-center py-4">No to-dos for this date.</p>)}
+                                );
+                            })
+                        )}
                     </div>
                 </div>
-                <div className="hidden md:block">
+
+                {/* 2️⃣ Todo 필터 버튼 (고정) */}
+                <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-sm font-medium">To do</h3>
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={() => setTodoFilter('ALL')}
+                            className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'ALL' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}`}
+                        >All</button>
+                        <button
+                            onClick={() => setTodoFilter('PUBLIC')}
+                            className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'PUBLIC' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}`}
+                        >Public</button>
+                        <button
+                            onClick={() => setTodoFilter('PRIVATE')}
+                            className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'PRIVATE' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}`}
+                        >Private</button>
+                    </div>
+                </div>
+
+                {/* 3️⃣ Todo 목록 (스크롤) */}
+                <div className="flex-1 overflow-auto">
+                    <div className="space-y-3 text-sm">
+                        {filteredSidebarTodos.length > 0 ? (
+                            filteredSidebarTodos.map((todo) => (
+                                <div key={`${todo.type}-${todo.id}`} className={`flex items-center gap-3 p-1 rounded-md ${todo.status === "DONE" ? "opacity-50" : ""}`}>
+                                    <div className="w-2 h-7 rounded" style={{backgroundColor: todo.parentEventColor}}></div>
+                                    <div className="flex-1 min-w-0 cursor-pointer" onDoubleClick={() => onEditTodo(todo)}>
+                                        <div className={`font-medium truncate ${todo.status === "DONE" ? "line-through text-slate-400" : ""}`}>{todo.title}</div>
+                                        <div className="text-xs text-slate-400 truncate">
+                                            {todo.type === 'PRIVATE' ? (todo.description || 'No description') : `${user?.name || 'Unassigned'} - ${todo.description || ''}`}
+                                        </div>
+                                    </div>
+                                    <button onClick={() => handleToggleTodoStatus(todo)}
+                                            className="w-5 h-5 border-2 rounded-full flex-shrink-0 flex items-center justify-center cursor-pointer">
+                                        {todo.status === "DONE" && (
+                                            <div className="w-2.5 h-2.5 bg-slate-400 rounded-full"></div>
+                                        )}
+                                    </button>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-xs text-slate-400 text-center py-4">No to-dos for this date.</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* 4️⃣ 하단 고정: TaskProgress */}
+                <div className="flex-shrink-0 mt-2">
                     <TaskProgress
                         todos={sidebarTodos}
                         projectStartDate={projectStartDate}
