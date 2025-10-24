@@ -6,5 +6,5 @@ export interface NotificationItem {
     title: string;
     message: string;
     isRead: boolean;
-    createdAt: string;
+    sentAt: string;
 }
