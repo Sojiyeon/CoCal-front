@@ -15,7 +15,7 @@ interface ModalProps {
 }
 
 
-const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, className, titleClassName, footer = '' }) => {
+const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, className, footer = '' }) => {
     const modalRef = useRef<HTMLDivElement>(null);
     if (!isOpen) return null;
 
@@ -28,15 +28,15 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, className, ti
         >
             {/* 모달 내용 컨테이너 */}
             <div
-                className={`bg-white rounded-xl z-[510] shadow-2xl w-full max-w-lg transition-all transform duration-300 scale-100 ${className}`}
+                className={`bg-white dark:bg-neutral-900 rounded-xl z-[510] shadow-2xl w-full max-w-lg transition-all transform duration-300 scale-100 ${className}`}
                 onClick={e => e.stopPropagation()} // 내부 클릭 시 닫히지 않도록 방지
             >
                 {/* 모달 헤더 */}
-                <div className="flex justify-between items-center p-6 border-b border-gray-100">
-                    <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+                <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-neutral-600">
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white ">{title}</h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 transition"
+                        className="text-gray-400 hover:text-gray-600 transition dark:hover:text-gray-200"
                         aria-label="Close modal"
                     >
                         <X className="w-6 h-6" />
@@ -49,7 +49,7 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, title, children, className, ti
                 </div>
                 
                 {footer && (
-                    <div className="flex justify-end p-4 border-t border-gray-100 dark:border-dark-border">
+                    <div className="flex justify-end p-4 border-t border-gray-100 dark:border-neutral-600">
                         {footer}
                     </div>
                 )}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FC, useState, createContext, useContext, useEffect, useRef } from 'react';
+import React, { FC, useState, useRef } from 'react';
 import { X, ChevronRight } from 'lucide-react';
 import { fetchWithAuth } from '@/utils/authService';
 import { useUser } from '@/contexts/UserContext';
@@ -31,10 +31,10 @@ interface InputFieldProps {
 }
 
 const InputField: FC<InputFieldProps> = ({ label, value, onClick, editable = false }) => (
-    <div className="flex items-center justify-between border-b border-gray-100 py-3 cursor-pointer">
-        <div className="text-sm font-medium text-gray-500 w-1/4">{label}</div>
+    <div className="flex items-center justify-between border-b border-gray-100 dark:border-neutral-600 py-3 cursor-pointer">
+        <div className="text-sm font-medium text-gray-500 w-1/4 dark:text-gray-400">{label}</div>
         <div className="flex items-center space-x-2 w-3/4 justify-end" onClick={onClick}>
-            <span className={`text-sm text-gray-900 ${editable ? 'font-semibold' : ''}`}>
+            <span className={`text-sm text-gray-900 dark:text-white ${editable ? 'font-semibold' : ''}`}>
                 {value || '정보 없음'}
             </span>
             {editable && <ChevronRight className="w-4 h-4 text-gray-400" />}
@@ -62,14 +62,14 @@ const NameEditModal: FC<NameEditModalProps> = ({ currentName, onSave, onCancel }
 
     return (
         <div className="flex flex-col items-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-8">Edit Name</h2>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-8">Edit Name</h2>
 
             <form onSubmit={handleSubmit} className="w-full space-y-6">
                 <div>
-                    <label htmlFor="newName" className="block text-sm font-medium text-gray-700 mb-1">New Name</label>
+                    <label htmlFor="newName" className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">New Name</label>
                     <input type="text" id="newName" value={newName}
                            onChange={(e) => setNewName(e.target.value)}
-                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
+                           className="w-full px-4 py-3 dark:text-neutral-200 border border-gray-300 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
                            required
                     />
                 </div>
@@ -82,7 +82,7 @@ const NameEditModal: FC<NameEditModalProps> = ({ currentName, onSave, onCancel }
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="w-full py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
+                        className="w-full py-3 border border-gray-300 dark:border-neutral-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-50/5 dark:hover:border-neutral-400 transition"
                     > Cancel </button>
                 </div>
             </form>
@@ -108,27 +108,27 @@ const PasswordEditModal: FC<PasswordEditModalProps> = ({ onSave, onCancel }) => 
 
     return (
         <div className="flex flex-col items-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-8">Edit Password</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-8 dark:text-white">Edit Password</h2>
             <form onSubmit={handleSubmit} className="w-full space-y-4">
                 <div>
-                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-400">Current Password</label>
                     <input
                         type="password"
                         id="currentPassword"
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
+                        className="w-full px-4 py-3 border border-gray-300 dark:text-neutral-200 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
                         required
                     />
                 </div>
                 <div>
-                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-400">New Password</label>
                     <input
                         type="password"
                         id="newPassword"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
+                        className="w-full px-4 py-3 border border-gray-300 dark:text-neutral-200 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
                         required
                     />
                 </div>
@@ -136,7 +136,7 @@ const PasswordEditModal: FC<PasswordEditModalProps> = ({ onSave, onCancel }) => 
                     <button type="submit" className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-md">
                         Save
                     </button>
-                    <button type="button" onClick={onCancel} className="w-full py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition">
+                    <button type="button" onClick={onCancel} className="w-full py-3 border border-gray-300 dark:border-neutral-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-50/5 dark:hover:border-neutral-400 transition">
                         Cancel
                     </button>
                 </div>
@@ -159,7 +159,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
         return (
             <div className="fixed inset-0 z-[500] flex items-center justify-center p-4"
                      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }} onClick={onClose}>
-                <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
+                <div className="bg-white dark:bg-neutral-900 rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
                     <div className="flex justify-center items-center h-32">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
                         <p className="ml-4 text-gray-600">Loading user data...</p>
@@ -414,12 +414,12 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
              style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }} onClick={onClose}>
 
             <div
-                className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative transform transition-all duration-300 scale-100"
+                className="bg-white dark:bg-neutral-900 rounded-3xl p-8 w-full max-w-md shadow-2xl relative transform transition-all duration-300 scale-100"
                 onClick={e => e.stopPropagation()} // 모달 배경 클릭 방지
             >
                 <button
                     onClick={onClose}
-                    className="absolute top-5 right-5 p-2 rounded-full text-gray-500 hover:bg-gray-100 transition"
+                    className="absolute top-5 right-5 p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-neutral-50/5 transition"
                 >
                     <X className="w-6 h-6" />
                 </button>
@@ -436,11 +436,11 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                         onCancel={() => setIsEditingPassword(false)} />
                 ) : (
                     <div className="flex flex-col items-center">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6">Profile Settings</h2>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6 dark:text-white">Profile Settings</h2>
                         <img
                             src={user.profileImageUrl || 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User'}
                             alt="Profile"
-                            className="w-24 h-24 rounded-full object-cover mb-2 border-4 border-gray-100 shadow-md" // 👈 mb-6 -> mb-2
+                            className="w-24 h-24 rounded-full object-cover mb-2 border-4 border-gray-100 dark:border-neutral-700  shadow-md"
                         />
                         <input
                             type="file"
@@ -452,14 +452,14 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                         <div className="flex items-center space-x-4 mt-6 mb-8">
                             <button
                                 onClick={handlePhotoClick}
-                                className="text-sm text-blue-600 hover:text-blue-700 font-medium transition"
+                                className="text-sm text-blue-600 dark:text-blue-500 hover:text-blue-700 dark:hover:text-blue-400 font-medium transition"
                             >
                                 Change Photo
                             </button>
                             {user.profileImageUrl && (
                                 <button
                                     onClick={handleDeletePhoto}
-                                    className="text-sm text-red-500 hover:text-red-700 font-medium transition"
+                                    className="text-sm text-red-500 hover:text-red-700 dark:hover:text-red-400 font-medium transition"
                                 >
                                     Delete Photo
                                 </button>
@@ -492,7 +492,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                         {/* 모든 기기 로그아웃 버튼 추가 */}
                         <button
                             onClick={handleAllLogout}
-                            className="mt-8 w-full py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition"
+                            className="mt-8 w-full py-3 border border-gray-300 dark:border-neutral-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-50/5 dark:hover:border-neutral-400 transition"
                         >
                             Logout from All Devices
                         </button>
@@ -500,7 +500,7 @@ const ProfileSettingsModal: FC<ProfileSettingsModalProps> = ({ isOpen, onClose, 
                         {/* 계정 삭제 버튼 */}
                         <button
                             onClick={handleDeleteAccount}
-                            className="mt-3 w-full py-3 border border-red-400 text-red-500 font-semibold rounded-lg hover:bg-red-50 transition"
+                            className="mt-3 w-full py-3 border border-red-400 text-red-500 font-semibold rounded-lg hover:bg-red-50 dark:hover:bg-red-50/5 transition"
                         >
                             Delete Account
                         </button>

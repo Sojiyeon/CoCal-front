@@ -2,7 +2,7 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from "next/image";
-import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X, Check, XCircle, Dog, Loader2 } from 'lucide-react';
+import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X, Check, XCircle, Dog, Cat, Loader2 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
@@ -168,15 +168,15 @@ const ProjectCategoryFilter: FC<ProjectCategoryFilterProps> = ({
     return (
         <div className="flex justify-between items-center mb-8">
             {/* 카테고리 탭 */}
-            <div className="flex space-x-8 border-b border-gray-200">
+            <div className="flex space-x-8 border-b border-gray-200 dark:border-neutral-700">
                 {categories.map(category => (
                     <button
                         key={category}
                         onClick={() => onSelectCategory(category)}
                         className={`py-2 text-lg font-medium transition duration-200
                 ${selectedCategory === category
-                            ? 'text-blue-600 border-b-2 border-blue-600'
-                            : 'text-gray-500 hover:text-gray-700'
+                            ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-300 dark:border-blue-300'
+                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                         }`}
                     >
                         {category === 'All' ? 'All' : category === 'In Progress' ? 'In Progress' : 'Completed'}
@@ -219,12 +219,12 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
     const cardZIndex = isDropdownActive ? 'z-50' : 'z-10';
 
     return (
-        <div className={`bg-white dark:bg-neutral-900 p-4 rounded-xl shadow-md dark:shadow-lg  hover:shadow-lg transition duration-200 relative border border-gray-100 dark:border-gray-700 ${cardZIndex}`}>
+        <div className={`bg-white dark:bg-neutral-900 p-4 rounded-xl shadow-md dark:shadow-lg  hover:shadow-lg transition duration-200 relative border border-gray-100 dark:border-neutral-700 ${cardZIndex}`}>
             {/* 상단 (이름, 날짜, 드롭다운 버튼) */}
             <div className="flex justify-between items-start mb-4">
                 <div className="flex flex-col flex-grow min-w-0">
                     <h3 className="font-semibold text-gray-900 dark:text-white truncate">{project.name}</h3>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">
                         {formatDates(project.startDate, project.endDate)}
                     </p>
                 </div>
@@ -238,7 +238,7 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
                                     e.stopPropagation();
                                     onToggleDropdown(!isDropdownActive);
                                 }}
-                                className="p-1 text-gray-400 hover:text-gray-700 transition relative z-20"
+                                className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition relative z-20"
                             >
                                 <MoreVertical className="w-5 h-5" />
                             </button>
@@ -251,7 +251,7 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
                                     e.stopPropagation();
                                     onShowDescription(project);
                                 }}
-                                className="p-1 text-gray-400 hover:text-gray-700 transition relative z-20"
+                                className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition relative z-20"
                                 title="프로젝트 설명 보기"
                             >
                                 <MoreVertical className="w-5 h-5" />
@@ -264,13 +264,13 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
             {/* 상태 태그 표시 (status prop 사용) */}
             <div className="mb-4">
                 <span className={`text-xs font-semibold px-2 py-0.5 rounded-full
-                    ${status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`
+                    ${status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'}`
                 }>
                     {status}
                 </span>
             </div>
 
-            <div className="flex items-center space-x-[-4px] pt-2 border-t border-gray-100">
+            <div className="flex items-center space-x-[-4px] pt-2 border-t border-gray-100 dark:border-neutral-700">
                 {visibleMembers.map((member, index) => (
                     <img
                         key={member.id || index}
@@ -279,7 +279,7 @@ const ProjectCard: FC<ProjectCardProps> = ({ project, currentUserId, onEdit, onD
                         alt={member.name || 'Team member'}
                         width={24}
                         height={24}
-                        className="w-6 h-6 rounded-full object-cover border-2 border-white shadow-sm transition transform hover:scale-110"
+                        className="w-6 h-6 rounded-full object-cover border-2 border-white dark:border-neutral-700 shadow-sm transition transform hover:scale-110"
                         style={{ zIndex: visibleMembers.length - index }}
                     />
                 ))}
@@ -412,13 +412,13 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
                     width={40}
                     height={40}
                     unoptimized
-                    className="w-10 h-10 rounded-full object-cover shadow-inner ring-1 ring-gray-200"
+                    className="w-10 h-10 rounded-full object-cover shadow-inner ring-1 ring-gray-200 dark:ring-neutral-900"
                 />
                 <div className="flex-col text-xs hidden sm:block">
                     <span className="font-semibold text-gray-900 dark:text-white block">
                         {user.name}
                     </span>
-                    <span className="text-gray-500 block">
+                    <span className="text-gray-500 dark:text-gray-400 block">
                         {user.email}
                     </span>
                 </div>
@@ -426,7 +426,7 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
 
             {isOpen && (
                 <div
-                    className="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl z-40 p-2 border border-gray-100 dark:border-gray-700 transform origin-top-right transition-all duration-150 ease-out"
+                    className="absolute right-0 mt-2 w-56 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl z-40 p-2 border border-gray-100 dark:border-neutral-700 transform origin-top-right transition-all duration-150 ease-out"
                     role="menu"
                 >
                     {menuItems.map((item, index) => (
@@ -434,7 +434,7 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
                             key={index}
                             onClick={() => { item.action(); if (!item.isToggle) setIsOpen(false); }}
                             className={`flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer transition duration-150
-                                ${item.isDestructive ? 'text-red-500 hover:bg-red-50' : 'text-gray-700 hover:bg-gray-50'}
+                                ${item.isDestructive ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-300/10' : 'text-light-text-primary dark:text-white hover:bg-gray-50 dark:hover:bg-white/5'}
                             `}
                             role="menuitem"
                         >
@@ -477,78 +477,78 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
     const [toast, setToast] = useState<string | null>(null);
 
     // Fetch General Notifications (Bell Icon)
-        const fetchGeneralNotifications = useCallback(async () => {
-            if (!userId) return;
+    const fetchGeneralNotifications = useCallback(async () => {
+        if (!userId) return;
 
-            try {
-                const endpoint = API_ENDPOINTS.FETCH_UNREAD_NOTIFICATIONS_BY_USER(userId);
-                console.log(`API 호출: ${endpoint}로 읽지 않은 일반 알림 조회 요청`);
-                const response = await fetchWithAuth(endpoint, { method: 'GET' });
+        try {
+            const endpoint = API_ENDPOINTS.FETCH_UNREAD_NOTIFICATIONS_BY_USER(userId);
+            console.log(`API 호출: ${endpoint}로 읽지 않은 일반 알림 조회 요청`);
+            const response = await fetchWithAuth(endpoint, {method: 'GET'});
 
-                if (response.ok) {
-                    const result = await response.json();
-                    const notifications: NotificationItem[] = Array.isArray(result.data) ? result.data : [];
-                    // INVITE 타입은 별도로 처리되므로, 일반 알림 목록에서 필터링하여 제외합니다.
-                    const generalNotifications = notifications.filter(n => n.type !== 'INVITE');
-                    setUnreadNotifications(generalNotifications);
-                    console.log('읽지 않은 일반 알림 조회 성공:', generalNotifications.length, '개');
-                } else if (response.status === 401) {
-                    handleLogout();
-                } else {
-                    console.error('읽지 않은 일반 알림 로드 실패:', response.status);
-                }
-            } catch (_error) {
-                console.error("일반 알림 목록 로드 중 오류:", _error);
-                if (_error instanceof Error && _error.message.includes("SESSION_EXPIRED")) {
-                     await handleLogout();
-                }
+            if (response.ok) {
+                const result = await response.json();
+                const notifications: NotificationItem[] = Array.isArray(result.data) ? result.data : [];
+                // INVITE 타입은 별도로 처리되므로, 일반 알림 목록에서 필터링하여 제외합니다.
+                const generalNotifications = notifications.filter(n => n.type !== 'INVITE');
+                setUnreadNotifications(generalNotifications);
+                console.log('읽지 않은 일반 알림 조회 성공:', generalNotifications.length, '개');
+            } else if (response.status === 401) {
+                handleLogout();
+            } else {
+                console.error('읽지 않은 일반 알림 로드 실패:', response.status);
             }
-        }, [userId, handleLogout]);
+        } catch (_error) {
+            console.error("일반 알림 목록 로드 중 오류:", _error);
+            if (_error instanceof Error && _error.message.includes("SESSION_EXPIRED")) {
+                await handleLogout();
+            }
+        }
+    }, [userId, handleLogout]);
 
     // Fetch Project Invites (Mail Icon) - 전용 API 사용
-       const fetchProjectInvites = useCallback(async () => {
-            if (!userId) return;
+    const fetchProjectInvites = useCallback(async () => {
+        if (!userId) return;
 
-            try {
-                const endpoint = API_ENDPOINTS.FETCH_PROJECT_INVITES_ME;
-                console.log(`API 호출: ${endpoint}로 프로젝트 초대 목록 조회 요청`);
-                const response = await fetchWithAuth(endpoint, { method: 'GET' });
+        try {
+            const endpoint = API_ENDPOINTS.FETCH_PROJECT_INVITES_ME;
+            console.log(`API 호출: ${endpoint}로 프로젝트 초대 목록 조회 요청`);
+            const response = await fetchWithAuth(endpoint, { method: 'GET' });
 
-                if (response.ok) {
-                    const result = await response.json();
-                    const inviteData: ProjectInviteResponse = result.data;
-                    // totalElements를 사용하여 초대장 수를 계산합니다.
-                    // 초대 목록 상태에 저장
-                    const inviteList = inviteData.content || [];
-                    setInvites(inviteList);
-                    // totalElements를 사용하여 초대장 수를 계산
-                    const inviteCount = inviteData.totalElements || 0;
-                    console.log('읽지 않은 프로젝트 초대 조회 성공:', inviteCount, '개');
-                } else if (response.status === 401) {
-                    handleLogout();
-                } else {
-                    console.error('프로젝트 초대 로드 실패:', response.status);
-                }
-            } catch (_error) {
-                console.error("프로젝트 초대 목록 로드 중 오류:", _error);
-                if (_error instanceof Error && _error.message.includes("SESSION_EXPIRED")) {
-                     await handleLogout();
-                }
+            if (response.ok) {
+                const result = await response.json();
+                const inviteData: ProjectInviteResponse = result.data;
+                // totalElements를 사용하여 초대장 수를 계산합니다.
+                // 초대 목록 상태에 저장
+                const inviteList = inviteData.content || [];
+                setInvites(inviteList);
+                // totalElements를 사용하여 초대장 수를 계산
+                const inviteCount = inviteData.totalElements || 0;
+                console.log('읽지 않은 프로젝트 초대 조회 성공:', inviteCount, '개');
+            } else if (response.status === 401) {
+                handleLogout();
+            } else {
+                console.error('프로젝트 초대 로드 실패:', response.status);
             }
-        }, [userId, handleLogout]);
+        } catch (_error) {
+            console.error("프로젝트 초대 목록 로드 중 오류:", _error);
+            if (_error instanceof Error && _error.message.includes("SESSION_EXPIRED")) {
+                await handleLogout();
+            }
+        }
+    }, [userId, handleLogout]);
 
     useEffect(() => {
+        fetchGeneralNotifications();
+        fetchProjectInvites();
+
+        // 1분(60000ms)마다 알림 목록 갱신
+        const intervalId = setInterval(() => {
             fetchGeneralNotifications();
             fetchProjectInvites();
+        }, 60000);
 
-            // 1분(60000ms)마다 알림 목록 갱신
-            const intervalId = setInterval(() => {
-                fetchGeneralNotifications();
-                fetchProjectInvites();
-            }, 60000);
-
-            return () => clearInterval(intervalId);
-        }, [fetchGeneralNotifications, fetchProjectInvites, notifications]);
+        return () => clearInterval(intervalId);
+    }, [fetchGeneralNotifications, fetchProjectInvites, notifications]);
     // 외부 클릭 감지 로직 (드롭다운을 닫기 위해 필요)
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -692,7 +692,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
             <div className="relative" ref={inviteDropdownRef}>
                 <button
                     onClick={() => setShowInviteNotifications(prev => !prev)}
-                    className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition duration-150 rounded-full hover:bg-gray-100 dark:hover:bg-dark-surface-alt"
+                    className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-gray-200 transition duration-150 rounded-full hover:bg-gray-100 dark:hover:bg-white/5"
                     aria-label="초대 보관함"
                 >
                     <Mail className="w-6 h-6" />
@@ -703,12 +703,12 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                     )}
                 </button>
                 {showInviteNotifications && (
-                    <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-dark-surface rounded-xl shadow-2xl z-[120] p-2 border border-gray-100 dark:border-gray-700 transform origin-top-right transition-all duration-150 ease-out max-h-96 overflow-y-auto">
-                        <div className="flex justify-between items-center px-3 py-2 border-b border-gray-100 dark:border-gray-700 ">
+                    <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl z-[120] p-2 border border-gray-100 dark:border-neutral-700 transform origin-top-right transition-all duration-150 ease-out max-h-96 overflow-y-auto">
+                        <div className="flex justify-between items-center px-3 py-2 border-b border-gray-100 dark:border-neutral-700 ">
                             <h4 className="text-sm font-semibold text-gray-800 dark:text-white">Invitations ({pendingInvites.length})</h4>
                             <button
                                 onClick={() => setShowInviteNotifications(false)}
-                                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                                className="text-gray-400 hover:text-gray-600 dark:text-neutral-500 dark:hover:text-gray-300"
                                 aria-label="닫기"
                             >
                                 <X className="w-5 h-5" />
@@ -728,7 +728,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                                     <p className="text-sm font-medium text-gray-800 dark:text-white truncate">
                                         {invite.projectName}
                                     </p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    <p className="text-xs text-gray-500 dark:text-neutral-400 mt-0.5">
                                         초대한 사람: {invite.email}
                                     </p>
 
@@ -762,7 +762,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
             <div className="relative" ref={dropdownRef}>
                 <button
                     onClick={() => setShowAllNotifications(prev => !prev)}
-                    className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition duration-150 rounded-full hover:bg-gray-100 dark:hover:bg-dark-surface-alt"
+                    className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition duration-150 rounded-full hover:bg-gray-100 dark:hover:bg-white/5"
                     aria-label="알림"
                 >
                     <Bell className="w-6 h-6" />
@@ -775,8 +775,8 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
 
                 {/* 알림 드롭다운 메뉴 */}
                 {showAllNotifications && (
-                    <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl z-[120] p-2 border border-gray-100 dark:border-gray-700 transform origin-top-right transition-all duration-150 ease-out max-h-96 overflow-y-auto">
-                        <div className="flex justify-between items-center px-3 py-2 border-b border-gray-100 dark:border-gray-700 ">
+                    <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl z-[120] p-2 border border-gray-100 dark:border-neutral-700 transform origin-top-right transition-all duration-150 ease-out max-h-96 overflow-y-auto">
+                        <div className="flex justify-between items-center px-3 py-2 border-b border-gray-100 dark:border-neutral-700 ">
                             <h4 className="text-sm font-semibold text-gray-800 dark:text-white">New Notifications ({unreadNotifications.length})</h4>
                             <button
                                 onClick={() => setShowAllNotifications(false)}
@@ -787,7 +787,8 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                             </button>
                         </div>
                         {unreadNotifications.length === 0 ? (
-                            <p className="p-3 text-sm text-gray-500 text-center">읽지 않은 새 알림이 없습니다.</p>
+                            <p className="p-3 text-sm text-gray-500 text-center inline-flex items-center justify-center gap-1">
+                                Nothing here<Cat className="stroke-1"/></p>
                         ) : (
                             unreadNotifications.map((n) => (
                                 <div
