@@ -9,9 +9,16 @@ interface TaskProgressProps {
     todos: EventTodo[];
     projectStartDate?: Date | undefined;
     projectEndDate?: Date | undefined;
+    projectName?: string;
 }
 
-export default function TaskProgress({ todos, projectStartDate, projectEndDate }: TaskProgressProps) {
+export default function TaskProgress({ todos, projectStartDate, projectEndDate, projectName }: TaskProgressProps) {
+    const truncateText = (text: string, maxLength: number) => {
+        if (text.length <= maxLength) {
+            return text;
+        }
+        return text.substring(0, maxLength) + "...";
+    };
 
     const stats = useMemo(() => {
         const all = todos.length;
@@ -38,17 +45,19 @@ export default function TaskProgress({ todos, projectStartDate, projectEndDate }
     }, [todos, projectStartDate, projectEndDate]);
 
     return (
-        <div className="py-2 px-6 max-w-md mx-auto">
+        <div className="max-w-md mx-auto">
             {/* 제목 + 완료율 배지 */}
-            <div className="flex items-center justify-between mb-2">
-                <h2 className="text-gray-600 font-semibold text-sm">IN PROGRESS</h2>
+            <div className="flex items-center justify-between mx-1">
+                <h2 className="text-gray-600 font-semibold text-sm">
+                    {projectName ? truncateText(projectName,18) : "IN PROGRESS"}
+                </h2>
                 <span className="border border-blue-900 rounded-full px-2 py-0.5 text-blue-900 font-semibold text-xs">
                     {stats.percent}%
                 </span>
             </div>
 
             {/* 진행률 & 통계 묶음 */}
-            <div className="w-[120%] relative left-[-10%]">
+            <div className="w-[120%] relative left-[-10%] py-2 px-6">
                 {/* 진행률 바 */}
                 {/*  데스크톱에서만 하단 여백(mb-4)이 적용되도록 수정 */}
                 <div className="bg-gray-200 rounded-full h-2 md:mb-4">

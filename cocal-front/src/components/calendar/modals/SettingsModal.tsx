@@ -124,13 +124,63 @@ export function SettingsModal({ projectId, onClose }: Props) {
                 className="bg-white rounded-xl shadow-lg p-4 md:p-6 w-full max-w-2xl text-slate-800 flex flex-col md:flex-row gap-4 md:gap-8">
                 {/* 사이드 메뉴 */}
                 <div className="w-full md:w-1/4 flex flex-col">
-                    <h2 className="text-lg font-bold mb-2 md:mb-4">Settings</h2>
-                    <div className="space-y-2">
-                        <div className="bg-slate-100 p-2 rounded-md text-sm text-slate-800">Project Settings</div>
+                    <h2 className="hidden md:block text-lg font-bold mb-2 md:mb-4">Settings</h2>
+                    <div className="md:hidden flex items-center justify-between">
+                        <h2 className="text-lg font-bold ml-2">Project Settings</h2>
+                        <button
+                            onClick={handleLeaveOrDelete}
+                            className="flex items-center mr-2 text-red-600 hover:text-red-700 font-medium stroke-3"
+                        >
+                            {isOwner ? (
+                                // 오너용 (프로젝트 삭제)
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.75"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="lucide lucide-trash2-icon lucide-trash-2"
+                                >
+                                    <path d="M10 11v6" />
+                                    <path d="M14 11v6" />
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                    <path d="M3 6h18" />
+                                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                </svg>
+                            ) : (
+                                // 멤버용 (프로젝트 나가기)
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.75"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="lucide lucide-door-open-icon lucide-door-open"
+                                >
+                                    <path d="M11 20H2" />
+                                    <path d="M11 4.562v16.157a1 1 0 0 0 1.242.97L19 20V5.562a2 2 0 0 0-1.515-1.94l-4-1A2 2 0 0 0 11 4.561z" />
+                                    <path d="M11 4H8a2 2 0 0 0-2 2v14" />
+                                    <path d="M14 12h.01" />
+                                    <path d="M22 20h-3" />
+                                </svg>
+                            )}
+                        </button>
                     </div>
+                    <div className="space-y-2">
+                        <div className="hidden md:block bg-slate-100 p-2 rounded-md text-sm text-slate-800">Project Settings</div>
+                    </div>
+                    {/*데스크탑일 때 버튼*/}
                     <button
                         onClick={handleLeaveOrDelete}
-                        className="mt-auto flex items-center mt-6 text-red-600 hover:text-red-700 font-medium stroke-3"
+                        className="hidden md:block mt-auto flex items-center mt-6 text-red-600 hover:text-red-700 font-medium stroke-3"
                     >
                         {isOwner ? (
                             // 오너용 (프로젝트 삭제)
