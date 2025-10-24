@@ -802,7 +802,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                                         {n.message}
                                     </p>
                                     <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
-                                        {formatSentAt(n.createdAt)}
+                                        {formatSentAt(n.sentAt)}
                                     </p>
                                 </div>
                             ))
