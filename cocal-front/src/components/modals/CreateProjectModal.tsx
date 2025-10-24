@@ -52,7 +52,7 @@ const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, user
 
                 {/* Project Name */}
                 <div>
-                    <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+                    <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Project Name</label>
                     <input
                         type="text"
                         id="projectName"
@@ -60,13 +60,13 @@ const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, user
                         placeholder="Design mockup for project"
                         value={formData.name}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
+                        className="w-full px-4 py-3 border dark:text-neutral-300 border-gray-300 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
                         required
                     />
                 </div>
                 {/* Project Description */}
                 <div>
-                    <label htmlFor="projectDescription" className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                    <label htmlFor="projectDescription" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Description (Optional)</label>
                     <textarea
                         id="projectDescription"
                         name="description"
@@ -74,45 +74,45 @@ const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClose, user
                         value={formData.description}
                         onChange={handleChange}
                         rows={3}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150 resize-y"
+                        className="w-full px-4 py-3 border dark:text-neutral-300 border-gray-300 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
                     />
                 </div>
                 {/* Client Name */}
                 <div>
-                    <label htmlFor="clientName" className="block text-sm font-medium text-gray-700 mb-1">Project Creator</label>
+                    <label htmlFor="clientName" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Project Creator</label>
                     <input
                         type="text"
                         id="clientName"
                         name="client"
                         value={userName} // 상위 컴포넌트에서 받은 사용자 이름 사용
                         readOnly
-                        className="w-full px-4 py-3 border border-gray-300 bg-gray-50 rounded-lg text-gray-500 cursor-not-allowed"
+                        className="w-full px-4 py-3 border dark:text-neutral-300 border-gray-300 dark:border-neutral-700 rounded-lg text-gray-500 cursor-not-allowed"
                     />
                     <p className="text-xs text-gray-500 mt-1">This project will be created under your name.</p>
                 </div>
                 {/* Start Date / End Date */}
                 <div className="flex space-x-4">
                     <div className="flex-1">
-                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                        <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Start Date</label>
                         <input
                             type="date"
                             id="startDate"
                             name="startDate"
                             value={formData.startDate}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
+                            className="w-full px-4 py-3 border dark:text-neutral-300 border-gray-300 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
                             required
                         />
                     </div>
                     <div className="flex-1">
-                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                        <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">End Date</label>
                         <input
                             type="date"
                             id="endDate"
                             name="endDate"
                             value={formData.endDate}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
+                            className="w-full px-4 py-3 border dark:text-neutral-300 border-gray-300 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
                             required
                         />
                     </div>

@@ -66,52 +66,52 @@ const EditProjectModal: FC<EditProjectModalProps> = ({ isOpen, onClose, onUpdate
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Project Name */}
                 <div>
-                    <label htmlFor="editProjectName" className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+                    <label htmlFor="editProjectName" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Project Name</label>
                     <input
                         type="text"
                         id="editProjectName"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 border dark:text-neutral-300 border-gray-300 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
                     />
                 </div>
                 {/* Project Description */}
                 <div>
-                    <label htmlFor="editProjectDescription" className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                    <label htmlFor="editProjectDescription" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Description (Optional)</label>
                     <textarea
                         id="editProjectDescription"
                         name="description"
                         value={formData.description}
                         onChange={handleChange}
                         rows={3}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                        className="w-full px-4 py-3 border dark:text-neutral-300 border-gray-300 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
                     />
                 </div>
                 {/* Start Date / End Date */}
                 <div className="flex space-x-4">
                     <div className="flex-1">
-                        <label htmlFor="editStartDate" className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                        <label htmlFor="editStartDate" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">Start Date</label>
                         <input
                             type="date"
                             id="editStartDate"
                             name="startDate"
                             value={formData.startDate}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                            className="w-full px-4 py-3 border dark:text-neutral-300 border-gray-300 dark:border-neutral-700 rounded-lg"
                             required
                         />
                     </div>
-                    <div className="flex-1">
-                        <label htmlFor="editEndDate" className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                    <div className="flex-1 relative">
+                        <label htmlFor="editEndDate" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">End Date</label>
                         <input
                             type="date"
                             id="editEndDate"
                             name="endDate"
                             value={formData.endDate}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                            className="w-full px-4 py-3 border dark:text-neutral-300 border-gray-300 dark:border-neutral-700 rounded-lg text-neutral-900"
                             required
                         />
                     </div>

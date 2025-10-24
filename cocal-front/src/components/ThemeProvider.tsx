@@ -54,11 +54,7 @@ const ThemeProvider = ({ children }: ThemeProviderProps) => {
         } else if (savedTheme === 'light') {
             initialDarkMode = false;
         } else {
-            // 2. Local Storage에 설정이 없으면 OS 설정 확인
-            // const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             initialDarkMode = false;
-            // applyTheme(initialDarkMode);
-            // return;
         }
         applyTheme(initialDarkMode);
     }, []);

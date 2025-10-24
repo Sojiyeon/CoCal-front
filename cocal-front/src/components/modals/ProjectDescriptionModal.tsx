@@ -70,7 +70,7 @@ const ProjectDescriptionModal: FC<ProjectDescriptionModalProps> = ({
             className={`flex items-center space-x-2 py-2 px-4 border border-red-500 text-red-500 transition duration-150 rounded-lg font-semibold ${
                 isLoading
                 ? 'bg-red-200 cursor-not-allowed opacity-70'
-                : 'hover:bg-red-50'
+                : 'hover:bg-red-50 dark:hover:bg-red-200/5'
             }`}
         >
             {isLoading ? (
