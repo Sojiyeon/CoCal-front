@@ -3,7 +3,6 @@ export type ReminderValue = number | null;
 
 
 export const REMINDER_OPTIONS: { label: string; value: ReminderValue }[] = [
-    { label: "Off", value: null },
     { label: "At start time", value: 0 },
     { label: "5 minutes before", value: 5 },
     { label: "10 minutes before", value: 10 },
