@@ -2,7 +2,7 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from "next/image";
-import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X, Check, XCircle, Dog, Loader2 } from 'lucide-react';
+import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X, Check, XCircle, Dog} from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
@@ -476,6 +476,8 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [toast, setToast] = useState<string | null>(null);
 
+    const router = useRouter();
+
     // Fetch General Notifications (Bell Icon)
         const fetchGeneralNotifications = useCallback(async () => {
             if (!userId) return;
@@ -610,7 +612,17 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
         setShowAllNotifications(false);
     };
 
-    // [신규] '모두 읽음' 처리 함수
+    // 해당 알림의 프로젝트로 이동
+    const handleMoveProject= (notification: NotificationItem) => {
+        if(!notification.projectId) {
+            alert("Project not found.");
+            return
+        }
+        handleNotificationClick(notification);
+        router.push(`/calendar/${notification.projectId}`);
+    }
+
+    // '모두 읽음' 처리 함수
     const handleMarkAllAsRead = async () => {
         // 읽을 알림이 없으면 함수 종료
         if (unreadNotifications.length === 0) return;
@@ -793,17 +805,38 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                                 <div
                                     key={n.id}
                                     onClick={() => handleNotificationClick(n)}
-                                    className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition duration-150 border-b dark:border-gray-700 last:border-b-0"
+                                    className="flex justify-between items-start px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition duration-150 border-b dark:border-gray-700 last:border-b-0"
                                 >
-                                    <p className="text-sm font-medium text-gray-800 dark:text-white truncate">
-                                        {n.title}
-                                    </p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
-                                        {n.message}
-                                    </p>
-                                    <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
-                                        {formatSentAt(n.sentAt)}
-                                    </p>
+                                    {/* 왼쪽 텍스트 */}
+                                    <div className="flex-1 space-y-1.5">
+                                        <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                                            {n.title}
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                                            {n.message}
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                                            프로젝트: <span className="font-medium not-italic text-gray-700 dark:text-gray-300">{n.projectName}</span>
+                                        </p>
+                                        <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
+                                            {formatSentAt(n.sentAt)}
+                                        </p>
+                                    </div>
+
+                                    {/* 오른쪽 버튼 */}
+                                    <button
+                                        className="ml-3 shrink-0 p-1 rounded-full transition duration-200 hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95 group"
+                                        onClick={() => handleMoveProject(n)}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                             viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25"
+                                             strokeLinecap="round" strokeLinejoin="round"
+                                             className="lucide lucide-circle-arrow-right-icon lucide-circle-arrow-right">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <path d="m12 16 4-4-4-4"/>
+                                            <path d="M8 12h8"/>
+                                        </svg>
+                                    </button>
                                 </div>
                             ))
                         )}
