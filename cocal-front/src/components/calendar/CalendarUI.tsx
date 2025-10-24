@@ -1127,6 +1127,7 @@ export default function CalendarUI() {
                         todos={allProjectTodos}
                         projectStartDate={currentProject?.startDate ? new Date(currentProject.startDate) : undefined}
                         projectEndDate={currentProject?.endDate ? new Date(currentProject.endDate) : undefined}
+                        projectName={currentProject?.name}
                     />
                 </div>
             )}
