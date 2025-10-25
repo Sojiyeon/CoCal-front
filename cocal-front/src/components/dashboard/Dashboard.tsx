@@ -686,8 +686,15 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
     // 날짜 포맷팅 헬퍼 함수
     const formatSentAt = (dateStr: string) => {
         const date = new Date(dateStr);
-        return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+        return date.toLocaleString('ko-KR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     };
+
 
     // 실시간 알림을 위한 WebSocket 연결
     useNotificationSocket(userId, (notification) => {
@@ -811,9 +818,6 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                                     {/* 왼쪽 텍스트 */}
                                     <div className="flex-1 space-y-1.5">
                                         <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
-                                            {n.title}
-                                        </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
                                             {n.message}
                                         </p>
                                         <p className="text-xs text-gray-500 dark:text-gray-400 italic">
