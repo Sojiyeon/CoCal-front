@@ -8,7 +8,12 @@ import { ChevronRight, ChevronLeft } from "lucide-react";
 import { api } from "@/components/calendar/utils/api";
 
 import { TodoUpdatePayload } from "@/api/todoApi";
-
+interface ApiTodoItem {
+    id: number;
+    title: string;
+    status: string; // "IN_PROGRESS" | "DONE"
+    description: string | null;
+}
 interface TodoItemType {
     id: number;
     title: string;
@@ -59,7 +64,7 @@ export default function WeekViewMobile({
                     .then(res => {
                         if (res.success && res.data && res.data.items) {
 
-                            const todos: TodoItemType[] = res.data.items.map((item: any) => ({
+                            const todos: TodoItemType[] = res.data.items.map((item: ApiTodoItem) => ({
                                 id: item.id,
                                 title: item.title,
                                 status: item.status,
