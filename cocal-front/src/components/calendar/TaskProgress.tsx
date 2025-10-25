@@ -46,14 +46,27 @@ export default function TaskProgress({ todos, projectStartDate, projectEndDate, 
 
     return (
         <div className="max-w-md mx-auto">
-            {/* 제목 + 완료율 배지 */}
+            {/* 모바일 = 제목 + 완료율 배지 | 데스크탑 = 완료율 배지 + projectEndDate */}
             <div className="flex items-center justify-between mx-1">
-                <h2 className="text-gray-600 font-semibold text-sm">
-                    {projectName ? truncateText(projectName,18) : "IN PROGRESS"}
-                </h2>
-                <span className="border border-blue-900 rounded-full px-2 py-0.5 text-blue-900 font-semibold text-xs">
-                    {stats.percent}%
-                </span>
+                    {projectName ?
+                        <>
+                            <h2 className="text-gray-600 font-semibold text-sm">
+                            {truncateText(projectName,18)}
+                            </h2>
+                            <span className="border border-blue-900 rounded-full px-2 py-0.5 text-blue-900 font-semibold text-xs">
+                                {stats.percent}%
+                            </span>
+                        </>
+                        :
+                        <>
+                            <span className="border border-blue-900 rounded-full px-2 py-0.5 text-blue-900 font-semibold text-xs">
+                                {stats.percent}%
+                            </span>
+                            <h2 className="text-gray-600 font-semibold text-sm">
+                                {projectEndDate ? projectEndDate.toLocaleDateString() : ""}
+                            </h2>
+                        </>
+                    }
             </div>
 
             {/* 진행률 & 통계 묶음 */}
