@@ -1,41 +1,165 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { CalendarEvent,EventTodo } from "./types";
-import { ChevronRight, ChevronLeft } from "lucide-react";
 
+import React, { useMemo, useEffect, useState } from "react";
+
+import { CalendarEvent, EventTodo } from "./types";
+import { ChevronRight, ChevronLeft } from "lucide-react";
+import { api } from "@/components/calendar/utils/api";
+
+import { TodoUpdatePayload } from "@/api/todoApi";
+interface ApiTodoItem {
+    id: number;
+    title: string;
+    status: string; // "IN_PROGRESS" | "DONE"
+    description: string | null;
+}
 interface TodoItemType {
     id: number;
     title: string;
     status: string;
+    description: string | null;
+
 }
 interface WeekViewMobileProps {
-    weekTitle: string; // ex) "Sep Week 1, 2025"
-    projectName: string; // ex) "projects 1"
+    weekTitle: string;
+    projectName: string;
+    projectId: number;
     days: {
-        date: string; // ex) "1" 또는 "2025-09-01"
-        weekday: string; // ex) "Mon" | "Tue" ...
+        date: string;
+        fullDate: string;
+        weekday: string;
         events: CalendarEvent[];
-        todos: { id: number; title: string; status: string }[];
+        todos: [];
     }[];
     onPrevWeek?: () => void;
     onNextWeek?: () => void;
     onToggleTodoStatus?: (todoId: number) => void;
+    onTodoDataChanged?: () => void;
 }
 
 export default function WeekViewMobile({
                                            weekTitle,
                                            projectName,
+                                           projectId,
                                            days,
                                            onPrevWeek,
                                            onNextWeek,
                                            onToggleTodoStatus,
+                                           onTodoDataChanged,
                                        }: WeekViewMobileProps) {
+
+
+    const [privateTodosMap, setPrivateTodosMap] = useState<Map<string, TodoItemType[]>>(new Map());
+
+
+    useEffect(() => {
+        if (!projectId || days.length === 0) return;
+
+        const fetchWeekPrivateTodos = async () => {
+            const newTodoMap = new Map<string, TodoItemType[]>();
+
+            const fetchPromises = days.map(day => {
+                return api.get(`/projects/${projectId}/todos?date=${day.fullDate}`)
+                    .then(res => {
+                        if (res.success && res.data && res.data.items) {
+
+                            const todos: TodoItemType[] = res.data.items.map((item: ApiTodoItem) => ({
+                                id: item.id,
+                                title: item.title,
+                                status: item.status,
+                                description: item.description,
+                            }));
+                            return { date: day.fullDate, todos };
+                        }
+                        return { date: day.fullDate, todos: [] };
+                    })
+                    .catch(err => {
+                        console.error(`Failed to fetch private todos for ${day.fullDate}:`, err);
+                        return { date: day.fullDate, todos: [] };
+                    });
+            });
+
+            const results = await Promise.all(fetchPromises);
+
+            results.forEach(result => {
+                newTodoMap.set(result.date, result.todos);
+            });
+
+            setPrivateTodosMap(newTodoMap);
+        };
+
+        fetchWeekPrivateTodos();
+
+    }, [days, projectId]);
+
+
+
+    const handleTogglePrivateTodo = async (todoId: number, fullDate: string) => {
+        const todosForDate = privateTodosMap.get(fullDate);
+        if (!todosForDate) return;
+
+        const todoToUpdate = todosForDate.find(t => t.id === todoId);
+        if (!todoToUpdate) {
+            console.error(`WeekViewMobile: 토글할 Private Todo(ID: ${todoId})를 찾지 못했습니다.`);
+            return;
+        }
+
+        const originalStatus = todoToUpdate.status;
+        const newStatus = originalStatus === 'DONE' ? 'IN_PROGRESS' : 'DONE';
+
+
+        setPrivateTodosMap(prevMap => {
+            const newMap = new Map(prevMap);
+            const currentDateTodos = newMap.get(fullDate) || [];
+            const updatedDateTodos = currentDateTodos.map(t =>
+                t.id === todoId ? { ...t, status: newStatus } : t
+            );
+            newMap.set(fullDate, updatedDateTodos);
+            return newMap;
+        });
+
+
+        const payload: TodoUpdatePayload = {
+            title: todoToUpdate.title,
+            description: todoToUpdate.description || "",
+            url: "", // List API에 없으므로 기본값
+            status: newStatus,
+            type: 'PRIVATE',
+            projectId: projectId,
+            visibility: 'PRIVATE',
+            date: fullDate + "T00:00:00", // 날짜 정보 사용
+            offsetMinutes: null, // List API에 없으므로 기본값
+        };
+
+
+        try {
+            await api.put(`/projects/${projectId}/todos/${todoId}`, payload);
+
+            onTodoDataChanged?.();
+        } catch (error) {
+            console.error("Private Todo 상태 업데이트 API 호출 실패:", error);
+
+
+            setPrivateTodosMap(prevMap => {
+                const newMap = new Map(prevMap);
+                const currentDateTodos = newMap.get(fullDate) || [];
+                const updatedDateTodos = currentDateTodos.map(t =>
+                    t.id === todoId ? { ...t, status: originalStatus } : t // 원래 status로 복구
+                );
+                newMap.set(fullDate, updatedDateTodos);
+                return newMap;
+            });
+            alert("할 일 상태 변경에 실패했습니다.");
+        }
+    };
+
 
     const title = useMemo(() => projectName, [projectName]);
 
     const weekdayInitial = (w: string) => (w?.[0] ?? "").toUpperCase();
 
+    // === KOR-ADD: START :: Public Event 렌더링에 필요한 헬퍼 함수  ===
     const toAmPm = (iso: string) => {
         const d = new Date(iso);
         const hours = d.getHours();
@@ -49,22 +173,25 @@ export default function WeekViewMobile({
     const timeRange = (e: CalendarEvent) => {
         return `${toAmPm(e.startAt)} – ${toAmPm(e.endAt)}`;
     };
+    // === KOR-ADD: END :: 헬퍼 함수 ===
+
 
     const normalizedDayText = (dateStr: string, fallbackIndex: number) => {
-        // date가 "1", "2"처럼 숫자면 그대로, ISO면 일(day) 추출
         const onlyNum = Number(dateStr);
         if (!Number.isNaN(onlyNum) && `${onlyNum}` === dateStr) return dateStr;
         const d = new Date(dateStr);
         const n = d.getDate();
         return Number.isNaN(n) ? String(fallbackIndex) : String(n);
     };
-    const TodoItem = ({ todo }: { todo: TodoItemType | EventTodo }) => (
+
+
+    const TodoItem = ({ todo, onClick }: { todo: TodoItemType | EventTodo, onClick: () => void }) => (
         <div
             key={todo.id}
             className={`flex items-center gap-2 ${todo.status === "DONE" ? "opacity-60" : ""}`}
         >
             <button
-                onClick={() => onToggleTodoStatus?.(todo.id)}
+                onClick={onClick}
                 aria-label="toggle todo"
                 className={`w-4 h-4 border-2 rounded-md flex items-center justify-center ${
                     todo.status === "DONE" ? "border-slate-400" : "border-slate-300"
@@ -118,7 +245,9 @@ export default function WeekViewMobile({
                 {days.map((day, idx) => {
                     const dayNum = normalizedDayText(day.date, idx + 1);
                     const dayInitial = weekdayInitial(day.weekday);
-                    const privateTodos = day.todos;
+
+                    const privateTodos = privateTodosMap.get(day.fullDate) || [];
+
                     return (
                         <div key={`${day.date}-${idx}`} className="border-b">
                             {/* 한 날짜 블록 */}
@@ -139,12 +268,15 @@ export default function WeekViewMobile({
                                         <div className="pb-3">
                                             {privateTodos.length > 0 && (
                                                 <div className="mb-2">
-                                                    {/* 요청하신 "Private Todo" 제목입니다 */}
                                                     <p className="text-[11px] text-slate-500 font-semibold mb-1.5">Private
                                                         Todo</p>
                                                     <div className="space-y-1">
                                                         {privateTodos.map((todo) => (
-                                                            <TodoItem key={todo.id} todo={todo}/>
+                                                            <TodoItem
+                                                                key={todo.id}
+                                                                todo={todo}
+                                                                onClick={() => handleTogglePrivateTodo(todo.id, day.fullDate)}
+                                                            />
                                                         ))}
                                                     </div>
                                                 </div>
@@ -152,6 +284,7 @@ export default function WeekViewMobile({
                                         </div>
 
 
+                                        {/* === KOR-ADD: START :: Public Event/Todo 렌더링 섹션  === */}
                                         {/* 할일 섹션 */}
                                         <div className="pt-3">
                                             <div className="flex items-center justify-between mb-2">
@@ -186,11 +319,17 @@ export default function WeekViewMobile({
                                                                     className="text-[14px] text-slate-800">{event.title}</span>
                                                             </div>
                                                         </div>
+
                                                         {/* Public Todo 목록 */}
                                                         {event.todos && event.todos.length > 0 && (
                                                             <div className="pl-8 pt-2 space-y-1">
                                                                 {event.todos.map(todo => (
-                                                                    <TodoItem key={todo.id} todo={todo} />
+                                                                    /* KOR-ADD: 'onClick' prop을 사용하는 새 TodoItem 컴포넌트 호출 방식으로 수정 */
+                                                                    <TodoItem
+                                                                        key={todo.id}
+                                                                        todo={todo}
+                                                                        onClick={() => onToggleTodoStatus?.(todo.id)}
+                                                                    />
                                                                 ))}
                                                             </div>
                                                         )}
@@ -198,6 +337,8 @@ export default function WeekViewMobile({
                                                 ))}
                                             </div>
                                         </div>
+                                        {/* === KOR-ADD: END :: Public Event/Todo 렌더링 섹션 === */}
+
                                     </div>
                                 </div>
                             </div>

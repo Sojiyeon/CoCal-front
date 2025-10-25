@@ -123,12 +123,12 @@ export default function CalendarUI() {
         projectName: string;
         days: {
             date: string;
+            fullDate: string; // SUJEONG: fullDate 타입 추가
             weekday: string;
             events: CalendarEvent[];
-            todos: { id: number; title: string; status: string }[];
+            todos: []; // SUJEONG: todos는 항상 빈 배열
         }[];
     } | null>(null);
-
     // Todo 데이터의 버전을 관리할 상태 추가
     const [todoVersion, setTodoVersion] = useState(0);
 
@@ -206,7 +206,7 @@ export default function CalendarUI() {
                 setMemos(json.data.memos || []);
                 setPrivateTodos(json.data.privateTodos || []);
 
-                // 3. [추가] 각 이벤트의 상세 할일(Todo) 목록을 가져오는 Promise 배열 생성
+                // 3. 각 이벤트의 상세 할일(Todo) 목록을 가져오는 Promise 배열 생성
                 const todoFetchPromises = initialEvents.map(event => {
                     return api.get(`/projects/${projectId}/events/${event.id}/todos`)
                         .then(todoJson => {
@@ -240,10 +240,10 @@ export default function CalendarUI() {
                         });
                 });
 
-                // 4. [추가] 모든 할일 목록 조회가 완료될 때까지 대기
+                // 4.  모든 할일 목록 조회가 완료될 때까지 대기
                 const todoResults = await Promise.all(todoFetchPromises);
 
-                // 5. [추가] 조회된 할일 목록을 기존 이벤트 객체에 병합
+                // 5. 조회된 할일 목록을 기존 이벤트 객체에 병합
                 //    (빠른 조회를 위해 Map 사용)
                 const todoMap = new Map<number, EventTodo[]>();
                 todoResults.forEach(result => {
@@ -255,7 +255,7 @@ export default function CalendarUI() {
                     todos: todoMap.get(event.id) || [], // 조회된 todos를 주입
                 }));
 
-                // 6. [추가] 할일 목록이 포함된 완전한 events 배열로 상태 업데이트
+                // 6.  할일 목록이 포함된 완전한 events 배열로 상태 업데이트
                 setEvents(enrichedEvents);
 
             } catch (error) {
@@ -361,7 +361,7 @@ export default function CalendarUI() {
         setSelectedDate(newDate);
         setViewMode("day");
     };
-    // [추가] WeekView에 전달할 weekStartDate 계산
+    // WeekView에 전달할 weekStartDate 계산
     const getMonday = (d: Date) => {
         d = new Date(d);
         const day = d.getDay(),
@@ -370,7 +370,7 @@ export default function CalendarUI() {
     }
     const weekStartDate = getMonday(selectedDate);
 
-    // [추가] WeekView에서 Day 뷰로 전환하는 핸들러
+    //  WeekView에서 Day 뷰로 전환하는 핸들러
     const handleNavigateToDay = (date: Date) => {
         setSelectedDate(date);
         setViewMode("day");
@@ -784,7 +784,7 @@ export default function CalendarUI() {
                 );
             }
 
-            // [추가] 삭제 성공 시, Todo 버전을 1 증가시켜서 변경 신호를 보냅니다.
+            //  삭제 성공 시, Todo 버전을 1 증가시켜서 변경 신호를 보냅니다.
             setTodoVersion(v => v + 1);
 
         } catch (err) {
@@ -838,7 +838,7 @@ export default function CalendarUI() {
         setViewMonth(viewMonth === 11 ? 0 : viewMonth + 1);
         setViewYear(viewMonth === 11 ? viewYear + 1 : viewYear);
     }
-    // --- [추가] 뷰 모드에 따라 탐색을 처리하는 새로운 통합 핸들러 ---
+    // --- 뷰 모드에 따라 탐색을 처리하는 새로운 통합 핸들러 ---
     const handlePrev = () => {
         if (viewMode === 'month') {
             prevMonth();
@@ -966,8 +966,8 @@ export default function CalendarUI() {
             const y = d.getFullYear();
             const m = d.getMonth();
             const dd = d.getDate();
-            const key = formatYMD(y, m, dd);
-            const weekday = d.toLocaleDateString("en-US", {weekday: "short"}); // "Mon" 등
+            const key = formatYMD(y, m, dd); // "YYYY-MM-DD"
+            const weekday = d.toLocaleString("en-US", {weekday: "short"}); // "Mon" 등
 
             // 해당 날짜와 겹치는 이벤트(하루라도 겹치면 포함)
             const dayEvents = events.filter((ev) => {
@@ -977,27 +977,21 @@ export default function CalendarUI() {
                 return evStart <= cur && evEnd >= cur;
             });
 
-            const privateTodosForDate = privateTodos
-                .filter(todo => todo.date.startsWith(key)) // 'key'는 YYYY-MM-DD
-                .map(t => ({
-                    id: t.id,
-                    title: t.title,
-                    status: t.status,
-                    type: 'PRIVATE' // type을 명시
-                }));
 
-            // 2. dayTodos는 이제 Private Todo만 포함합니다.
-            const dayTodos = privateTodosForDate;
+            // const privateTodosForDate = privateTodos.filter(...)
+
+            const dayTodos: [] = [];
+
             return {
-                date: String(dd),
+                date: String(dd), // 표시용 날짜 (ex: "1")
+                fullDate: key,
                 weekday,
                 events: dayEvents,
                 todos: dayTodos,
             };
         });
-
         // 예) "Sep Week 1, 2025" 식의 타이틀
-        const monthLabel = sunday.toLocaleDateString("en-US", {month: "short"});
+        const monthLabel = sunday.toLocaleString("en-US", {month: "short"});
         const weekNum = Math.ceil((sunday.getDate() - 1) / 7) + 1;
         const yearLabel = sunday.getFullYear();
         const weekTitle = `${monthLabel} Week ${weekNum}, ${yearLabel}`;
@@ -1021,7 +1015,7 @@ export default function CalendarUI() {
         setSelectedEventId(event.id);
     };
     const selectedEvent = events.find(event => event.id === selectedEventId);
-    // [추가] 주간 뷰에 표시할 이벤트를 미리 필터링합니다.
+    //  주간 뷰에 표시할 이벤트를 미리 필터링합니다.
     const weekEvents = useMemo(() => {
         if (viewMode !== 'week') return [];
 
@@ -1117,10 +1111,10 @@ export default function CalendarUI() {
                 <div className="z-30">
                     {isUserLoading ? (
                         <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse"></div>) : user && user.id ? (
-                            <ProfileDropdown
-                                onOpenSettings={handleOpenSettingsModal}
-                                onLogout={logout}
-                            />
+                        <ProfileDropdown
+                            onOpenSettings={handleOpenSettingsModal}
+                            onLogout={logout}
+                        />
                     ) : (<div>
                         <button onClick={() => router.push("/")}>Login</button>
                     </div>)}
@@ -1234,12 +1228,14 @@ export default function CalendarUI() {
                     {isMobile && isWeekMobileOpen ? (
                         weekMobileData && (
                             <WeekViewMobile
+                                projectId={projectId}
                                 weekTitle={weekMobileData.weekTitle}
                                 projectName={weekMobileData.projectName}
                                 days={weekMobileData.days}
                                 onPrevWeek={handlePrevMobileWeek}
                                 onNextWeek={handleNextMobileWeek}
                                 onToggleTodoStatus={handleToggleTodoStatus}
+                                onTodoDataChanged={() => setTodoVersion(v => v + 1)}
                             />
                         )
                     ) : (
@@ -1380,13 +1376,13 @@ export default function CalendarUI() {
 
                                                             // --- 5. 렌더링: 이벤트 + "+N more" 버튼 ---
 
-                                                            // [수정] 모바일/데스크톱에 따라 최대 표시 줄 수 결정
+                                                            // 모바일/데스크톱에 따라 최대 표시 줄 수 결정
                                                             const MAX_EVENT_ROWS_TO_SHOW = isMobile ? 2 : 3;
 
-                                                            // [수정] 렌더링할 이벤트 필터링 (모바일: 0, 1번 줄 / 데스크톱: 0, 1, 2번 줄)
+                                                            // 렌더링할 이벤트 필터링 (모바일: 0, 1번 줄 / 데스크톱: 0, 1, 2번 줄)
                                                             const eventsToRender = processedEvents.filter(event => event.renderRowIndex < MAX_EVENT_ROWS_TO_SHOW);
 
-                                                            // [수정] "+N more" 버튼 계산
+                                                            // "+N more" 버튼 계산
                                                             const moreButtons = [];
                                                             for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
                                                                 const day = week[dayIndex];
@@ -1394,11 +1390,11 @@ export default function CalendarUI() {
 
                                                                 const totalEventsOnDay = rowBumper[dayIndex]; // 이 날짜의 총 이벤트 수
 
-                                                                // [수정] 모바일/데스크톱 최대 줄 수를 초과하는 경우
+                                                                //  모바일/데스크톱 최대 줄 수를 초과하는 경우
                                                                 if (totalEventsOnDay > MAX_EVENT_ROWS_TO_SHOW) {
                                                                     const eventsOnDay = processedEvents.filter(e => e.startCol <= dayIndex && e.endCol >= dayIndex);
 
-                                                                    // [수정] 숨겨진 이벤트 수 계산 (최대 줄 수 이상인 이벤트)
+                                                                    // 숨겨진 이벤트 수 계산 (최대 줄 수 이상인 이벤트)
                                                                     const hiddenCount = eventsOnDay.filter(e => e.renderRowIndex >= MAX_EVENT_ROWS_TO_SHOW).length;
 
                                                                     if (hiddenCount > 0) {
@@ -1411,7 +1407,7 @@ export default function CalendarUI() {
                                                                 }
                                                             }
 
-                                                            // [수정] 렌더링 부분을 <></> (Fragment)로 감싸고 2개의 map을 실행
+                                                            //  렌더링 부분을 <></> (Fragment)로 감싸고 2개의 map을 실행
                                                             return (
                                                                 <>
                                                                     {/* 5a. 렌더링할 이벤트 */}
@@ -1451,7 +1447,7 @@ export default function CalendarUI() {
                                                                     {/* 5b. "+N more" 버튼 렌더링 */}
                                                                     {moreButtons.map(({day, dayIndex, count}) => {
 
-                                                                        // [수정] "+N more" 클릭 핸들러 (모바일/데스크톱 분기)
+                                                                        //  "+N more" 클릭 핸들러 (모바일/데스크톱 분기)
                                                                         const handleMoreClick = () => {
                                                                             const clickedDate = new Date(viewYear, viewMonth, day);
 
@@ -1469,9 +1465,9 @@ export default function CalendarUI() {
                                                                             <div
                                                                                 key={`more-${dayIndex}`}
                                                                                 className="absolute h-5 px-2 text-xs text-slate-600 font-medium cursor-pointer truncate hover:bg-slate-100 rounded"
-                                                                                onClick={handleMoreClick} // [수정] 클릭 핸들러 변경
+                                                                                onClick={handleMoreClick} // 클릭 핸들러 변경
                                                                                 style={{
-                                                                                    // [수정] top 위치를 동적으로 설정
+                                                                                    //  top 위치를 동적으로 설정
                                                                                     top: `${MAX_EVENT_ROWS_TO_SHOW * 22}px`, // 모바일: 44px, 데스크톱: 66px
                                                                                     left: `calc(${(dayIndex / 7) * 100}% + 2px)`,
                                                                                     width: `calc(${(1 / 7) * 100}% - 4px)`,
