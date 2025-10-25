@@ -12,7 +12,7 @@ import EditProjectModal from '@/components/modals/EditProjectModal';
 import ProfileSettingsModal from '@/components/modals/ProfileSettingModal';
 import ProjectDescriptionModal from '@/components/modals/ProjectDescriptionModal';
 import {inviteAation} from "@/api/inviteApi";
-import useNotificationSocket from "@/hooks/useNotificationSocket";
+import useNotificationStream from "@/hooks/useNotificationStream";
 import { NotificationItem } from "@/types/notification";
 import Toast from "@/components/common/Toast";
 
@@ -697,7 +697,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
 
 
     // 실시간 알림을 위한 WebSocket 연결
-    useNotificationSocket(userId, (notification) => {
+    useNotificationStream(userId, (notification) => {
         setNotifications((prev) => [notification, ...prev]);
         setToast(notification.message);
         console.log("새 알림 상태 반영:", notification);
