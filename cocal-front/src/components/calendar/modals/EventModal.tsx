@@ -621,29 +621,60 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                             className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                             rows={3}
                         />
-                        <div>
-                            <label className="text-sm font-medium text-slate-600">Visibility</label>
-                            <div className="flex gap-4 mt-2">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="radio" name="type" value="EVENT"
-                                        checked={formData.type === "EVENT"}
-                                        onChange={() => handleTypeChange("EVENT")}
-                                        className="form-radio h-4 w-4 text-blue-600"
-                                    />
-                                    <span className="text-sm">Public</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="radio" name="type" value="PRIVATE"
-                                        checked={formData.type === "PRIVATE"}
-                                        onChange={() => handleTypeChange("PRIVATE")}
-                                        className="form-radio h-4 w-4 text-blue-600"
-                                    />
-                                    <span className="text-sm">Private</span>
-                                </label>
-                            </div>
-                        </div>
+                            {editTodo ? // 수정일 때는 타입 변환 불가능
+                                <div>
+                                    <label className="text-sm font-medium text-slate-600">Visibility</label>
+                                    <div className="flex gap-4 mt-2">
+                                        <label className="flex items-center gap-2 cursor-default">
+                                            <input
+                                                type="radio"
+                                                name="visibility"
+                                                value="PUBLIC"
+                                                checked={formData.type === "EVENT"}
+                                                disabled
+                                                className="form-radio h-4 w-4 text-blue-600 cursor-not-allowed"
+                                            />
+                                            <span className="text-sm text-gray-500">Public</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-default">
+                                            <input
+                                                type="radio"
+                                                name="visibility"
+                                                value="PRIVATE"
+                                                checked={formData.type === "PRIVATE"}
+                                                disabled
+                                                className="form-radio h-4 w-4 text-blue-600 cursor-not-allowed"
+                                            />
+                                            <span className="text-sm text-gray-500">Private</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            : // 생성일 때는 타입 변환 가능
+                                <div>
+                                    <label className="text-sm font-medium text-slate-600">Visibility</label>
+                                    <div className="flex gap-4 mt-2">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio" name="type" value="EVENT"
+                                                checked={formData.type === "EVENT"}
+                                                onChange={() => handleTypeChange("EVENT")}
+                                                className="form-radio h-4 w-4 text-blue-600"
+                                            />
+                                            <span className="text-sm">Public</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio" name="type" value="PRIVATE"
+                                                checked={formData.type === "PRIVATE"}
+                                                onChange={() => handleTypeChange("PRIVATE")}
+                                                className="form-radio h-4 w-4 text-blue-600"
+                                            />
+                                            <span className="text-sm">Private</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+
 
                         {/* Public일 때만 카테고리(이벤트) 선택창 표시 */}
                         {formData.type === 'EVENT' && (

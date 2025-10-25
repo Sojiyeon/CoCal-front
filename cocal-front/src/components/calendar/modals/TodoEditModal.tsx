@@ -176,26 +176,27 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                             <div>
                                 <label className="text-sm font-medium text-slate-600">Visibility</label>
                                 <div className="flex gap-4 mt-2">
-                                    <label className="flex items-center gap-2 cursor-pointer">
+                                    <label className="flex items-center gap-2 cursor-default">
                                         <input
-                                            type="radio" name="visibility" value="PUBLIC"
+                                            type="radio"
+                                            name="visibility"
+                                            value="PUBLIC"
                                             checked={visibility === "PUBLIC"}
-                                            onChange={() => setVisibility("PUBLIC")}
-                                            className="form-radio h-4 w-4 text-blue-600"
+                                            disabled
+                                            className="form-radio h-4 w-4 text-blue-600 cursor-not-allowed"
                                         />
-                                        <span className="text-sm">Public</span>
+                                        <span className="text-sm text-gray-500">Public</span>
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
+                                    <label className="flex items-center gap-2 cursor-default">
                                         <input
-                                            type="radio" name="visibility" value="PRIVATE"
+                                            type="radio"
+                                            name="visibility"
+                                            value="PRIVATE"
                                             checked={visibility === "PRIVATE"}
-                                            onChange={() => {
-                                                setVisibility("PRIVATE");
-                                                setSelectedEventId(undefined);
-                                            }}
-                                            className="form-radio h-4 w-4 text-blue-600"
+                                            disabled
+                                            className="form-radio h-4 w-4 text-blue-600 cursor-not-allowed"
                                         />
-                                        <span className="text-sm">Private</span>
+                                        <span className="text-sm text-gray-500">Private</span>
                                     </label>
                                 </div>
                             </div>
