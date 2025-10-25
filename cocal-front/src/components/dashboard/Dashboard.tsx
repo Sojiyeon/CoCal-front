@@ -657,6 +657,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
         }
     }; // <-- [수정] 여기서 함수가 닫혀야 합니다.
 
+    // 초대 수락/거절 핸들러
     const handleInviteAction = async (inviteId: number, action: string)=> {
         if (!inviteId) {
             console.log("inviteId 없음");
@@ -666,8 +667,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
             const msg = await inviteAation(inviteId, action);
             console.log("msg: ", msg);
             alert("Action successful.");
-            fetchProjectInvites();
-
+            await fetchProjectInvites();
         } catch (err:unknown) {
             console.error("프로젝트 수락/거절 실패:", err);
             alert("Failed");
