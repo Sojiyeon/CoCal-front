@@ -34,21 +34,25 @@ export function TeamModal({ projectId, onClose }: Props) {
 
     // 컴포넌트가 마운트될 때 데이터를 불러오는 부분
     useEffect(() => {
-        (async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const { members, invites } = await getTeamList(projectId);
-                setMembers(members);
-                setInvites(invites);
-            } catch (err: unknown) {
-                setError(err instanceof Error ? err.message : "팀원 데이터를 불러오지 못했습니다.");
-                console.error(err);
-            } finally {
-                setIsLoading(false);
-            }
-        })();
+        handleGetTeamList(projectId);
     }, [projectId]);
+
+    // 팀원 조회 핸들러
+    const handleGetTeamList = async (projectId: number) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            // api 호출
+            const { members, invites } = await getTeamList(projectId);
+            setMembers(members);
+            setInvites(invites);
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "팀원 데이터를 불러오지 못했습니다.");
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    }
 
     // 이메일로 팀원을 초대하는 핸들러
     const handleInvite = async () => {
@@ -60,9 +64,10 @@ export function TeamModal({ projectId, onClose }: Props) {
         try {
             // api 요청
             const newInvite: TeamInvite = await sendEmailInvite(projectId, email);
-            setInvites((prev) => [newInvite, ...prev]);
             setEmail("");
             window.alert(`${email}님에게 초대 메일을 보냈습니다.`);
+            // 팀원 목록 재조회
+            handleGetTeamList(projectId);
         } catch (err: unknown) {
             if (err instanceof Error) {
                 window.alert(`Invite failed: ${err.message}`);
