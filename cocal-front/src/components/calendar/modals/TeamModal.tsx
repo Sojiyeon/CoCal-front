@@ -182,30 +182,44 @@ export function TeamModal({ projectId, onClose }: Props) {
                     <h3 className="text-sm font-medium text-slate-500">Who has access</h3>
                     {error && <p className="text-xs text-red-500">{error}</p>}
                     <div className="space-y-3 max-h-60 overflow-y-auto">
-                        {members.map((member) => (
-                            <div key={`member-${member.userId}`} className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-3">
-                                    {/* [수정] <img>를 Next.js의 <Image>로 교체하여 성능 경고를 해결합니다. */}
-                                    <img src={member.avatarUrl || `https://placehold.co/32x32/E2E8F0/475569?text=${member.name.charAt(0)}`} alt={member.name} width={32} height={32} className="w-8 h-8 rounded-full" />
-                                    <div>
-                                        <div className="font-semibold">{member.name} {member.me && '(me)'}</div>
-                                        <div className="text-xs text-slate-400">{member.email}</div>
+                        {[...members]
+                            // me=true가 먼저 오도록 정렬
+                            .sort((a, b) => (b.me ? 1 : 0) - (a.me ? 1 : 0))
+                            .map((member) => (
+                                <div key={`member-${member.userId}`} className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-3">
+                                        <img
+                                            src={
+                                                member.avatarUrl ||
+                                                `https://placehold.co/32x32/E2E8F0/475569?text=${member.name.charAt(0)}`
+                                            }
+                                            alt={member.name}
+                                            width={32}
+                                            height={32}
+                                            className="w-8 h-8 rounded-full"
+                                        />
+                                        <div>
+                                            <div className="font-semibold">
+                                                {member.name} {member.me && "(me)"}
+                                            </div>
+                                            <div className="text-xs text-slate-400">{member.email}</div>
+                                        </div>
                                     </div>
+                                    {member.me ? (
+                                        <span className="text-slate-400 text-xs font-medium">{member.role}</span>
+                                    ) : myRole !== "MEMBER" ? (
+                                        <button
+                                            onClick={() => handleRemoveMember(projectId, member.userId)}
+                                            className="text-slate-500 hover:text-red-600 text-xs font-medium"
+                                        >
+                                            Remove
+                                        </button>
+                                    ) : (
+                                        <span className="text-slate-400 text-xs font-medium">{member.role}</span>
+                                    )}
                                 </div>
-                                {member.me ? (
-                                    <span className="text-slate-400 text-xs font-medium">{member.role}</span>
-                                ) : myRole !== "MEMBER" ? (
-                                    <button
-                                        onClick={() => handleRemoveMember(projectId, member.userId)}
-                                        className="text-slate-500 hover:text-red-600 text-xs font-medium"
-                                    >
-                                        Remove
-                                    </button>
-                                ) : (
-                                    <span className="text-slate-400 text-xs font-medium">{member.role}</span>
-                                )}
-                            </div>
-                        ))}
+                            )
+                        )}
                         {invites.map((invite) => (
                             <div key={`invite-${invite.inviteId}`} className="flex items-center justify-between text-sm opacity-70">
                                 <div className="flex items-center gap-3">
