@@ -6,6 +6,8 @@ import { CalendarEvent,EventTodo } from "./types";
 interface DayViewProps {
     events: CalendarEvent[];
     date?: Date;
+    onSelectEvent: (event: CalendarEvent) => void;
+    onToggleTodoStatus?: (todoId: number) => void;
 
 }
 interface PositionedEvent {
@@ -17,7 +19,12 @@ interface PositionedEvent {
 }
 
 
-export default function DayView({ events, date = new Date() }: DayViewProps) {
+export default function DayView({
+                                     events,
+                                     date = new Date(),
+                                     onSelectEvent,
+                                    onToggleTodoStatus,
+                                 }: DayViewProps) {
     const hours = Array.from({ length: 24 }, (_, i) => i);
     const hourSlotHeight = 64; // h-16 (64px)
     const { allDayEventsForDay, timedEventsForDay } = useMemo(() => {
@@ -31,15 +38,24 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
             const end = new Date(event.endAt || event.startAt);
 
             // 1. 오늘 날짜에 겹치는지 확인 (기존 dayEvents 필터 로직)
-            const eventStart = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-            const eventEnd = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+            const eventStart = new Date(
+                start.getFullYear(),
+                start.getMonth(),
+                start.getDate()
+            );
+            const eventEnd = new Date(
+                end.getFullYear(),
+                end.getMonth(),
+                end.getDate()
+            );
 
             if (!(viewDate >= eventStart && viewDate <= eventEnd)) {
                 return; // 이 날짜에 해당 안되면 스킵
             }
 
             // 2. 겹치는 이벤트 중 종일/시간 지정 분리 (WeekView 로직)
-            const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+            const durationHours =
+                (end.getTime() - start.getTime()) / (1000 * 60 * 60);
             if (event.allDay || durationHours >= 24) {
                 allDay.push(event);
             } else {
@@ -49,6 +65,7 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
 
         return { allDayEventsForDay: allDay, timedEventsForDay: timed };
     }, [events, date]);
+
     const timedEventsLayout = useMemo(() => {
         const eventsWithPos = timedEventsForDay
             .map(event => ({
@@ -138,8 +155,8 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
             return (
                 <div
                     key={event.id}
-                    // flex-col과 overflow-hidden 추가
-                    className="absolute rounded p-2 text-xs text-white shadow flex flex-col overflow-hidden"
+                    onClick={() => onSelectEvent(event)}
+                    className="absolute rounded p-2 text-xs text-white shadow flex flex-col overflow-hidden cursor-pointer"
                     style={{
                         top: `${top}px`,
                         height: `${height}px`,
@@ -159,32 +176,45 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
 
                     {/*  할일 목록 컨테이너에 flex-1과 overflow-y-auto 추가 */}
                     {todos.length > 0 && (
-
-                        <div className="mt-1 space-y-1 flex-1 overflow-y-auto
+                        <div
+                            className="mt-1 space-y-1 flex-1 overflow-y-auto
                                     [&::-webkit-scrollbar]:w-1.5
                                     [&::-webkit-scrollbar-track]:bg-transparent
                                     [&::-webkit-scrollbar-thumb]:bg-white/40
                                     [&::-webkit-scrollbar-thumb]:rounded-full
-                                    hover:[&::-webkit-scrollbar-thumb]:bg-white/60">
-
+                                    hover:[&::-webkit-scrollbar-thumb]:bg-white/60"
+                        >
                             <h4 className="text-[11px] font-bold opacity-70">To do</h4>
                             {todos.map((todo) => (
-                                <div key={todo.id} className="flex items-center text-[11px] opacity-90">
+                                <div
+                                    key={todo.id}
+                                    className="flex items-center text-[11px] opacity-90 cursor-pointer" // [추가] cursor-pointer
+                                    onClick={(e) => {
+                                        // [추가] Todo 클릭 핸들러
+                                        e.stopPropagation(); // 부모(이벤트 카드) 클릭 방지
+                                        onToggleTodoStatus?.(todo.id);
+                                    }}
+                                >
                                     <div className="mr-1.5 h-3 w-3 flex-shrink-0 rounded-full flex items-center justify-center bg-white/30">
-                                        {todo.status === 'DONE' && (
+                                        {todo.status === "DONE" && (
                                             <div className="w-1.5 h-1.5 bg-white rounded-full" />
                                         )}
                                     </div>
-                                    <span className={`${todo.status === 'DONE' ? "line-through opacity-70" : ""}`}>
-                                        {todo.title}
-                                    </span>
+                                    <span
+                                        className={`${
+                                            todo.status === "DONE" ? "line-through opacity-70" : ""
+                                        }`}
+                                    >
+                      {todo.title}
+                    </span>
                                 </div>
                             ))}
                         </div>
                     )}
                 </div>
             );
-        });
+            }
+        );
 
     };
     return (
@@ -213,8 +243,8 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
                             return (
                                 <div
                                     key={event.id}
-                                    // [수정] flex, flex-col, overflow-hidden, max-h-32 (128px) 추가
-                                    className="rounded p-1 text-xs text-white shadow cursor-pointer flex flex-col overflow-hidden max-h-32"
+                                    onClick={() => onSelectEvent(event)}
+                                    className="rounded p-1 text-xs text-white shadow cursor-pointer flex flex-col overflow-hidden max-h-17"
                                     style={{
                                         backgroundColor: event.color || "#6366f1",
                                         zIndex: 10,
@@ -227,25 +257,44 @@ export default function DayView({ events, date = new Date() }: DayViewProps) {
 
                                     {/* 종일 이벤트의 할 일(todo) 목록 렌더링 */}
                                     {todos.length > 0 && (
-
-                                        <div className="mt-1 space-y-1 border-t border-white/20 pt-1 flex-1 overflow-y-auto
+                                        <div
+                                            //  'border-t border-white/20 pt-1' 클래스 제거
+                                            className="mt-1 space-y-1 flex-1 overflow-y-auto
                                                     [&::-webkit-scrollbar]:w-1.5
                                                     [&::-webkit-scrollbar-track]:bg-transparent
                                                     [&::-webkit-scrollbar-thumb]:bg-white/40
                                                     [&::-webkit-scrollbar-thumb]:rounded-full
-                                                    hover:[&::-webkit-scrollbar-thumb]:bg-white/60">
+                                                    hover:[&::-webkit-scrollbar-thumb]:bg-white/60"
+                                        >
+                                            {/*  'To do' 헤더 */}
+                                            <h4 className="text-[11px] font-bold opacity-70">
+                                                To do
+                                            </h4>
 
                                             {todos.map((todo) => (
-                                                <div key={todo.id} className="flex items-center text-[11px] opacity-90">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={todo.status === 'DONE'}
-                                                        readOnly
-                                                        className="mr-1.5 h-3 w-3 flex-shrink-0 rounded-sm border-white/60 bg-transparent text-indigo-300 focus:ring-0 focus:ring-offset-0"
-                                                    />
-                                                    <span className={`${todo.status === 'DONE' ? "line-through opacity-70" : ""}`}>
-                                                            {todo.title}
-                                                        </span>
+                                                <div
+                                                    key={todo.id}
+                                                    //  className과 onClick 핸들러를 추가합니다.
+                                                    className="flex items-center text-[11px] opacity-90 cursor-pointer"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // 부모(이벤트 카드) 클릭 방지
+                                                        onToggleTodoStatus?.(todo.id);
+                                                    }}
+                                                >
+                                                    <div className="mr-1.5 h-3 w-3 flex-shrink-0 rounded-full flex items-center justify-center bg-white/30">
+                                                        {todo.status === "DONE" && (
+                                                            <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                                                        )}
+                                                    </div>
+                                                    <span
+                                                        className={`${
+                                                            todo.status === "DONE"
+                                                                ? "line-through opacity-70"
+                                                                : ""
+                                                        }`}
+                                                    >
+                            {todo.title}
+                          </span>
                                                 </div>
                                             ))}
                                         </div>

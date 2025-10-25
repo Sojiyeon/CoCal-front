@@ -1497,7 +1497,8 @@ export default function CalendarUI() {
                                     onSelectMemo={setSelectedMemo}
                                 />
                             )}
-                            {viewMode === "day" && <DayView events={events} date={selectedDate}/>}
+                            {viewMode === "day" && <DayView events={events} date={selectedDate} onSelectEvent={handleSelectEvent} onToggleTodoStatus={handleToggleTodoStatus} />}
+
                         </>
                     )}
                 </main>
