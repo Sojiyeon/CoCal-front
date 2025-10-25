@@ -5,6 +5,7 @@ import {
     getTeamList,
     TeamMember,
     TeamInvite,
+    MemberRole,
     sendEmailInvite,
     kickMember,
     getOpenInviteLink,
@@ -31,6 +32,7 @@ export function TeamModal({ projectId, onClose }: Props) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [copying, setCopying] = useState(false);
+    const myRole:MemberRole | undefined = members.find(m => m.me === true)?.role;
 
     // 컴포넌트가 마운트될 때 데이터를 불러오는 부분
     useEffect(() => {
@@ -131,43 +133,50 @@ export function TeamModal({ projectId, onClose }: Props) {
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
             <div className="bg-white rounded-xl shadow-lg p-6 w-[480px] text-slate-800">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold">Share this calendar</h2>
+                    <h2 className="text-lg font-semibold">
+                        {myRole !== "MEMBER" ?
+                            "Share this calendar" : "Calendar members"
+                        }
+                    </h2>
                     <div className="flex items-center gap-4">
-                        <button onClick={handleCopyLink} className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                 fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-                                 strokeLinejoin="round" className="lucide lucide-link-icon lucide-link">
-                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                            </svg>
-                            {copying ? "Copying..." : "Copy Link"}
-                        </button>
+                        {myRole !== "MEMBER" && (
+                            <button onClick={handleCopyLink} className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                                     strokeLinejoin="round" className="lucide lucide-link-icon lucide-link">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                </svg>
+                                {copying ? "Copying..." : "Copy Link"}
+                            </button>
+                        )}
                         <button onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>
                     </div>
                 </div>
-
-                <div className="flex gap-2 mb-6">
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                e.preventDefault(); // 폼 제출 막기
-                                handleInvite();
-                            }
-                        }}
-                        className="flex-1 border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                    <button
-                        onClick={() => void handleInvite()} // [수정] Promise 반환 무시 경고를 해결합니다.
-                        disabled={isLoading}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold hover:bg-blue-700 disabled:bg-blue-300"
-                    >
-                        {isLoading ? "Inviting..." : "Invite"}
-                    </button>
-                </div>
+                {myRole !== "MEMBER" && (
+                    <div className="flex gap-2 mb-6">
+                        <input
+                            type="email"
+                            placeholder="Email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault(); // 폼 제출 막기
+                                    handleInvite();
+                                }
+                            }}
+                            className="flex-1 border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                        <button
+                            onClick={() => void handleInvite()} // [수정] Promise 반환 무시 경고를 해결합니다.
+                            disabled={isLoading}
+                            className="px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold hover:bg-blue-700 disabled:bg-blue-300"
+                        >
+                            {isLoading ? "Inviting..." : "Invite"}
+                        </button>
+                    </div>
+                )}
 
                 <div className="space-y-4">
                     <h3 className="text-sm font-medium text-slate-500">Who has access</h3>
@@ -183,8 +192,13 @@ export function TeamModal({ projectId, onClose }: Props) {
                                         <div className="text-xs text-slate-400">{member.email}</div>
                                     </div>
                                 </div>
-                                {!member.me ? (
-                                    <button onClick={() => handleRemoveMember(projectId, member.userId)} className="text-slate-500 hover:text-red-600 text-xs font-medium">
+                                {member.me ? (
+                                    <span className="text-slate-400 text-xs font-medium">{member.role}</span>
+                                ) : myRole !== "MEMBER" ? (
+                                    <button
+                                        onClick={() => handleRemoveMember(projectId, member.userId)}
+                                        className="text-slate-500 hover:text-red-600 text-xs font-medium"
+                                    >
                                         Remove
                                     </button>
                                 ) : (
