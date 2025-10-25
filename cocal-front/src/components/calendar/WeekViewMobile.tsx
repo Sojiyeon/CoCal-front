@@ -3,7 +3,7 @@
 
 import React, { useMemo, useEffect, useState } from "react";
 
-import { CalendarEvent, EventTodo } from "./types";
+import { CalendarEvent, EventTodo, DateMemo } from "./types";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { api } from "@/components/calendar/utils/api";
 
@@ -31,11 +31,13 @@ interface WeekViewMobileProps {
         weekday: string;
         events: CalendarEvent[];
         todos: [];
+        memos: DateMemo[];
     }[];
     onPrevWeek?: () => void;
     onNextWeek?: () => void;
     onToggleTodoStatus?: (todoId: number) => void;
     onTodoDataChanged?: () => void;
+    onSelectMemo?: (memo: DateMemo) => void;
 }
 
 export default function WeekViewMobile({
@@ -47,6 +49,7 @@ export default function WeekViewMobile({
                                            onNextWeek,
                                            onToggleTodoStatus,
                                            onTodoDataChanged,
+                                           onSelectMemo,
                                        }: WeekViewMobileProps) {
 
 
@@ -245,7 +248,7 @@ export default function WeekViewMobile({
                 {days.map((day, idx) => {
                     const dayNum = normalizedDayText(day.date, idx + 1);
                     const dayInitial = weekdayInitial(day.weekday);
-
+                    const dayMemos = day.memos || []; // 그날의 메모 가져오기
                     const privateTodos = privateTodosMap.get(day.fullDate) || [];
 
                     return (
@@ -254,16 +257,32 @@ export default function WeekViewMobile({
                             <div className="px-4 py-4">
                                 <div className="flex items-start gap-3">
                                     {/* 좌측 원형 날짜 + 요일 이니셜 */}
-                                    <div className="flex flex-col items-center w-8">
-                                        <div
-                                            className="w-7 h-7 rounded-full bg-slate-900 text-white text-[13px] font-semibold flex items-center justify-center">
-                                            {dayNum}
+                                    <div className="flex flex-col items-center w-10">
+                                        <div className="relative">
+                                            <div
+                                                className="w-7 h-7 rounded-full bg-slate-900 text-white text-[13px] font-semibold flex items-center justify-center ">
+                                                {dayNum}
+                                            </div>
+                                            {/*  메모 닷 렌더링 로직  */}
+                                            {dayMemos.length > 0 && (
+                                                <div
+                                                    className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5 flex space-x-0.5">
+                                                    {dayMemos.slice(0, 9).map(memo => (
+                                                        <div
+                                                            key={memo.id}
+                                                            onClick={() => onSelectMemo?.(memo)}
+                                                            className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
+                                                            title={memo.content}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                         <span className="text-[11px] text-slate-400 mt-1">{dayInitial}</span>
                                     </div>
 
                                     {/* 우측 콘텐츠 */}
-                                    <div className="flex-1">
+                                    <div className="flex-1 pt-6">
                                         {/* === Private Todo 섹션 === */}
                                         <div className="pb-3">
                                             {privateTodos.length > 0 && (

@@ -123,10 +123,11 @@ export default function CalendarUI() {
         projectName: string;
         days: {
             date: string;
-            fullDate: string; // SUJEONG: fullDate 타입 추가
+            fullDate: string; // fullDate 타입 추가
             weekday: string;
             events: CalendarEvent[];
-            todos: []; // SUJEONG: todos는 항상 빈 배열
+            todos: []; // todos는 항상 빈 배열
+            memos: DateMemo[];
         }[];
     } | null>(null);
     // Todo 데이터의 버전을 관리할 상태 추가
@@ -136,7 +137,7 @@ export default function CalendarUI() {
         if (isMobile && isWeekMobileOpen) {
             setWeekMobileData(buildWeekViewMobileData(weekMobileAnchor));
         }
-    }, [events, privateTodos, currentProject, isMobile, isWeekMobileOpen, weekMobileAnchor]);
+    }, [events, privateTodos, memos, currentProject, isMobile, isWeekMobileOpen, weekMobileAnchor]);
     // --- useEffect 훅 ---
     // 이름, 프로필이 변경된 경우 유저 정보 재조회
     useEffect(() => {
@@ -977,7 +978,7 @@ export default function CalendarUI() {
                 return evStart <= cur && evEnd >= cur;
             });
 
-
+            const dayMemos = memos.filter(m => m.memoDate === key);
             // const privateTodosForDate = privateTodos.filter(...)
 
             const dayTodos: [] = [];
@@ -988,6 +989,7 @@ export default function CalendarUI() {
                 weekday,
                 events: dayEvents,
                 todos: dayTodos,
+                memos: dayMemos,
             };
         });
         // 예) "Sep Week 1, 2025" 식의 타이틀
@@ -1236,6 +1238,7 @@ export default function CalendarUI() {
                                 onNextWeek={handleNextMobileWeek}
                                 onToggleTodoStatus={handleToggleTodoStatus}
                                 onTodoDataChanged={() => setTodoVersion(v => v + 1)}
+                                onSelectMemo={setSelectedMemo}
                             />
                         )
                     ) : (
