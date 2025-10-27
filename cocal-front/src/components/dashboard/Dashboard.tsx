@@ -432,7 +432,11 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
                     {menuItems.map((item, index) => (
                         <div
                             key={index}
-                            onClick={() => { item.action(); if (!item.isToggle) setIsOpen(false); }}
+                            onClick={() => {
+                                if (item.isToggle) return; // 다크모드 라벨은 부모 클릭 무시
+                                item.action();
+                                setIsOpen(false);
+                            }}
                             className={`flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer transition duration-150
                                 ${item.isDestructive ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-300/10' : 'text-light-text-primary dark:text-white hover:bg-gray-50 dark:hover:bg-white/5'}
                             `}
@@ -742,7 +746,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                             pendingInvites.map((invite, idx) => (
                                 <div
                                     key={idx}
-                                    className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition duration-150 border-b dark:border-neutral-700 last:border-b-0"
+                                    className="px-3 pt-4 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition duration-150 border-b border-gray-200 dark:border-neutral-700 last:border-b-0"
                                 >
                                     <p className="text-sm font-medium text-gray-800 dark:text-white truncate">
                                         {invite.projectName}
@@ -751,11 +755,11 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                                         초대한 사람: {invite.inviterEmail}
                                     </p>
 
-                                    <div className="flex justify-between items-center mt-2">
+                                    <div className="flex justify-between items-center mt-2 mb-1.5">
                                         <div className="flex flex-col text-xs text-gray-500 dark:text-gray-400">
                                             <span>만료일: {formatDate(invite.expiresAt)}</span>
                                         </div>
-                                        <div className="flex justify-end gap-1 mt-3">
+                                        <div className="flex justify-end gap-1">
                                             <button
                                                 onClick={() => handleInviteAction(invite.id, "accept")}
                                                 className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 px-2 py-1 rounded-md hover:bg-green-50 dark:hover:bg-green-900/30 transition"
@@ -813,7 +817,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                                 <div
                                     key={n.id}
                                     onClick={() => handleNotificationClick(n)}
-                                    className="flex justify-between items-start px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition duration-150 border-b dark:border-neutral-700 last:border-b-0"
+                                    className="flex justify-between items-start px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition duration-150 border-b border-gray-200 dark:border-neutral-700 last:border-b-0"
                                 >
                                     {/* 왼쪽 텍스트 */}
                                     <div className="flex-1 space-y-1.5">
@@ -836,7 +840,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25"
                                              strokeLinecap="round" strokeLinejoin="round"
-                                             className="lucide lucide-circle-arrow-right-icon lucide-circle-arrow-right">
+                                             className="lucide lucide-circle-arrow-right-icon lucide-circle-arrow-right dark:text-neutral-200">
                                             <circle cx="12" cy="12" r="10"/>
                                             <path d="m12 16 4-4-4-4"/>
                                             <path d="M8 12h8"/>

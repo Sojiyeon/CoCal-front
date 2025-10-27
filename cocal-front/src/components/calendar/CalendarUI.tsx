@@ -903,6 +903,7 @@ export default function CalendarUI() {
             weekHeaderTitle = `${monthLabel} ${year}`;
         }
     }
+
     // 이벤트가 해당 주에 걸쳐 있는지 확인하고, 시작 및 끝 요일을 계산하는 헬퍼 함수
     const getWeekEvents = (week: (number | null)[]) => {
         const weekStart = new Date(viewYear, viewMonth, week.find(day => day !== null)!);
@@ -1057,7 +1058,8 @@ export default function CalendarUI() {
     return (
         <div className="h-screen w-screen flex flex-col bg-white dark:bg-neutral-900">
             {/*  --- 데스크톱 헤더 ---  */}
-            <div className="hidden md:flex items-center justify-between  px-6 py-3 border-b border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-900 sticky shadow-md">
+            <div
+                className="hidden md:flex items-center justify-between  px-6 py-3 border-b border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-900 sticky shadow-md z-35">
                 <div className="flex items-center gap-3">
                     <button onClick={() => router.push("/dashboard")} className="p-1 rounded-full hover:bg-slate-100 dark:text-white dark:hover:bg-gray-700/70">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -1189,7 +1191,8 @@ export default function CalendarUI() {
                 </div>
 
                 {/* 메인 캘린더  영역 */}
-                <main className="flex-1 overflow-auto p-2 md:p-5">
+
+                <main className="flex-1 overflow-auto scrollbar-hide p-2 md:p-5">
                     {/* 메인 캘린더 헤더 */}
                     <div className="flex items-center justify-between mb-4">
                         {/* ← 왼쪽 블록: 항상 렌더. 모바일에서 week(또는 WeekViewMobile 열림)일 때만 invisible */}
@@ -1440,7 +1443,6 @@ export default function CalendarUI() {
                                                                                     if (isMobile) {
                                                                                         const d = new Date(event.startAt);
                                                                                         openWeekMobileForDate(d);
-                                                                                        setViewMode("week")
                                                                                     } else {
                                                                                         setSelectedEventId(event.id);
                                                                                     }
