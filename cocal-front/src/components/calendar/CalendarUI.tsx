@@ -195,8 +195,15 @@ export default function CalendarUI() {
                 const storedProfile = localStorage.getItem("userProfile");
                 if (storedProfile) {
                     const parsed = JSON.parse(storedProfile);
-                    const defaultView = parsed.defaultView ?? null;
-                    setViewMode(defaultView);
+                    // 1. defaultView가 null일 경우 "month"를 기본값으로 사용
+                    const defaultView = parsed.defaultView ?? "month";
+
+                    // 2. 유효한 값인지 한번 더 확인 (선택 사항이지만 더 안전함)
+                    if (["month", "week", "day"].includes(defaultView)) {
+                        setViewMode(defaultView);
+                    } else {
+                        setViewMode("month"); // 혹시 이상한 값이 들어있다면 "month"로 초기화
+                    }
                     console.log("defaultView", defaultView);
                     console.log('ViewMode', defaultView);
                 }
@@ -1304,7 +1311,8 @@ export default function CalendarUI() {
                                                             <div key={dateKey}
                                                                  className={`min-h-[80px] md:min-h-[120px] border-r border-gray-200 dark:border-neutral-600 p-1 md:p-2 relative ${isToday ? 'bg-blue-50 dark:bg-blue-400/10' : 'bg-white dark:bg-neutral-900'}`}>
                                                                 <div className="flex items-center justify-between">
-                                                                    <div className="flex items-center gap-1 dark:text-white">
+                                                                    <div
+                                                                        className="flex items-center gap-1 dark:text-white">
                                                                         <div
                                                                             className={`text-xs md:text-sm font-medium cursor-pointer hover:text-blue-600 ${isToday ? 'text-blue-600 font-bold' : ''}`}
                                                                             onClick={() => handleMainDateClick(day)}>
@@ -1312,10 +1320,13 @@ export default function CalendarUI() {
                                                                         </div>
                                                                         <div
                                                                             className="hidden md:flex items-center space-x-1">
-                                                                            {dayMemos.map(memo => <div key={memo.id}
-                                                                                                       onClick={() => setSelectedMemo(memo)}
-                                                                                                       className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
-                                                                                                       title={memo.content}/>)}
+                                                                            {dayMemos.length > 0 && (
+                                                                                <div
+                                                                                    onClick={() => setSelectedMemo(dayMemos[0])}
+                                                                                    className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
+                                                                                    title={dayMemos[0].content}
+                                                                                />
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                     <button
@@ -1573,21 +1584,44 @@ export default function CalendarUI() {
 
                 />
             )}
+            {/* [수정] MemoDetailModal 호출부 */}
+            {selectedMemo && (() => {
+                // 1. 클릭된 날짜의 모든 메모를 찾습니다.
+                const memosForDate = memos.filter(m => m.memoDate === selectedMemo.memoDate);
+                // 2. 그 배열에서 클릭된 메모의 순서(index)를 찾습니다.
+                const startIndex = memosForDate.findIndex(m => m.id === selectedMemo.id);
 
-            {selectedMemo && <MemoDetailModal
-                memo={selectedMemo}
-                projectId={projectId}
-                onClose={() => setSelectedMemo(null)}
-                onEdit={(updatedMemo) => {
-                    setMemos((prev) =>
-                        prev.map((m) => (m.id === updatedMemo.id ? updatedMemo : m))
-                    );
-                }}
-                onDelete={(id) => {
-                    setMemos((prev) => prev.filter((m) => m.id !== id));
-                    setSelectedMemo(null);
-                }}
-            />}
+                return (
+                    <MemoDetailModal
+                        memos={memosForDate} // 1. 해당 날짜의 [모든] 메모 배열 전달
+                        startIndex={startIndex !== -1 ? startIndex : 0} // 2. 클릭한 메모의 [순서] 전달
+                        projectId={projectId}
+                        onClose={() => setSelectedMemo(null)}
+                        onEdit={(updatedMemo) => {
+                            // 수정 시 메인 'memos' 상태 업데이트
+                            setMemos((prev) =>
+                                prev.map((m) => (m.id === updatedMemo.id ? updatedMemo : m))
+                            );
+                        }}
+                        onDelete={(id) => {
+                            // 삭제 시 메인 'memos' 상태 업데이트
+                            const remainingMemos = memos.filter((m) => m.id !== id);
+                            setMemos(remainingMemos);
+
+                            // 3. 삭제 후 로직:
+                            // 같은 날짜의 남은 메모가 있는지 확인
+                            const remainingOnDate = remainingMemos.filter(m => m.memoDate === selectedMemo.memoDate);
+                            if (remainingOnDate.length === 0) {
+                                setSelectedMemo(null); // 남은 메모가 없으면 모달 닫기
+                            } else {
+                                // 남은 메모가 있으면, 0번째 메모를 보도록 상태 업데이트
+                                // (삭제 시 모달이 닫히는 것을 방지)
+                                setSelectedMemo(remainingOnDate[0]);
+                            }
+                        }}
+                    />
+                );
+            })()}
 
             {isEventModalOpen && (
                 <EventModal
