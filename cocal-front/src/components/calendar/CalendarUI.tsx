@@ -1043,7 +1043,8 @@ export default function CalendarUI() {
     return (
         <div className="h-screen w-screen flex flex-col bg-white dark:bg-neutral-900">
             {/*  --- 데스크톱 헤더 ---  */}
-            <div className="hidden md:flex items-center justify-between  px-6 py-3 border-b border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-900 sticky shadow-md">
+            <div
+                className="hidden md:flex items-center justify-between  px-6 py-3 border-b border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-900 sticky shadow-md z-35">
                 <div className="flex items-center gap-3">
                     <button onClick={() => router.push("/dashboard")} className="p-1 rounded-full hover:bg-slate-100 dark:text-white dark:hover:bg-gray-700/70">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -1071,7 +1072,7 @@ export default function CalendarUI() {
                 {isUserLoading ? (
                     <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
                 ) : user && user.id ? (
-                    <div  className="flex items-center justify-end space-x-4">
+                    <div className="flex items-center justify-end space-x-4">
                         <NotificationAndInviteIcons
                             userId={user.id}
                             handleLogout={logout}
@@ -1089,7 +1090,8 @@ export default function CalendarUI() {
             </div>
 
             {/*  --- 모바일 헤더 ---  */}
-            <div className="md:hidden relative flex items-center justify-between px-4 py-3 bg-white border-gray-200 dark:bg-neutral-900 border-b dark:border-neutral-600 top-0 shadow-md">
+            <div
+                className="md:hidden relative flex items-center justify-between px-4 py-3 bg-white border-gray-200 dark:bg-neutral-900 border-b dark:border-neutral-600 top-0 shadow-md">
                 {/* 햄버거 버튼 */}
                 <button onClick={() => setIsSidebarOpen(true)} className="p-2 z-10">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-900 dark:text-neutral-300">
