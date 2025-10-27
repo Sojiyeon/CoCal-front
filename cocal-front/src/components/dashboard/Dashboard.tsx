@@ -708,11 +708,11 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
     });
 
     return (
-        <div className="flex items-center space-x-3 sm:space-x-5">
+        <div className="flex items-center space-x-3 sm:space-x-5 relative md:static">
             {/* 알람 오면 뜸*/}
             {toast && <Toast message={toast} onClose={() => setToast(null)} />}
             {/* 초대 보관함 아이콘 */}
-            <div className="relative" ref={inviteDropdownRef}>
+            <div className="md:relative" ref={inviteDropdownRef}>
                 <button
                     onClick={() => setShowInviteNotifications(prev => !prev)}
                     className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-gray-200 transition duration-150 rounded-full hover:bg-gray-100 dark:hover:bg-white/5"
@@ -726,7 +726,13 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                     )}
                 </button>
                 {showInviteNotifications && (
-                    <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl z-[120] p-2 border border-gray-100 dark:border-neutral-700 transform origin-top-right transition-all duration-150 ease-out max-h-96 overflow-y-auto">
+                    <div className="
+                            absolute right-0 mt-2 w-72 md:w-80
+                            bg-white dark:bg-neutral-900 rounded-xl shadow-2xl z-[120] p-2
+                            border border-gray-100 dark:border-neutral-700
+                            max-h-96 overflow-y-auto
+                            md:absolute md:left-auto md:mt-2 md:left-0
+                        ">
                         <div className="flex justify-between items-center px-3 py-2 border-b border-gray-100 dark:border-neutral-700 ">
                             <h4 className="text-sm font-semibold text-gray-800 dark:text-white">Invitations ({pendingInvites.length})</h4>
                             <button
@@ -782,7 +788,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
             </div>
 
             {/* 알림 아이콘 */}
-            <div className="relative" ref={dropdownRef}>
+            <div className="md:relative" ref={dropdownRef}>
                 <button
                     onClick={() => setShowAllNotifications(prev => !prev)}
                     className="relative p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition duration-150 rounded-full hover:bg-gray-100 dark:hover:bg-white/5"
@@ -798,7 +804,13 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
 
                 {/* 알림 드롭다운 메뉴 */}
                 {showAllNotifications && (
-                    <div className="absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-neutral-900 rounded-xl shadow-2xl z-[120] p-2 border border-gray-100 dark:border-neutral-700 transform origin-top-right transition-all duration-150 ease-out max-h-96 overflow-y-auto">
+                    <div className="
+                        absolute right-0 mt-2 w-72 md:w-80
+                        bg-white dark:bg-neutral-900 rounded-xl shadow-2xl z-[120] p-2
+                        border border-gray-100 dark:border-neutral-700
+                        max-h-96 overflow-y-auto
+                        md:absolute md:right-0 md:mt-2
+                    ">
                         <div className="flex justify-between items-center px-3 py-2 border-b border-gray-100 dark:border-neutral-700 ">
                             <h4 className="text-sm font-semibold text-gray-800 dark:text-white">New Notifications ({unreadNotifications.length})</h4>
                             <button
