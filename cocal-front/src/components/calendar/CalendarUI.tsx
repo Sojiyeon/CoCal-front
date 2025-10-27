@@ -82,7 +82,7 @@ export default function CalendarUI() {
     const [selectedMemo, setSelectedMemo] = useState<DateMemo | null>(null);
 
     // 현재 캘린더 뷰 모드 ('month', 'week', 'day') 상태
-    const [viewMode, setViewMode] = useState<"day" | "week" | "month">("week");
+    const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month");
     // 현재 보고 있는 프로젝트의 정보 상태
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
 
