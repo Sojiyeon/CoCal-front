@@ -1259,6 +1259,7 @@ export default function CalendarUI() {
                                 onToggleTodoStatus={handleToggleTodoStatus}
                                 onTodoDataChanged={() => setTodoVersion(v => v + 1)}
                                 onSelectMemo={setSelectedMemo}
+                                onEditTodo={handleOpenTodoEditModal}
 
                             />
                         )
@@ -1521,6 +1522,7 @@ export default function CalendarUI() {
                                         onToggleTodoStatus={handleToggleTodoStatus}
                                         onTodoDataChanged={() => setTodoVersion(v => v + 1)}
                                         onSelectMemo={setSelectedMemo}
+                                        onEditTodo={handleOpenTodoEditModal}
                                         // weekTitle, onPrevWeek, onNextWeek 등 자체 헤더 props 제거
                                     />
                                 )
@@ -1533,6 +1535,7 @@ export default function CalendarUI() {
                                     onSelectEvent={handleSelectEvent}
                                     memos={memos}
                                     onSelectMemo={setSelectedMemo}
+                                    //onEditTodo={handleOpenTodoEditModal}
                                 />
                             ) : null}
 
