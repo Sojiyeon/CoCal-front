@@ -293,6 +293,9 @@ export function EventDetailModal({
     const [eventData, setEventData] = useState<EventData | null>(null);
     // 이벤트 멤버 담는 상태
     const [eventMembers, setEventMembers] = useState<ProjectMember[]>([]);
+    // --- 1. 로딩 상태 추가 ---
+    const [isLoading, setIsLoading] = useState(true); // 처음엔 true로 설정
+
     const formatTime = (dateString: string) => {
         return new Date(dateString).toLocaleTimeString("ko-KR", {
             hour: "2-digit",
@@ -337,6 +340,8 @@ export function EventDetailModal({
 
     // 이벤트 정보 조회
     useEffect(() => {
+        // --- 2. 로딩 상태 관리 ---
+        setIsLoading(true); // 새 이벤트가 선택될 때마다 로딩 시작
         (async () => {
             try {
                 // api 호출
@@ -353,6 +358,7 @@ export function EventDetailModal({
             } catch (err: unknown) {
                 console.error('이벤트 정보 로드 실패:', err);
             } finally {
+                setIsLoading(false);
             }
         })();
     }, [event]);
@@ -475,8 +481,15 @@ export function EventDetailModal({
 
                 {/* --- 컨텐츠 --- */}
                 <div className="p-4 overflow-y-auto h-full">
+                    {/* --- 3. 로딩 상태에 따른 조건부 렌더링 --- */}
                     {activeTab === "Event" ? (
-                        <EventContent/>
+                        isLoading ? (
+                            <div className="text-center text-slate-500 py-8">
+                                Loading...
+                            </div>
+                        ) : (
+                            <EventContent/>
+                        )
                     ) : (
                         <TodoListTab
                             event={event}
