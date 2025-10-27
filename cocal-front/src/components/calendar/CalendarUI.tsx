@@ -82,7 +82,7 @@ export default function CalendarUI() {
     const [selectedMemo, setSelectedMemo] = useState<DateMemo | null>(null);
 
     // 현재 캘린더 뷰 모드 ('month', 'week', 'day') 상태
-    const [viewMode, setViewMode] = useState<"day" | "week" | "month">("month");
+    const [viewMode, setViewMode] = useState<"day" | "week" | "month">("week");
     // 현재 보고 있는 프로젝트의 정보 상태
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
 
@@ -191,6 +191,15 @@ export default function CalendarUI() {
 
         const fetchCalendarData = async () => {
             try {
+                // defaultView 설정
+                const storedProfile = localStorage.getItem("userProfile");
+                if (storedProfile) {
+                    const parsed = JSON.parse(storedProfile);
+                    const defaultView = parsed.defaultView ?? null;
+                    setViewMode(defaultView);
+                    console.log("defaultView", defaultView);
+                    console.log('ViewMode', defaultView);
+                }
                 // 1. 캘린더의 기본 데이터 (이벤트, 메모, 개인 할일)를 가져옵니다.
                 const json = await api.get(`/cal/${projectId}`);
 
@@ -1242,8 +1251,8 @@ export default function CalendarUI() {
                         weekMobileData && (
                             <WeekViewMobile
                                 projectId={projectId}
-                                //weekTitle={weekMobileData.weekTitle}
-                               // projectName={weekMobileData.projectName}
+                                // weekTitle={weekMobileData.weekTitle}
+                                // projectName={weekMobileData.projectName}
                                 days={weekMobileData.days}
                                 //onPrevWeek={handlePrevMobileWeek}
                                 //onNextWeek={handleNextMobileWeek}
