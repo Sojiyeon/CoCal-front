@@ -314,7 +314,7 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
                             <div
                                 key={event.id}
                                 onClick={() => onSelectEvent(event)}
-                                className="absolute h-[22px] rounded p-1 text-xs text-white shadow overflow-hidden cursor-pointer"
+                                className="absolute h-[22px] rounded p-1 text-xs text-white shadow overflow-hidden cursor-pointer dark:text-neutral-500"
                                 style={{
                                     top: `${topIndex * allDayEventHeight + 1}px`,
                                     left: `calc(${(startDayIndex / 7) * 100}% + 1px)`,

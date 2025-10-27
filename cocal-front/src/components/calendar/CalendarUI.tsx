@@ -1041,7 +1041,7 @@ export default function CalendarUI() {
         return text.substring(0, maxLength) + "...";
     };
     return (
-        <div className="h-screen w-screen flex flex-col bg-white dark:bg-neutral-900">
+        <div className="h-screen w-screen overflow-x-hidden flex flex-col bg-white dark:bg-neutral-900">
             {/*  --- 데스크톱 헤더 ---  */}
             <div
                 className="hidden md:flex items-center justify-between  px-6 py-3 border-b border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-900 sticky shadow-md z-35">
@@ -1177,7 +1177,7 @@ export default function CalendarUI() {
                 </div>
 
                 {/* 메인 캘린더  영역 */}
-                <main className={`flex-1 overflow-auto scrollbar-hide ${
+                <main className={`flex-1 overflow-auto ${
                     isMobile && isWeekMobileOpen ? "" : "p-2 md:p-5"
                 }`}>
                     {/* 메인 캘린더 헤더 */}
