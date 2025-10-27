@@ -178,7 +178,7 @@ const TodoListTab = ({ event, onSelectTodo }: Props & { onSelectTodo?: (todo: Re
                     {eventTodos.length > 1 && (
                         <div className="flex items-center gap-1">
                             <button onClick={goToPrev} className="p-1 rounded-full hover:bg-slate-100"><ChevronLeftIcon /></button>
-                            <span className="text-xs font-mono w-12 text-center">{currentTodoIndex + 1} / {eventTodos.length}</span>
+                            <span className="text-xs font-mono w-auto text-center">{currentTodoIndex + 1} / {eventTodos.length}</span>
                             <button onClick={goToNext} className="p-1 rounded-full hover:bg-slate-100"><ChevronRightIcon /></button>
                         </div>
                     )}
