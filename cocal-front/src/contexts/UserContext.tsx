@@ -75,7 +75,8 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
                     id: data.id || null,
                     email: data.email || null,
                     name: data.name || null,
-                    profileImageUrl: data.profileImageUrl || null
+                    profileImageUrl: data.profileImageUrl || null,
+                    defaultView: data.defaultView ? data.defaultView.toLowerCase() : null
                 };
                 setUser(profile);
                 localStorage.setItem('userProfile', JSON.stringify(profile));
@@ -94,7 +95,6 @@ export const UserProvider: FC<{ children: ReactNode }> = ({ children }) => {
     useEffect(() => {
         const token = localStorage.getItem('accessToken');
         if (token) {
-
             void fetchUserProfile(token);
         } else {
             setIsLoading(false);

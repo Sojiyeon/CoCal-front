@@ -18,7 +18,8 @@ interface Props {
         eventId?: number | null;
     }) => void;
 
-    todoToEdit: SidebarTodo;onDelete: (projectId: number, todoId: number, eventId: number, type: 'EVENT' | 'PRIVATE') => void;
+    todoToEdit: SidebarTodo;
+    onDelete: (projectId: number, todoId: number, eventId: number, type: 'EVENT' | 'PRIVATE') => void;
     projectId: number;
     events: CalendarEvent[];
 }
@@ -280,7 +281,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                                                 hour12: true // 12시간제로 표시 (true가 기본값이지만 명시)
 
                                             })
-                                            : <span className="text-slate-400">Not set</span>
+                                            : <span className="text-slate-400">No URL</span>
                                         }
                                     </DetailRow>
                                     <DetailRow label="Reminder">
@@ -298,7 +299,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                                         {todoToEdit.url}
                                     </a>
                                 ) : (
-                                    <span className="text-slate-400">Not set</span>
+                                    <span className="text-slate-400">No URL</span>
                                 )}
                             </DetailRow>
                         </>

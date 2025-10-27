@@ -191,6 +191,15 @@ export default function CalendarUI() {
 
         const fetchCalendarData = async () => {
             try {
+                // defaultView 설정
+                const storedProfile = localStorage.getItem("userProfile");
+                if (storedProfile) {
+                    const parsed = JSON.parse(storedProfile);
+                    const defaultView = parsed.defaultView ?? null;
+                    setViewMode(defaultView);
+                    console.log("defaultView", defaultView);
+                    console.log('ViewMode', defaultView);
+                }
                 // 1. 캘린더의 기본 데이터 (이벤트, 메모, 개인 할일)를 가져옵니다.
                 const json = await api.get(`/cal/${projectId}`);
 
@@ -1242,8 +1251,8 @@ export default function CalendarUI() {
                         weekMobileData && (
                             <WeekViewMobile
                                 projectId={projectId}
-                                //weekTitle={weekMobileData.weekTitle}
-                               // projectName={weekMobileData.projectName}
+                                // weekTitle={weekMobileData.weekTitle}
+                                // projectName={weekMobileData.projectName}
                                 days={weekMobileData.days}
                                 //onPrevWeek={handlePrevMobileWeek}
                                 //onNextWeek={handleNextMobileWeek}
