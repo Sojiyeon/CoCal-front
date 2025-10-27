@@ -170,23 +170,6 @@ const TodoListTab = ({ event, onSelectTodo }: Props & { onSelectTodo?: (todo: Re
 
     return (
         <div className="p-1 space-y-1">
-            {/* 제목, 수정/삭제/탐색 버튼 */}
-            <div className="flex justify-between items-center">
-                <h3 className="text-1xl font-bold text-slate-800 truncate"></h3>
-                <div className="flex items-center gap-3 text-slate-600">
-                    {/* 할 일이 2개 이상일 때만 화살표 표시 */}
-                    {eventTodos.length > 1 && (
-                        <div className="flex items-center gap-1">
-                            <button onClick={goToPrev} className="p-1 rounded-full hover:bg-slate-100"><ChevronLeftIcon /></button>
-                            <span className="text-xs font-mono w-auto text-center">{currentTodoIndex + 1} / {eventTodos.length}</span>
-                            <button onClick={goToNext} className="p-1 rounded-full hover:bg-slate-100"><ChevronRightIcon /></button>
-                        </div>
-                    )}
-
-                {/*    <button onClick={() => onDeleteTodo?.(event.projectId, currentTodo.id, event.id, "EVENT")} className="hover:text-red-600"><DeleteIcon /></button>*/}
-                </div>
-            </div>
-
             {/* 상세 정보 */}
             <div className="space-y-4">
                 <DetailRow label="Title">
@@ -223,6 +206,23 @@ const TodoListTab = ({ event, onSelectTodo }: Props & { onSelectTodo?: (todo: Re
                         </span>
                     </div>
                 </DetailRow>
+
+                {/* 제목, 수정/삭제/탐색 버튼 */}
+                <div className="flex justify-center items-center pt-3">
+                    <h3 className="text-1xl font-bold text-slate-800 truncate"></h3>
+                    <div className="flex items-center gap-3 text-slate-600 ">
+                        {/* 할 일이 2개 이상일 때만 화살표 표시 */}
+                        {eventTodos.length > 1 && (
+                            <div className="flex items-center gap-1">
+                                <button onClick={goToPrev} className="p-1 rounded-full hover:bg-slate-100"><ChevronLeftIcon /></button>
+                                <span className="text-xs font-mono w-auto text-center">{currentTodoIndex + 1} / {eventTodos.length}</span>
+                                <button onClick={goToNext} className="p-1 rounded-full hover:bg-slate-100"><ChevronRightIcon /></button>
+                            </div>
+                        )}
+
+                        {/*    <button onClick={() => onDeleteTodo?.(event.projectId, currentTodo.id, event.id, "EVENT")} className="hover:text-red-600"><DeleteIcon /></button>*/}
+                    </div>
+                </div>
             </div>
         </div>
     );
