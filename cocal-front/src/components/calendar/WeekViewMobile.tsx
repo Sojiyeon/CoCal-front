@@ -1,6 +1,5 @@
 "use client";
 
-
 import React, { useMemo, useEffect, useState } from "react";
 
 import { CalendarEvent, EventTodo, DateMemo } from "./types";
@@ -19,7 +18,6 @@ interface TodoItemType {
     title: string;
     status: string;
     description: string | null;
-
 }
 interface WeekViewMobileProps {
     weekTitle: string;
@@ -51,10 +49,9 @@ export default function WeekViewMobile({
                                            onTodoDataChanged,
                                            onSelectMemo,
                                        }: WeekViewMobileProps) {
-
-
-    const [privateTodosMap, setPrivateTodosMap] = useState<Map<string, TodoItemType[]>>(new Map());
-
+    const [privateTodosMap, setPrivateTodosMap] = useState<
+        Map<string, TodoItemType[]>
+    >(new Map());
 
     useEffect(() => {
         if (!projectId || days.length === 0) return;
@@ -62,30 +59,35 @@ export default function WeekViewMobile({
         const fetchWeekPrivateTodos = async () => {
             const newTodoMap = new Map<string, TodoItemType[]>();
 
-            const fetchPromises = days.map(day => {
-                return api.get(`/projects/${projectId}/todos?date=${day.fullDate}`)
-                    .then(res => {
+            const fetchPromises = days.map((day) => {
+                return api
+                    .get(`/projects/${projectId}/todos?date=${day.fullDate}`)
+                    .then((res) => {
                         if (res.success && res.data && res.data.items) {
-
-                            const todos: TodoItemType[] = res.data.items.map((item: ApiTodoItem) => ({
-                                id: item.id,
-                                title: item.title,
-                                status: item.status,
-                                description: item.description,
-                            }));
+                            const todos: TodoItemType[] = res.data.items.map(
+                                (item: ApiTodoItem) => ({
+                                    id: item.id,
+                                    title: item.title,
+                                    status: item.status,
+                                    description: item.description,
+                                })
+                            );
                             return { date: day.fullDate, todos };
                         }
                         return { date: day.fullDate, todos: [] };
                     })
-                    .catch(err => {
-                        console.error(`Failed to fetch private todos for ${day.fullDate}:`, err);
+                    .catch((err) => {
+                        console.error(
+                            `Failed to fetch private todos for ${day.fullDate}:`,
+                            err
+                        );
                         return { date: day.fullDate, todos: [] };
                     });
             });
 
             const results = await Promise.all(fetchPromises);
 
-            results.forEach(result => {
+            results.forEach((result) => {
                 newTodoMap.set(result.date, result.todos);
             });
 
@@ -93,48 +95,47 @@ export default function WeekViewMobile({
         };
 
         fetchWeekPrivateTodos();
-
     }, [days, projectId]);
 
-
-
-    const handleTogglePrivateTodo = async (todoId: number, fullDate: string) => {
+    const handleTogglePrivateTodo = async (
+        todoId: number,
+        fullDate: string
+    ) => {
         const todosForDate = privateTodosMap.get(fullDate);
         if (!todosForDate) return;
 
-        const todoToUpdate = todosForDate.find(t => t.id === todoId);
+        const todoToUpdate = todosForDate.find((t) => t.id === todoId);
         if (!todoToUpdate) {
-            console.error(`WeekViewMobile: 토글할 Private Todo(ID: ${todoId})를 찾지 못했습니다.`);
+            console.error(
+                `WeekViewMobile: 토글할 Private Todo(ID: ${todoId})를 찾지 못했습니다.`
+            );
             return;
         }
 
         const originalStatus = todoToUpdate.status;
-        const newStatus = originalStatus === 'DONE' ? 'IN_PROGRESS' : 'DONE';
+        const newStatus = originalStatus === "DONE" ? "IN_PROGRESS" : "DONE";
 
-
-        setPrivateTodosMap(prevMap => {
+        setPrivateTodosMap((prevMap) => {
             const newMap = new Map(prevMap);
             const currentDateTodos = newMap.get(fullDate) || [];
-            const updatedDateTodos = currentDateTodos.map(t =>
+            const updatedDateTodos = currentDateTodos.map((t) =>
                 t.id === todoId ? { ...t, status: newStatus } : t
             );
             newMap.set(fullDate, updatedDateTodos);
             return newMap;
         });
 
-
         const payload: TodoUpdatePayload = {
             title: todoToUpdate.title,
             description: todoToUpdate.description || "",
             url: "", // List API에 없으므로 기본값
             status: newStatus,
-            type: 'PRIVATE',
+            type: "PRIVATE",
             projectId: projectId,
-            visibility: 'PRIVATE',
+            visibility: "PRIVATE",
             date: fullDate + "T00:00:00", // 날짜 정보 사용
             offsetMinutes: null, // List API에 없으므로 기본값
         };
-
 
         try {
             await api.put(`/projects/${projectId}/todos/${todoId}`, payload);
@@ -143,11 +144,10 @@ export default function WeekViewMobile({
         } catch (error) {
             console.error("Private Todo 상태 업데이트 API 호출 실패:", error);
 
-
-            setPrivateTodosMap(prevMap => {
+            setPrivateTodosMap((prevMap) => {
                 const newMap = new Map(prevMap);
                 const currentDateTodos = newMap.get(fullDate) || [];
-                const updatedDateTodos = currentDateTodos.map(t =>
+                const updatedDateTodos = currentDateTodos.map((t) =>
                     t.id === todoId ? { ...t, status: originalStatus } : t // 원래 status로 복구
                 );
                 newMap.set(fullDate, updatedDateTodos);
@@ -156,7 +156,6 @@ export default function WeekViewMobile({
             alert("할 일 상태 변경에 실패했습니다.");
         }
     };
-
 
     const title = useMemo(() => projectName, [projectName]);
 
@@ -178,7 +177,6 @@ export default function WeekViewMobile({
     };
     // === KOR-ADD: END :: 헬퍼 함수 ===
 
-
     const normalizedDayText = (dateStr: string, fallbackIndex: number) => {
         const onlyNum = Number(dateStr);
         if (!Number.isNaN(onlyNum) && `${onlyNum}` === dateStr) return dateStr;
@@ -187,21 +185,30 @@ export default function WeekViewMobile({
         return Number.isNaN(n) ? String(fallbackIndex) : String(n);
     };
 
-
-    const TodoItem = ({ todo, onClick }: { todo: TodoItemType | EventTodo, onClick: () => void }) => (
+    const TodoItem = ({
+                          todo,
+                          onClick,
+                      }: {
+        todo: TodoItemType | EventTodo;
+        onClick: () => void;
+    }) => (
         <div
             key={todo.id}
-            className={`flex items-center gap-2 ${todo.status === "DONE" ? "opacity-60" : ""}`}
+            className={`flex items-center gap-2 ${
+                todo.status === "DONE" ? "opacity-60" : ""
+            }`}
         >
             <button
                 onClick={onClick}
                 aria-label="toggle todo"
                 className={`w-4 h-4 border-2 rounded-md flex items-center justify-center ${
-                    todo.status === "DONE" ? "border-slate-400" : "border-slate-300"
+                    todo.status === "DONE"
+                        ? "border-slate-400"
+                        : "border-slate-300"
                 }`}
             >
                 {todo.status === "DONE" && (
-                    <div className="w-2 h-2 bg-slate-400 rounded-sm"/>
+                    <div className="w-2 h-2 bg-slate-400 rounded-sm" />
                 )}
             </button>
             <span
@@ -226,21 +233,20 @@ export default function WeekViewMobile({
                             className="h-12 w-12 flex items-center justify-center rounded-full hover:bg-slate-100 active:scale-95 transition"
                             aria-label="Previous week"
                         >
-                            <ChevronLeft className="h-6 w-6 text-slate-700"/>
+                            <ChevronLeft className="h-6 w-6 text-slate-700" />
                         </button>
-                        <p className="text-[23px] text-slate-500 ">{weekTitle}</p>
+                        <p className="text-[23px] text-slate-500 ">
+                            {weekTitle}
+                        </p>
                         <button
                             onClick={() => onNextWeek?.()}
                             className="h-12 w-12 flex items-center justify-center rounded-full hover:bg-slate-100 active:scale-95 transition"
                             aria-label="Next week"
                         >
-                            <ChevronRight className="h-6 w-6 text-slate-700"/>
+                            <ChevronRight className="h-6 w-6 text-slate-700" />
                         </button>
-
                     </div>
                 </div>
-
-
             </div>
 
             {/* Days Scroll Section */}
@@ -249,7 +255,8 @@ export default function WeekViewMobile({
                     const dayNum = normalizedDayText(day.date, idx + 1);
                     const dayInitial = weekdayInitial(day.weekday);
                     const dayMemos = day.memos || []; // 그날의 메모 가져오기
-                    const privateTodos = privateTodosMap.get(day.fullDate) || [];
+                    const privateTodos =
+                        privateTodosMap.get(day.fullDate) || [];
 
                     return (
                         <div key={`${day.date}-${idx}`} className="border-b">
@@ -259,26 +266,34 @@ export default function WeekViewMobile({
                                     {/* 좌측 원형 날짜 + 요일 이니셜 */}
                                     <div className="flex flex-col items-center w-10">
                                         <div className="relative">
-                                            <div
-                                                className="w-7 h-7 rounded-full bg-slate-900 text-white text-[13px] font-semibold flex items-center justify-center ">
+                                            <div className="w-7 h-7 rounded-full bg-slate-900 text-white text-[13px] font-semibold flex items-center justify-center ">
                                                 {dayNum}
                                             </div>
-                                            {/*  메모 닷 렌더링 로직  */}
+                                            {/* 메모 닷 렌더링 로직  */}
                                             {dayMemos.length > 0 && (
-                                                <div
-                                                    className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5 flex space-x-0.5">
-                                                    {dayMemos.slice(0, 9).map(memo => (
-                                                        <div
-                                                            key={memo.id}
-                                                            onClick={() => onSelectMemo?.(memo)}
-                                                            className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
-                                                            title={memo.content}
-                                                        />
-                                                    ))}
+                                                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5 flex space-x-0.5">
+                                                    {dayMemos
+                                                        .slice(0, 9)
+                                                        .map((memo) => (
+                                                            <div
+                                                                key={memo.id}
+                                                                onClick={() =>
+                                                                    onSelectMemo?.(
+                                                                        memo
+                                                                    )
+                                                                }
+                                                                className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
+                                                                title={
+                                                                    memo.content
+                                                                }
+                                                            />
+                                                        ))}
                                                 </div>
                                             )}
                                         </div>
-                                        <span className="text-[11px] text-slate-400 mt-1">{dayInitial}</span>
+                                        <span className="text-[11px] text-slate-400 mt-1">
+                                            {dayInitial}
+                                        </span>
                                     </div>
 
                                     {/* 우측 콘텐츠 */}
@@ -287,21 +302,38 @@ export default function WeekViewMobile({
                                         <div className="pb-3">
                                             {privateTodos.length > 0 && (
                                                 <div className="mb-2">
-                                                    <p className="text-[11px] text-slate-500 font-semibold mb-1.5">Private
-                                                        Todo</p>
-                                                    <div className="space-y-1">
-                                                        {privateTodos.map((todo) => (
-                                                            <TodoItem
-                                                                key={todo.id}
-                                                                todo={todo}
-                                                                onClick={() => handleTogglePrivateTodo(todo.id, day.fullDate)}
-                                                            />
-                                                        ))}
+                                                    {/* KOR-MOD: 헤더와 리스트를 flex로 나란히 배치 */}
+                                                    <div className="flex items-start gap-20">
+                                                        {/* 헤더 */}
+                                                        <p className="text-[11px] text-slate-500 font-semibold w-16 flex-shrink-0 pt-1">
+                                                            Private Todo
+                                                        </p>
+
+                                                        {/* 목록 */}
+                                                        <div className="flex-1 space-y-1">
+                                                            {privateTodos.map(
+                                                                (todo) => (
+                                                                    <TodoItem
+                                                                        key={
+                                                                            todo.id
+                                                                        }
+                                                                        todo={
+                                                                            todo
+                                                                        }
+                                                                        onClick={() =>
+                                                                            handleTogglePrivateTodo(
+                                                                                todo.id,
+                                                                                day.fullDate
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                )
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
-
 
                                         {/* === KOR-ADD: START :: Public Event/Todo 렌더링 섹션  === */}
                                         {/* 할일 섹션 */}
@@ -323,52 +355,72 @@ export default function WeekViewMobile({
                                                             {/* 컬러 dot */}
                                                             <span
                                                                 className="inline-block w-2 h-2 rounded-full"
-                                                                style={{backgroundColor: event.color || "#94a3b8"}}
+                                                                style={{
+                                                                    backgroundColor:
+                                                                        event.color ||
+                                                                        "#94a3b8",
+                                                                }}
                                                             />
-                                                            <span
-                                                                className="text-[12px] text-slate-500">{timeRange(event)}</span>
+                                                            <span className="text-[12px] text-slate-500">
+                                                                {timeRange(
+                                                                    event
+                                                                )}
+                                                            </span>
                                                         </div>
 
-                                                        {/* 이벤트 타이틀을 체크리스트 스타일로 (UI만) */}
-                                                        <div className="pl-4">
-                                                            <div className="flex items-start gap-2">
-                                                                <span
-                                                                    className="mt-2.5 inline-block w-3 h-0.5 rounded-sm bg-slate-400"></span>
-                                                                <span
-                                                                    className="text-[14px] text-slate-800">{event.title}</span>
+                                                        {/* KOR-MOD: 이벤트 타이틀과 Public Todo 리스트를 flex로 나란히 배치 */}
+                                                        <div className="flex items-start pl-4 gap-18">
+                                                            {/* 1. 이벤트 타이틀 */}
+                                                            <div className="flex items-start gap-2 w-15">
+                                                                <span className="mt-2.5 inline-block w-3 h-0.5 rounded-sm bg-slate-400"></span>
+                                                                <span className="text-[14px] text-slate-800">
+                                                                    {event.title}
+                                                                </span>
                                                             </div>
-                                                        </div>
 
-                                                        {/* Public Todo 목록 */}
-                                                        {event.todos && event.todos.length > 0 && (
-                                                            <div className="pl-8 pt-2 space-y-1">
-                                                                {event.todos.map(todo => (
-                                                                    /* KOR-ADD: 'onClick' prop을 사용하는 새 TodoItem 컴포넌트 호출 방식으로 수정 */
-                                                                    <TodoItem
-                                                                        key={todo.id}
-                                                                        todo={todo}
-                                                                        onClick={() => onToggleTodoStatus?.(todo.id)}
-                                                                    />
-                                                                ))}
-                                                            </div>
-                                                        )}
+                                                            {/* 2. Public Todo 목록 */}
+                                                            {event.todos &&
+                                                                event.todos
+                                                                    .length >
+                                                                0 && (
+                                                                    <div className="flex-1 space-y-1 pt-0.5">
+                                                                        {event.todos.map(
+                                                                            (
+                                                                                todo
+                                                                            ) => (
+                                                                                <TodoItem
+                                                                                    key={
+                                                                                        todo.id
+                                                                                    }
+                                                                                    todo={
+                                                                                        todo
+                                                                                    }
+                                                                                    onClick={() =>
+                                                                                        onToggleTodoStatus?.(
+                                                                                            todo.id
+                                                                                        )
+                                                                                    }
+                                                                                />
+                                                                            )
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
                                         {/* === KOR-ADD: END :: Public Event/Todo 렌더링 섹션 === */}
-
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     );
                 })}
             </div>
 
             {/* 바텀 세이프 에어리어 */}
-            <div className="h-[80px]"/>
+            <div className="h-[80px]" />
         </div>
     );
 }
