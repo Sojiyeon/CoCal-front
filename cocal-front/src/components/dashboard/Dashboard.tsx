@@ -432,7 +432,11 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
                     {menuItems.map((item, index) => (
                         <div
                             key={index}
-                            onClick={() => { item.action(); if (!item.isToggle) setIsOpen(false); }}
+                            onClick={() => {
+                                if (item.isToggle) return; // 다크모드 라벨은 부모 클릭 무시
+                                item.action();
+                                setIsOpen(false);
+                            }}
                             className={`flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer transition duration-150
                                 ${item.isDestructive ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-300/10' : 'text-light-text-primary dark:text-white hover:bg-gray-50 dark:hover:bg-white/5'}
                             `}
