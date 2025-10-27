@@ -432,7 +432,11 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
                     {menuItems.map((item, index) => (
                         <div
                             key={index}
-                            onClick={() => { item.action(); if (!item.isToggle) setIsOpen(false); }}
+                            onClick={() => {
+                                if (item.isToggle) return; // 다크모드 라벨은 부모 클릭 무시
+                                item.action();
+                                setIsOpen(false);
+                            }}
                             className={`flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer transition duration-150
                                 ${item.isDestructive ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-300/10' : 'text-light-text-primary dark:text-white hover:bg-gray-50 dark:hover:bg-white/5'}
                             `}
@@ -836,7 +840,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25"
                                              strokeLinecap="round" strokeLinejoin="round"
-                                             className="lucide lucide-circle-arrow-right-icon lucide-circle-arrow-right">
+                                             className="lucide lucide-circle-arrow-right-icon lucide-circle-arrow-right dark:text-neutral-200">
                                             <circle cx="12" cy="12" r="10"/>
                                             <path d="m12 16 4-4-4-4"/>
                                             <path d="M8 12h8"/>

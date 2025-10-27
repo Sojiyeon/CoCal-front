@@ -1072,7 +1072,7 @@ export default function CalendarUI() {
                 {isUserLoading ? (
                     <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
                 ) : user && user.id ? (
-                    <div className="flex items-center justify-end space-x-4">
+                    <div  className="flex items-center justify-end space-x-4">
                         <NotificationAndInviteIcons
                             userId={user.id}
                             handleLogout={logout}
@@ -1090,8 +1090,7 @@ export default function CalendarUI() {
             </div>
 
             {/*  --- 모바일 헤더 ---  */}
-            <div
-                className="md:hidden relative flex items-center justify-between px-4 py-3 bg-white border-gray-200 dark:bg-neutral-900 border-b dark:border-neutral-600 top-0 shadow-md">
+            <div className="md:hidden relative flex items-center justify-between px-4 py-3 bg-white border-gray-200 dark:bg-neutral-900 border-b dark:border-neutral-600 top-0 shadow-md">
                 {/* 햄버거 버튼 */}
                 <button onClick={() => setIsSidebarOpen(true)} className="p-2 z-10">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-900 dark:text-neutral-300">
@@ -1178,7 +1177,7 @@ export default function CalendarUI() {
                 </div>
 
                 {/* 메인 캘린더  영역 */}
-                <main className={`flex-1 overflow-auto ${
+                <main className={`flex-1 overflow-auto scrollbar-hide ${
                     isMobile && isWeekMobileOpen ? "" : "p-2 md:p-5"
                 }`}>
                     {/* 메인 캘린더 헤더 */}
