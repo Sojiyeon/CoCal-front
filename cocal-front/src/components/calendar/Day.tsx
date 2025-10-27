@@ -218,10 +218,10 @@ export default function DayView({
 
     };
     return (
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-2 border-b border border-gray-200 bg-slate-50 text-sm font-medium">
-                <div className="p-2 text-left text-slate-400">Time</div>
-                <div className="p-2 text-left text-slate-400">
+        <div className="border border-gray-200 dark:border-neutral-700 rounded-lg overflow-hidden">
+            <div className="grid grid-cols-2 border-b border border-gray-200 bg-slate-50 dark:bg-neutral-900 dark:border-slate-700 text-sm font-medium">
+                <div className="p-2 text-left text-slate-400 dark:text-slate-200">Time</div>
+                <div className="p-2 text-left text-slate-400 dark:text-slate-200">
 
                     {date.toLocaleDateString("ko-KR", {
                         year: "numeric",
@@ -306,7 +306,7 @@ export default function DayView({
                 </div>
             )}
             <div className="flex">
-                <div className="flex flex-col border-r border border-gray-200 text-xs text-slate-400">
+                <div className="flex flex-col border-r border border-gray-200 dark:border-neutral-700 text-xs text-slate-400 dark:text-slate-200">
                     {/*  시간 레이블 로직 변경 */}
                     {hours.map((h) => {
                         const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
@@ -320,9 +320,9 @@ export default function DayView({
                     })}
                 </div>
 
-                <div className="relative flex-1 border-l border border-gray-200">
+                <div className="relative flex-1 border-l border border-gray-200 dark:border-neutral-700">
                     {hours.map((_, h) => (
-                        <div key={h} className="h-16 border-b border border-gray-200"/>
+                        <div key={h} className="h-16 border-b border border-gray-200 dark:border-neutral-700"/>
                     ))}
 
                     {/*  이제 timedEventsForDay만 렌더링합니다. */}

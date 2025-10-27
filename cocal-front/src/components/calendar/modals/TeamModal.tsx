@@ -131,9 +131,9 @@ export function TeamModal({ projectId, onClose }: Props) {
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="bg-white rounded-xl shadow-lg p-6 w-[480px] text-slate-800">
+            <div className="bg-white rounded-xl shadow-lg p-6 w-[480px] text-slate-800 dark:bg-neutral-800">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold">
+                    <h2 className="text-lg font-semibold dark:text-white">
                         {myRole !== "MEMBER" ?
                             "Share this calendar" : "Calendar members"
                         }
@@ -150,11 +150,11 @@ export function TeamModal({ projectId, onClose }: Props) {
                                 {copying ? "Copying..." : "Copy Link"}
                             </button>
                         )}
-                        <button onClick={onClose} className="text-slate-400 hover:text-slate-600">✕</button>
+                        <button onClick={onClose} className="text-slate-400 dark:text-white hover:text-slate-600 dark:hover:text-slate-400">✕</button>
                     </div>
                 </div>
                 {myRole !== "MEMBER" && (
-                    <div className="flex gap-2 mb-6">
+                    <div className="flex gap-2 mb-6 dark:text-neutral-600">
                         <input
                             type="email"
                             placeholder="Email"
@@ -171,7 +171,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                         <button
                             onClick={() => void handleInvite()} // [수정] Promise 반환 무시 경고를 해결합니다.
                             disabled={isLoading}
-                            className="px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold hover:bg-blue-700 disabled:bg-blue-300"
+                            className="px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md text-sm font-semibold hover:bg-blue-700 disabled:bg-blue-300"
                         >
                             {isLoading ? "Inviting..." : "Invite"}
                         </button>
@@ -179,7 +179,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                 )}
 
                 <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-slate-500">Who has access</h3>
+                    <h3 className="text-sm font-medium text-slate-500 dark:text-neutral-300">Who has access</h3>
                     {error && <p className="text-xs text-red-500">{error}</p>}
                     <div className="space-y-3 max-h-60 overflow-y-auto">
                         {[...members]
@@ -196,10 +196,10 @@ export function TeamModal({ projectId, onClose }: Props) {
                                             alt={member.name}
                                             width={32}
                                             height={32}
-                                            className="w-8 h-8 rounded-full"
+                                            className="w-8 h-8 rounded-full dark:text-gray-200"
                                         />
                                         <div>
-                                            <div className="font-semibold">
+                                            <div className="font-semibold dark:text-gray-200">
                                                 {member.name} {member.me && "(me)"}
                                             </div>
                                             <div className="text-xs text-slate-400">{member.email}</div>

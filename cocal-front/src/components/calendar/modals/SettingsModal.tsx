@@ -121,7 +121,7 @@ export function SettingsModal({ projectId, onClose }: Props) {
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
             <div
-                className="bg-white rounded-xl shadow-lg p-4 md:p-6 w-full max-w-2xl text-slate-800 flex flex-col md:flex-row gap-4 md:gap-8">
+                className="bg-white dark:bg-neutral-800 rounded-xl shadow-lg p-4 md:p-6 w-full max-w-2xl text-slate-800 dark:text-gray-200 flex flex-col md:flex-row gap-4 md:gap-8">
                 {/* 사이드 메뉴 */}
                 <div className="w-full md:w-1/4 flex flex-col">
                     <h2 className="hidden md:block text-lg font-bold mb-2 md:mb-4">Settings</h2>
@@ -175,7 +175,7 @@ export function SettingsModal({ projectId, onClose }: Props) {
                         </button>
                     </div>
                     <div className="space-y-2">
-                        <div className="hidden md:block bg-slate-100 p-2 rounded-md text-sm text-slate-800">Project Settings</div>
+                        <div className="hidden md:block bg-slate-100 dark:bg-neutral-700 p-2 rounded-md text-sm text-slate-800 dark:text-slate-300">Project Settings</div>
                     </div>
                     {/*데스크탑일 때 버튼*/}
                     <button
@@ -235,12 +235,12 @@ export function SettingsModal({ projectId, onClose }: Props) {
                     ) : (
                         <>
                         {/* 프로젝트 설정 섹션 */}
-                            <div className={`bg-slate-50 p-4 rounded-lg mb-6 ${
+                            <div className={`bg-slate-50 dark:bg-neutral-800 p-4 rounded-lg mb-6 ${
                                 isOwner
-                                    ? "bg-white" // 편집 가능
+                                    ? "bg-white dark:bg-neutral-800" // 편집 가능
                                     : "bg-gray-100 text-gray-500 pointer-events-none cursor-not-allowed" // 읽기 전용
                             }`}>
-                                <h3 className="font-semibold mb-4 flex items-center gap-2 flex-wrap">
+                                <h3 className="font-semibold mb-4 flex items-center gap-2 flex-wrap dark:text-slate-100">
                                     <span className="truncate">{settings.name}</span>
                                     <div className="flex items-center space-x-[-8px] ml-auto">
                                         {members.map((member, index) => (
@@ -249,7 +249,7 @@ export function SettingsModal({ projectId, onClose }: Props) {
                                                 src={member.profileImageUrl || "https://placehold.co/100x100/A0BFFF/FFFFFF?text=User"}
                                                 title={member.name}
                                                 alt={member.name || 'Team member'}
-                                                className="w-6 h-6 rounded-full object-cover border-2 border-white shadow-sm transition transform hover:scale-110"
+                                                className="w-6 h-6 rounded-full object-cover border-2 border-white dark:border-neutral-600 shadow-sm transition transform hover:scale-110"
                                                 style={{zIndex: members.length - index}}
                                             />
                                         ))}
@@ -257,27 +257,27 @@ export function SettingsModal({ projectId, onClose }: Props) {
                                 </h3>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-500 mb-1">Project
+                                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-300 mb-1">Project
                                             Name</label>
                                         <input type="text" name="name" value={settings.name}
                                                onChange={handleInputChange}
-                                               className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none"/>
+                                               className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-slate-500 focus:border-slate-500 dark:border-neutral-600 dark:text-neutral-300 outline-none"/>
                                     </div>
 
                                     <div className="flex flex-col sm:flex-row gap-4">
                                         <div className="flex-1">
-                                            <label className="block text-xs font-medium text-slate-500 mb-1">Start
+                                            <label className="block text-xs font-medium text-slate-500 dark:text-slate-300 mb-1">Start
                                                 Date</label>
                                             <input type="date" name="startDate" value={settings.startDate}
                                                    onChange={handleInputChange}
-                                                   className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none"/>
+                                                   className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-slate-500 focus:border-slate-500 dark:border-neutral-600 dark:text-neutral-300 outline-none"/>
                                         </div>
                                         <div className="flex-1">
-                                            <label className="block text-xs font-medium text-slate-500 mb-1">End
+                                            <label className="block text-xs font-medium text-slate-500 dark:text-slate-300 mb-1">End
                                                 Date</label>
                                             <input type="date" name="endDate" value={settings.endDate}
                                                    onChange={handleInputChange}
-                                                   className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none"/>
+                                                   className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-slate-500 focus:border-slate-500 dark:border-neutral-600 dark:text-neutral-300 outline-none"/>
                                         </div>
                                     </div>
                                 </div>
@@ -288,7 +288,7 @@ export function SettingsModal({ projectId, onClose }: Props) {
                                 {/*취소 버튼*/}
                                 <button
                                     onClick={onClose}
-                                    className="flex-1 px-6 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-semibold hover:bg-gray-300"
+                                    className="flex-1 px-6 py-2 bg-gray-200 dark:bg-neutral-700/45 text-gray-700 dark:text-slate-200 rounded-md text-sm font-semibold hover:bg-gray-300 dark:hover:bg-gray-300/20"
                                 >
                                     Cancel
                                 </button>

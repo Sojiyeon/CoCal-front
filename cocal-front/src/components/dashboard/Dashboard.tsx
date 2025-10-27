@@ -742,7 +742,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                             pendingInvites.map((invite, idx) => (
                                 <div
                                     key={idx}
-                                    className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition duration-150 border-b dark:border-gray-700 last:border-b-0"
+                                    className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition duration-150 border-b dark:border-neutral-700 last:border-b-0"
                                 >
                                     <p className="text-sm font-medium text-gray-800 dark:text-white truncate">
                                         {invite.projectName}
@@ -813,7 +813,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                                 <div
                                     key={n.id}
                                     onClick={() => handleNotificationClick(n)}
-                                    className="flex justify-between items-start px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition duration-150 border-b dark:border-gray-700 last:border-b-0"
+                                    className="flex justify-between items-start px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition duration-150 border-b dark:border-neutral-700 last:border-b-0"
                                 >
                                     {/* 왼쪽 텍스트 */}
                                     <div className="flex-1 space-y-1.5">
@@ -848,7 +848,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                         {/* 더미 '모두 읽음' 버튼 */}
                         {/* [수정] '모두 읽음' 버튼 (API 연결 및 조건부 렌더링) */}
                         {unreadNotifications.length > 0 && (
-                            <div className='p-2 border-t border-gray-100 dark:border-gray-700 mt-1'>
+                            <div className='p-2 border-t border-gray-100 dark:border-neutral-700 mt-1'>
                                 <button
                                     onClick={handleMarkAllAsRead}
                                     className='w-full text-center text-sm text-blue-600 hover:text-blue-700 py-1 rounded-md hover:bg-blue-50 dark:hover:bg-gray-800 transition'
@@ -868,7 +868,6 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
 const ProjectDashboardPage: React.FC = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
-    // const { theme } = useTheme();
     const { user, isLoading: isLoadingUser, logout, fetchUserProfile } = useUser();
     const [isLoadingProjects, setIsLoadingProjects] = useState(false);
     const [projects, setProjects] = useState<Project[]>([]);
@@ -1202,7 +1201,7 @@ const ProjectDashboardPage: React.FC = () => {
     return (
     <div className="min-h-screen transition-colors duration-300 font-sans bg-gray-50 dark:bg-neutral-900">
         {/* 상단 통합 헤더 영역 */}
-        <header className="flex justify-between items-center py-5 px-8 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-neutral-900 sticky top-0 z-[110] shadow-md">
+        <header className="flex justify-between items-center py-3 px-8 border-b border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-900 sticky top-0 z-[110] shadow-md">
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">My projects</h1>
                 <div className="flex items-center space-x-4"> {/* 유저 프로필 */}
                     {/*초대함, 알림 아이콘*/}

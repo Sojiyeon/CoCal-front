@@ -785,7 +785,7 @@ export default function CalendarUI() {
                 );
             }
 
-            //  삭제 성공 시, Todo 버전을 1 증가시켜서 변경 신호를 보냅니다.
+            // [추가] 삭제 성공 시, Todo 버전을 1 증가시켜서 변경 신호를 보냅니다.
             setTodoVersion(v => v + 1);
 
         } catch (err) {
@@ -839,7 +839,7 @@ export default function CalendarUI() {
         setViewMonth(viewMonth === 11 ? 0 : viewMonth + 1);
         setViewYear(viewMonth === 11 ? viewYear + 1 : viewYear);
     }
-    // --- 뷰 모드에 따라 탐색을 처리하는 새로운 통합 핸들러 ---
+    // --- [추가] 뷰 모드에 따라 탐색을 처리하는 새로운 통합 핸들러 ---
     const handlePrev = () => {
         if (viewMode === 'month') {
             prevMonth();
@@ -1041,17 +1041,17 @@ export default function CalendarUI() {
         return text.substring(0, maxLength) + "...";
     };
     return (
-        <div className="h-screen w-screen flex flex-col bg-white">
+        <div className="h-screen w-screen flex flex-col bg-white dark:bg-neutral-900">
             {/*  --- 데스크톱 헤더 ---  */}
-            <div className="hidden md:flex items-center justify-between px-6 py-3 bg-white border-b">
+            <div className="hidden md:flex items-center justify-between  px-6 py-3 border-b border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-900 sticky shadow-md">
                 <div className="flex items-center gap-3">
-                    <button onClick={() => router.push("/dashboard")} className="p-1 rounded-full hover:bg-slate-100">
+                    <button onClick={() => router.push("/dashboard")} className="p-1 rounded-full hover:bg-slate-100 dark:text-white dark:hover:bg-gray-700/70">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                            <path d="M15 18l-6-6 6-6" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round"
+                            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
                                   strokeLinejoin="round"/>
                         </svg>
                     </button>
-                    <h1 className="text-lg font-semibold text-slate-800 truncate">
+                    <h1 className="text-lg font-semibold text-slate-800 truncate dark:text-white">
                         {currentProject ? currentProject.name : "Project"}
                     </h1>
                     <div className="flex items-center space-x-[-4px]">
@@ -1062,7 +1062,7 @@ export default function CalendarUI() {
                                 src={member.profileImageUrl || "https://placehold.co/100x100/A0BFFF/FFFFFF?text=User"}
                                 title={member.name}
                                 alt={member.name || 'Team member'}
-                                className="w-6 h-6 rounded-full object-cover border-2 border-white shadow-sm transition transform hover:scale-110"
+                                className="w-6 h-6 rounded-full object-cover border-2 border-white shadow-sm transition transform hover:scale-110 dark:border-neutral-600"
                                 style={{zIndex: currentProject?.members.length - index}}
                             />
                         ))}
@@ -1089,11 +1089,11 @@ export default function CalendarUI() {
             </div>
 
             {/*  --- 모바일 헤더 ---  */}
-            <div className="md:hidden relative flex items-center justify-between px-4 py-3 bg-white border-b">
+            <div className="md:hidden relative flex items-center justify-between px-4 py-3 bg-white border-gray-200 dark:bg-neutral-900 border-b dark:border-neutral-600 top-0 shadow-md">
                 {/* 햄버거 버튼 */}
                 <button onClick={() => setIsSidebarOpen(true)} className="p-2 z-10">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4 6H20M4 12H20M4 18H20" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-900 dark:text-neutral-300">
+                        <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                               strokeLinejoin="round"/>
                     </svg>
                 </button>
@@ -1107,10 +1107,9 @@ export default function CalendarUI() {
                         />
                     )}
                 </div>
-
-
+                
                 {/* 프로필 드롭다운 (이미지만 표시) */}
-                <div className="z-30">
+                <div className="z-20">
                     {isUserLoading ? (
                         <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse"></div>) : user && user.id ? (
                         <ProfileDropdown
@@ -1189,10 +1188,10 @@ export default function CalendarUI() {
                             }`}
                         >
                             <button onClick={handlePrev}
-                                    className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-lg md:text-xl p-2 rounded-full hover:bg-slate-100">
+                                    className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-slate-800 dark:text-neutral-300 hover:text-slate-600 dark:hover:text-slate-400  text-lg md:text-xl p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-100/5">
                                 &#x276E;
                             </button>
-                            <h2 className="text-base md:text-lg font-semibold text-slate-800 text-center">
+                            <h2 className="text-base md:text-lg font-semibold text-slate-800 text-center dark:text-gray-300">
                                 {viewMode === 'day'
                                     ? selectedDate.toLocaleDateString('en-US', {
                                         month: 'long',
@@ -1207,7 +1206,7 @@ export default function CalendarUI() {
                                         })}
                             </h2>
                             <button onClick={handleNext}
-                                    className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-slate-800 hover:text-slate-600 text-lg md:text-xl p-2 rounded-full hover:bg-slate-100">
+                                    className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-slate-800 dark:text-neutral-300 hover:text-slate-600 dark:hover:text-slate-400  text-lg md:text-xl p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-100/5">
                                 &#x276F;
                             </button>
                         </div>
@@ -1217,7 +1216,7 @@ export default function CalendarUI() {
                             <select
                                 value={viewMode}
                                 onChange={(e) => setViewMode(e.target.value as "day" | "week" | "month")}
-                                className="border rounded px-3 py-1 text-sm"
+                                className="border dark:border-neutral-700 dark:text-neutral-100 dark:bg-neutral-900 rounded px-3 py-1 text-sm"
                             >
                                 <option value="month">Month</option>
                                 <option value="week">Week</option>
@@ -1245,11 +1244,11 @@ export default function CalendarUI() {
                         <>
                             {viewMode === "month" && (
                                 <>
-                                    <div className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2">
+                                    <div className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2 dark:border-gray-600">
                                         {weekdays.map((w) => (
                                             <div key={w} className="text-center">{w.substring(0, 1)}</div>))}
                                     </div>
-                                    <div className="grid grid-cols-1 border-l border-gray-200">
+                                    <div className="grid grid-cols-1 border-l border-gray-200 dark:border-neutral-600">
                                         {matrix.map((week, weekIndex) => {
                                             const weekEvents = events.filter(event => {
                                                 if (event.title.startsWith('Todo:')) {
@@ -1270,10 +1269,10 @@ export default function CalendarUI() {
 
                                             return (
                                                 <div key={weekIndex}
-                                                     className="grid grid-cols-7 relative border-b border-gray-200">
+                                                     className="grid grid-cols-7 relative border-b border-gray-200 dark:border-neutral-600">
                                                     {week.map((day, dayIndex) => {
                                                         if (!day) return <div key={`empty-${dayIndex}`}
-                                                                              className="min-h-[80px] md:min-h-[120px] border-r border-gray-200 bg-gray-50"></div>;
+                                                                              className="min-h-[80px] md:min-h-[120px] border-r border-gray-200 bg-gray-50 dark:bg-neutral-800 dark:border-neutral-600"></div>;
 
                                                         const dateKey = formatYMD(viewYear, viewMonth, day);
                                                         const isToday = dateKey === formatYMD(today.getFullYear(), today.getMonth(), today.getDate());
@@ -1281,9 +1280,9 @@ export default function CalendarUI() {
 
                                                         return (
                                                             <div key={dateKey}
-                                                                 className={`min-h-[80px] md:min-h-[120px] border-r border-gray-200 p-1 md:p-2 relative ${isToday ? 'bg-blue-50' : 'bg-white'}`}>
+                                                                 className={`min-h-[80px] md:min-h-[120px] border-r border-gray-200 dark:border-neutral-600 p-1 md:p-2 relative ${isToday ? 'bg-blue-50 dark:bg-blue-400/10' : 'bg-white dark:bg-neutral-900'}`}>
                                                                 <div className="flex items-center justify-between">
-                                                                    <div className="flex items-center gap-1">
+                                                                    <div className="flex items-center gap-1 dark:text-white">
                                                                         <div
                                                                             className={`text-xs md:text-sm font-medium cursor-pointer hover:text-blue-600 ${isToday ? 'text-blue-600 font-bold' : ''}`}
                                                                             onClick={() => handleMainDateClick(day)}>
@@ -1468,7 +1467,7 @@ export default function CalendarUI() {
                                                                             <div
                                                                                 key={`more-${dayIndex}`}
                                                                                 className="absolute h-5 px-2 text-xs text-slate-600 font-medium cursor-pointer truncate hover:bg-slate-100 rounded"
-                                                                                onClick={handleMoreClick} // 클릭 핸들러 변경
+                                                                                onClick={handleMoreClick} // [수정] 클릭 핸들러 변경
                                                                                 style={{
                                                                                     //  top 위치를 동적으로 설정
                                                                                     top: `${MAX_EVENT_ROWS_TO_SHOW * 22}px`, // 모바일: 44px, 데스크톱: 66px

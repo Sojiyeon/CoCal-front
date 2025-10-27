@@ -50,19 +50,19 @@ export default function TaskProgress({ todos, projectStartDate, projectEndDate, 
             <div className="flex items-center justify-between mx-1">
                     {projectName ?
                         <>
-                            <h2 className="text-gray-600 font-semibold text-sm">
+                            <h2 className="text-gray-600 dark:text-white font-semibold text-sm">
                             {truncateText(projectName,18)}
                             </h2>
-                            <span className="border border-blue-900 rounded-full px-2 py-0.5 text-blue-900 font-semibold text-xs">
+                            <span className="border border-blue-900 rounded-full px-2 py-0.5 text-blue-900 font-semibold text-xs dark:text-blue-400 dark:border-blue-400">
                                 {stats.percent}%
                             </span>
                         </>
                         :
                         <>
-                            <span className="border border-blue-900 rounded-full px-2 py-0.5 text-blue-900 font-semibold text-xs">
+                            <span className="border border-blue-900 rounded-full px-2 py-0.5 text-blue-900 font-semibold text-xs dark:text-blue-400 dark:border-blue-400">
                                 {stats.percent}%
                             </span>
-                            <h2 className="text-gray-600 font-semibold text-sm">
+                            <h2 className="text-gray-600 dark:text-gray-400 font-semibold text-sm">
                                 {projectEndDate ? projectEndDate.toLocaleDateString() : ""}
                             </h2>
                         </>
@@ -75,7 +75,7 @@ export default function TaskProgress({ todos, projectStartDate, projectEndDate, 
                 {/*  데스크톱에서만 하단 여백(mb-4)이 적용되도록 수정 */}
                 <div className="bg-gray-200 rounded-full h-2 md:mb-4">
                     <div
-                        className="bg-blue-900 h-2 rounded-full"
+                        className="bg-blue-900 dark:bg-blue-400 h-2 rounded-full"
                         style={{ width: `${stats.percent}%` }}
                     ></div>
                 </div>
@@ -84,16 +84,16 @@ export default function TaskProgress({ todos, projectStartDate, projectEndDate, 
                 {/* 모바일에서는 숨기고(hidden), 데스크톱에서는 보이도록(md:flex) 수정 */}
                 <div className="hidden md:flex">
                     <div className="flex-1 text-left">
-                        <p className="text-1xl font-bold">{stats.completed}</p>
-                        <p className="text-gray-600">Completed</p>
+                        <p className="text-1xl font-bold dark:text-white">{stats.completed}</p>
+                        <p className="text-gray-600 dark:text-slate-400">Completed</p>
                     </div>
                     <div className="flex-1 text-center">
-                        <p className="text-1xl font-bold">{stats.todo}</p>
-                        <p className="text-gray-600">To do</p>
+                        <p className="text-1xl font-bold dark:text-white">{stats.todo}</p>
+                        <p className="text-gray-600 dark:text-slate-400">To do</p>
                     </div>
                     <div className="flex-1 text-right">
-                        <p className="text-1xl font-bold">{stats.all}</p>
-                        <p className="text-gray-400">All</p>
+                        <p className="text-1xl font-bold dark:text-white">{stats.all}</p>
+                        <p className="text-gray-400 dark:text-slate-400">All</p>
                     </div>
                 </div>
             </div>

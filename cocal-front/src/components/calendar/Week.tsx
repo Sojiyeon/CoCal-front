@@ -230,9 +230,9 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
     }, [dailyLayouts]);
 
     return (
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="flex border-b border-gray-200 bg-slate-50 text-sm font-medium">
-                <div className="w-16 flex-shrink-0 p-2 text-right text-slate-400">Time</div>
+        <div className="border border-gray-200 rounded-lg overflow-hidden dark:border-neutral-600">
+            <div className="flex border-b border-gray-200 bg-slate-50 text-sm font-medium dark:border-neutral-600">
+                <div className="w-16 flex-shrink-0 p-2 text-right text-slate-400 dark:bg-neutral-800">Time</div>
                 <div className="grid grid-cols-7 flex-1">
                     {days.map((day, idx) => {
                         // 현재 주의 시작일(월요일)로부터 idx(0~6)일 뒤의 날짜 계산
@@ -252,12 +252,12 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
                         return (
                             //flex-col로 변경하여 요일과 날짜를 세로로 배치
                             <div key={idx}
-                                 className="p-2 text-center border-l border-gray-200 flex flex-col items-center gap-0.5">
+                                 className="p-2 text-center border-l border-gray-200 flex flex-col items-center gap-0.5 dark:bg-neutral-800 dark:border-neutral-600">
 
                                 {/* 요일과 메모 닷(dot)을 묶는 div 추가 */}
                                 <div className="relative h-4">
                                     <span className={`text-xs ${
-                                        isToday ? 'text-blue-600' : 'text-slate-700'
+                                        isToday ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'
                                     }`}>
                                         {day}
                                     </span>
@@ -280,8 +280,8 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
                                 {/* 날짜 번호 */}
                                 <span className={`text-sm font-medium ${
                                     isToday
-                                        ? 'text-blue-600 bg-blue-100 rounded-full w-6 h-6 flex items-center justify-center'
-                                        : 'text-slate-700 w-6 h-6 flex items-center justify-center' // 크기 고정
+                                        ? 'text-blue-600 bg-blue-100 rounded-full w-6 h-6 flex items-center justify-center dark:bg-blue-800/20 dark:text-blue-400'
+                                        : 'text-slate-700 dark:text-slate-300 w-6 h-6 flex items-center justify-center' // 크기 고정
                                 }`}>
                                     {dateNum}
                                 </span>
@@ -308,7 +308,7 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
             {allDayLayout.totalRows > 0 && (
                 <div className="flex border-b border-gray-200">
                     <div className="w-16 flex-shrink-0 p-1 text-center text-xs text-slate-400 self-stretch"></div>
-                    <div className="grid grid-cols-7 flex-1 relative border-l border-gray-200"
+                    <div className="grid grid-cols-7 flex-1 relative border-l border-gray-200 dark:border-neutral-600"
                          style={{minHeight: `${allDayLayout.totalRows * allDayEventHeight}px`}}>
                         {allDayLayout.positionedEvents.map(({event, startDayIndex, span, topIndex}) => (
                             <div
@@ -336,7 +336,7 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
                             <span>
                                 {h === 0 ? '12' : h > 12 ? h - 12 : h}
                                 <span
-                                    className="ml-0.5 text-[10px] border border-gray-200 rounded px-1 opacity-70 ">{h < 12 ? 'AM' : 'PM'}</span>
+                                    className="ml-0.5 text-[10px] border border-gray-200 rounded px-1 opacity-70 dark:border-neutral-600">{h < 12 ? 'AM' : 'PM'}</span>
                             </span>
                         </div>
                     ))}
@@ -351,9 +351,9 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
                         dayEnd.setHours(23, 59, 59, 999);
 
                         return (
-                            <div key={dayIdx} className="relative border-l border-gray-200">
+                            <div key={dayIdx} className="relative border-l border-gray-200 dark:border-neutral-600">
                                 {hours.map((_, h) => (
-                                    <div key={h} className="h-12 border-b border-gray-200"/>
+                                    <div key={h} className="h-12 border-b border-gray-200 dark:border-neutral-600"/>
                                 ))}
 
                                 {dailyLayouts[dayIdx].eventsToRender.map(({

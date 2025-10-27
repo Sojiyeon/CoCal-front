@@ -111,12 +111,12 @@ const CalendarIcon = () => (
 const ActionButton = ({ icon: Icon, text, onClick }: { icon: React.ElementType; text: string; onClick: () => void }) => (
     <button
         onClick={onClick}
-        className="flex items-center w-full text-left p-3 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors duration-150"
+        className="flex items-center w-full text-left p-3 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors duration-150 dark:text-slate-200 dark:hover:bg-neutral-800 "
     >
-        <span className="mr-4 text-gray-600">
+        <span className="mr-4 text-gray-600 dark:text-slate-300">
             <Icon />
         </span>
-        <span className="font-medium">{text}</span>
+        <span className="font-medium dark:text-slate-300">{text}</span>
     </button>
 );
 
@@ -316,30 +316,30 @@ export default function SidebarLeft({
     });
 
     return (
-        <aside className="w-[280px] border-r p-4 bg-white flex flex-col h-full">
+        <aside className="w-[280px] p-4 bg-white flex flex-col h-full dark:bg-neutral-900">
             {/* --- 모바일 전용 UI --- */}
             <div className="md:hidden">
                 <div className="flex justify-between items-center mb-4">
                     <button onClick={onClose} className="p-2">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M18 6L6 18M6 6L18 18" stroke="#334155" strokeWidth="2" strokeLinecap="round"
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-900 dark:text-neutral-300">
+                            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                                   strokeLinejoin="round"/>
                         </svg>
                     </button>
                 </div>
 
                 {/* 모바일 뷰 전환 탭 */}
-                <div className="flex justify-center items-center bg-slate-100 rounded-lg p-1 mb-6">
+                <div className="flex justify-center items-center bg-slate-100 rounded-lg p-1 mb-6 dark:bg-neutral-800">
                     <button
                         onClick={onGoToMonthView}
-                        className="flex-1 p-2 rounded-md flex justify-center items-center text-slate-500"
+                        className="flex-1 p-2 rounded-md flex justify-center items-center text-slate-500 dark:text-gray-400"
                         aria-label="Month View"
                     >
                         <CalendarIcon/>
                     </button>
                     <button
                         onClick={onGoToWeekView}
-                        className="flex-1 p-2 rounded-md flex justify-center items-center text-slate-500"
+                        className="flex-1 p-2 rounded-md flex justify-center items-center text-slate-500 dark:text-gray-400"
                         aria-label="Week View"
                     >
                         <ListIcon/>
@@ -357,26 +357,26 @@ export default function SidebarLeft({
             {/* --- 데스크톱 UI --- */}
             <div className="hidden md:flex flex-col flex-1 overflow-hidden">
                 {/* 1️⃣ 상단: mini calendar (고정) */}
-                <div className="mb-6">
-                    <div className="mb-4">
-                        <div
-                            className="w-full px-6 py-1.5 rounded-full border border-slate-300 text-lg font-bold text-slate-800 text-center">
-                            To do
-                        </div>
+                <div className="mb-4">
+                    <div
+                        className="w-full px-6 py-1.5 rounded-full border border-slate-300 dark:border-slate-600 text-lg font-bold text-slate-800 dark:text-slate-100 text-center">
+                        To do
                     </div>
+                </div>
+                <div className="mb-6">
                     <div className="flex items-center justify-between">
-                        <button onClick={prevMiniMonth} className="text-xs">&#x276E;</button>
-                        <div className="text-sm font-medium">
+                        <button onClick={prevMiniMonth} className="text-xs dark:text-gray-100">&#x276E;</button>
+                        <div className="text-sm font-medium dark:text-gray-100">
                             {new Date(miniYear, miniMonth).toLocaleString("en-US", {month: "long", year: "numeric"})}
                         </div>
-                        <button onClick={nextMiniMonth} className="text-xs">&#x276F;</button>
+                        <button onClick={nextMiniMonth} className="text-xs dark:text-gray-100">&#x276F;</button>
                     </div>
-                    <div className="mt-3 grid grid-cols-7 gap-1 text-[12px] text-slate-500">
+                    <div className="mt-3 grid grid-cols-7 gap-1 text-[12px] text-slate-500 dark:text-gray-400">
                         {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
                             <div key={i} className="text-center">{d}</div>
                         ))}
                     </div>
-                    <div className="mt-2 grid grid-cols-7 gap-1 text-sm">
+                    <div className="mt-2 grid grid-cols-7 gap-1 text-sm dark:text-gray-300">
                         {miniMatrix.map((week, ri) =>
                             week.map((day, ci) => {
                                 const isTodayDate = day && miniYear === today.getFullYear() && miniMonth === today.getMonth() && day === today.getDate();
@@ -385,7 +385,7 @@ export default function SidebarLeft({
                                     <div
                                         key={`${ri}-${ci}`}
                                         onClick={() => day && handleSidebarDateSelect(day)}
-                                        className={`h-7 flex items-center justify-center rounded cursor-pointer ${isTodayDate ? "bg-slate-800 text-white" : isSelected ? "bg-slate-200 text-slate-800" : "text-slate-500 hover:bg-slate-100"}`}
+                                        className={`h-7 flex items-center justify-center rounded cursor-pointer ${isTodayDate ? "bg-slate-800 dark:bg-slate-700 text-white" : isSelected ? "bg-slate-200 dark:bg-slate-400/30 text-slate-800 dark:text-slate-100" : "text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-100/10"}`}
                                     >
                                         {day ?? ""}
                                     </div>
@@ -397,19 +397,19 @@ export default function SidebarLeft({
 
                 {/* 2️⃣ Todo 필터 버튼 (고정) */}
                 <div className="mb-2 flex items-center justify-between">
-                    <h3 className="text-sm font-medium">To do</h3>
+                    <h3 className="text-sm font-medium dark:text-gray-200">To do</h3>
                     <div className="flex items-center gap-1">
                     <button
                             onClick={() => setTodoFilter('ALL')}
-                            className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'ALL' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}`}
+                            className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'ALL' ? 'bg-slate-800 text-white' : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-400'}`}
                         >All</button>
                         <button
                             onClick={() => setTodoFilter('PUBLIC')}
-                            className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'PUBLIC' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}`}
+                            className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'PUBLIC' ? 'bg-slate-800 text-white' : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-400'}`}
                         >Public</button>
                         <button
                             onClick={() => setTodoFilter('PRIVATE')}
-                            className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'PRIVATE' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}`}
+                            className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'PRIVATE' ? 'bg-slate-800 text-white' : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-400'}`}
                         >Private</button>
                     </div>
                 </div>
@@ -453,4 +453,3 @@ export default function SidebarLeft({
         </aside>
     );
 }
-

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo, useEffect, useState } from "react";
-
 import { CalendarEvent, EventTodo, DateMemo } from "./types";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { api } from "@/components/calendar/utils/api";
@@ -223,27 +222,27 @@ export default function WeekViewMobile({
         </div>
     );
     return (
-        <div className="w-full h-full bg-white flex flex-col">
+        <div className="w-full h-full bg-white flex flex-col dark:bg-neutral-900">
             {/* Header */}
-            <div className="px-4 py-3 border-b sticky top-0 z-20 bg-white">
+            <div className="px-4 py-3 sticky top-0 z-10 bg-white dark:bg-neutral-900">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => onPrevWeek?.()}
-                            className="h-12 w-12 flex items-center justify-center rounded-full hover:bg-slate-100 active:scale-95 transition"
+                            className="h-12 w-12 flex items-center justify-center rounded-full hover:bg-slate-100 active:scale-95 transition dark:hover:bg-slate-100/10"
                             aria-label="Previous week"
                         >
-                            <ChevronLeft className="h-6 w-6 text-slate-700" />
+                            <ChevronLeft className="h-6 w-6 text-slate-700 dark:text-slate-400" />
                         </button>
-                        <p className="text-[23px] text-slate-500 ">
+                        <p className="text-[23px] text-slate-500 dark:text-slate-400">
                             {weekTitle}
                         </p>
                         <button
                             onClick={() => onNextWeek?.()}
-                            className="h-12 w-12 flex items-center justify-center rounded-full hover:bg-slate-100 active:scale-95 transition"
+                            className="h-12 w-12 flex items-center justify-center rounded-full hover:bg-slate-100 active:scale-95 transition dark:hover:bg-slate-100/10"
                             aria-label="Next week"
                         >
-                            <ChevronRight className="h-6 w-6 text-slate-700" />
+                            <ChevronRight className="h-6 w-6 text-slate-700 dark:text-slate-400" />
                         </button>
                     </div>
                 </div>
@@ -259,14 +258,14 @@ export default function WeekViewMobile({
                         privateTodosMap.get(day.fullDate) || [];
 
                     return (
-                        <div key={`${day.date}-${idx}`} className="border-b">
+                        <div key={`${day.date}-${idx}`} className="border-b dark:border-neutral-600">
                             {/* 한 날짜 블록 */}
                             <div className="px-4 py-4">
                                 <div className="flex items-start gap-3">
                                     {/* 좌측 원형 날짜 + 요일 이니셜 */}
                                     <div className="flex flex-col items-center w-10">
                                         <div className="relative">
-                                            <div className="w-7 h-7 rounded-full bg-slate-900 text-white text-[13px] font-semibold flex items-center justify-center ">
+                                            <div className="w-7 h-7 rounded-full bg-slate-900 dark:bg-slate-800 text-white text-[13px] font-semibold flex items-center justify-center ">
                                                 {dayNum}
                                             </div>
                                             {/* 메모 닷 렌더링 로직  */}
@@ -291,7 +290,7 @@ export default function WeekViewMobile({
                                                 </div>
                                             )}
                                         </div>
-                                        <span className="text-[11px] text-slate-400 mt-1">
+                                        <span className="text-[11px] text-slate-400 mt-1 dark:text-slate-300">
                                             {dayInitial}
                                         </span>
                                     </div>
@@ -373,7 +372,7 @@ export default function WeekViewMobile({
                                                             {/* 1. 이벤트 타이틀 */}
                                                             <div className="flex items-start gap-2 w-15">
                                                                 <span className="mt-2.5 inline-block w-3 h-0.5 rounded-sm bg-slate-400"></span>
-                                                                <span className="text-[14px] text-slate-800">
+                                                                <span className="text-[14px] text-slate-800 dark:text-slate-200">
                                                                     {event.title}
                                                                 </span>
                                                             </div>
