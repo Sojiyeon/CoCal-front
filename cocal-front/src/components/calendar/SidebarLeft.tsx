@@ -415,20 +415,20 @@ export default function SidebarLeft({
                 </div>
 
                 {/* 3️⃣ Todo 목록 (스크롤) */}
-                <div className="flex-1 overflow-auto">
+                <div className="flex-1 overflow-auto scrollbar-hide">
                     <div className="space-y-3 text-sm">
                         {filteredSidebarTodos.length > 0 ? (
                             filteredSidebarTodos.map((todo) => (
                                 <div key={`${todo.type}-${todo.id}`} className={`flex items-center gap-3 p-1 rounded-md ${todo.status === "DONE" ? "opacity-50" : ""}`}>
                                     <div className="w-2 h-7 rounded" style={{backgroundColor: todo.parentEventColor}}></div>
                                     <div className="flex-1 min-w-0 cursor-pointer" onDoubleClick={() => onEditTodo(todo)}>
-                                        <div className={`font-medium truncate ${todo.status === "DONE" ? "line-through text-slate-400" : ""}`}>{todo.title}</div>
+                                        <div className={`font-medium truncate dark:text-slate-200 ${todo.status === "DONE" ? "line-through text-slate-400" : ""}`}>{todo.title}</div>
                                         <div className="text-xs text-slate-400 truncate">
                                             {todo.type === 'PRIVATE' ? (todo.description || 'No description') : `${user?.name || 'Unassigned'} - ${todo.description || ''}`}
                                         </div>
                                     </div>
                                     <button onClick={() => handleToggleTodoStatus(todo)}
-                                            className="w-5 h-5 border-2 rounded-full flex-shrink-0 flex items-center justify-center cursor-pointer">
+                                            className="w-5 h-5 border-2 dark:border-slate-200 rounded-full flex-shrink-0 flex items-center justify-center cursor-pointer">
                                         {todo.status === "DONE" && (
                                             <div className="w-2.5 h-2.5 bg-slate-400 rounded-full"></div>
                                         )}
