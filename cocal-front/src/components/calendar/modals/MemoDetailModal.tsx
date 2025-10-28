@@ -42,6 +42,7 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
 
     const [editTitle, setEditTitle] = useState(currentMemo.title || "");
     const [editContent, setEditContent] = useState(currentMemo.content || "");
+    const [editDate, setEditDate] = useState(currentMemo.memoDate || "");
     const [editUrl, setEditUrl] = useState(currentMemo.url || "");
 
     // 메모 전환 시 수정창 초기화
@@ -50,6 +51,7 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
         setEditTitle(currentMemo.title || "");
         setEditContent(currentMemo.content || "");
         setEditUrl(currentMemo.url || "");
+        setEditDate(currentMemo.memoDate || "");
     }, [currentMemo]);
 
     const handleSaveEdit = async () => {
@@ -60,13 +62,13 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
                 title: editTitle,
                 content: editContent,
                 url: editUrl,
-                memoDate: currentMemo.memoDate
+                memoDate: editDate
             };
             const updatedMemo = await updateMemo(projectId, currentMemo.id, updatedData);
             onEdit(updatedMemo);
             setIsEditing(false);
         } catch (err) {
-            alert("수정 중 오류 발생");
+            alert("Failed to edit edit memo");
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -75,7 +77,7 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
 
     const handleDeleteClick = async () => {
         if (!currentMemo.id) return;
-        const confirmDelete = confirm("정말 메모를 삭제하시겠습니까?");
+        const confirmDelete = confirm("Are you sure you want to delete this note?");
         if (!confirmDelete) return;
 
         try {
@@ -92,7 +94,7 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
                 onClose();
             }
         } catch (err) {
-            alert("삭제 중 오류 발생");
+            alert("Failed to delete memo");
         } finally {
             setIsLoading(false);
         }
@@ -111,12 +113,25 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
             <div className="bg-white rounded-2xl shadow-lg w-[400px] p-6">
                 {/* 상단 헤더 */}
                 <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center space-x-2">
-                        <h2 className="text-lg font-bold text-slate-800">{currentMemo.title || "제목 없음"}</h2>
-                        <span className="text-xs text-slate-400">
-                            {new Date(currentMemo.createdAt).toLocaleDateString("ko-KR")}
-                        </span>
-                    </div>
+                    {/* 메모 제목 */}
+                    {isEditing ? (
+                        <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="flex-1 text-lg font-semibold text-slate-800 border-b border-slate-300 focus:outline-none focus:border-blue-400"
+                            placeholder="Enter a title"
+                        />
+                    ) : (
+                        <div className="flex items-center space-x-2">
+                            <h2 className="text-lg font-bold text-slate-800">
+                                {currentMemo.title || "Untitle"}
+                            </h2>
+                            <span className="text-xs text-slate-400">
+                                {new Date(currentMemo.createdAt).toLocaleDateString("ko-KR")}
+                            </span>
+                        </div>
+                    )}
 
                     <div className="flex items-center space-x-2">
                         <button onClick={() => setIsEditing(true)} className="text-slate-400 hover:text-blue-500">
@@ -135,7 +150,26 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
                 <div className="space-y-4 text-sm pt-3">
                     <div className="flex">
                         <span className="w-20 text-slate-500">작성자</span>
-                        <span className="text-slate-800 font-medium">{author?.name || "알 수 없음"}</span>
+                        <span className="text-slate-800 font-medium">{author?.name || "Unknown user"}</span>
+                    </div>
+
+                    {/* 날짜 */}
+                    <div className="flex items-start">
+                        <span className="w-20 text-slate-500 pt-1">날짜</span>
+                        <div className="flex-1">
+                            {isEditing ? (
+                                <input
+                                    type="date"
+                                    value={editDate}
+                                    onChange={(e) => setEditDate(e.target.value)}
+                                    className="border border-slate-300 rounded-md p-2 w-full focus:ring-2 focus:ring-blue-400"
+                                />
+                            ) : (
+                                <span className="text-slate-800">
+                                    {currentMemo.memoDate || "No Date"}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     {/* URL */}
@@ -155,7 +189,7 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
                                     {currentMemo.url}
                                 </a>
                             ) : (
-                                <span className="text-slate-400">URL 없음</span>
+                                <span className="text-slate-400">No URL</span>
                             )}
                         </div>
                     </div>
@@ -173,16 +207,16 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
                                     />
                                     <div className="flex justify-end space-x-2 mt-2">
                                         <button onClick={() => setIsEditing(false)} className="px-3 py-1 text-sm rounded-md bg-slate-200 text-slate-700 hover:bg-slate-300">
-                                            취소
+                                            Cancel
                                         </button>
                                         <button onClick={handleSaveEdit} className="px-3 py-1 text-sm rounded-md bg-blue-500 text-white hover:bg-blue-600">
-                                            저장
+                                            Save
                                         </button>
                                     </div>
                                 </>
                             ) : (
                                 <div className="text-slate-800 bg-slate-50 p-3 rounded-md min-h-[100px] whitespace-pre-wrap">
-                                    {currentMemo.content || "내용 없음"}
+                                    {currentMemo.content || "No content"}
                                 </div>
                             )}
                         </div>
