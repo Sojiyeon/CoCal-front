@@ -2,7 +2,7 @@
 
 import React, { useMemo, useEffect, useState } from "react";
 import { CalendarEvent, EventTodo, DateMemo } from "./types";
-import { ChevronRight, ChevronLeft } from "lucide-react";
+//import { ChevronRight, ChevronLeft } from "lucide-react";
 import { api } from "@/components/calendar/utils/api";
 
 import { TodoUpdatePayload } from "@/api/todoApi";
@@ -19,8 +19,8 @@ interface TodoItemType {
     description: string | null;
 }
 interface WeekViewMobileProps {
-    weekTitle: string;
-    projectName: string;
+  //  weekTitle: string;
+   // projectName: string;
     projectId: number;
     days: {
         date: string;
@@ -30,20 +30,20 @@ interface WeekViewMobileProps {
         todos: [];
         memos: DateMemo[];
     }[];
-    onPrevWeek?: () => void;
-    onNextWeek?: () => void;
+    //onPrevWeek?: () => void;
+    //onNextWeek?: () => void;
     onToggleTodoStatus?: (todoId: number) => void;
     onTodoDataChanged?: () => void;
     onSelectMemo?: (memo: DateMemo) => void;
 }
 
 export default function WeekViewMobile({
-                                           weekTitle,
-                                           projectName,
+                                           //weekTitle,
+                                           //projectName,
                                            projectId,
                                            days,
-                                           onPrevWeek,
-                                           onNextWeek,
+                                           //onPrevWeek,
+                                           //onNextWeek,
                                            onToggleTodoStatus,
                                            onTodoDataChanged,
                                            onSelectMemo,
@@ -156,7 +156,7 @@ export default function WeekViewMobile({
         }
     };
 
-    const title = useMemo(() => projectName, [projectName]);
+    //const title = useMemo(() => projectName, [projectName]);
 
     const weekdayInitial = (w: string) => (w?.[0] ?? "").toUpperCase();
 
@@ -183,6 +183,19 @@ export default function WeekViewMobile({
         const n = d.getDate();
         return Number.isNaN(n) ? String(fallbackIndex) : String(n);
     };
+
+    // 메모 아이콘
+    const MemoIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000"
+             strokeWidth="0.75" strokeLinecap="round" strokeLinejoin="round"
+             className="lucide lucide-message-square-text-icon lucide-message-square-text">
+            <path
+                d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/>
+            <path d="M7 11h10"/>
+            <path d="M7 15h6"/>
+            <path d="M7 7h8"/>
+        </svg>
+    );
 
     const TodoItem = ({
                           todo,
@@ -223,30 +236,6 @@ export default function WeekViewMobile({
     );
     return (
         <div className="w-full h-full bg-white flex flex-col dark:bg-neutral-900">
-            {/* Header */}
-            <div className="px-4 py-3 sticky top-0 z-10 bg-white dark:bg-neutral-900">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => onPrevWeek?.()}
-                            className="h-12 w-12 flex items-center justify-center rounded-full hover:bg-slate-100 active:scale-95 transition dark:hover:bg-slate-100/10"
-                            aria-label="Previous week"
-                        >
-                            <ChevronLeft className="h-6 w-6 text-slate-700 dark:text-slate-400" />
-                        </button>
-                        <p className="text-[23px] text-slate-500 dark:text-slate-400">
-                            {weekTitle}
-                        </p>
-                        <button
-                            onClick={() => onNextWeek?.()}
-                            className="h-12 w-12 flex items-center justify-center rounded-full hover:bg-slate-100 active:scale-95 transition dark:hover:bg-slate-100/10"
-                            aria-label="Next week"
-                        >
-                            <ChevronRight className="h-6 w-6 text-slate-700 dark:text-slate-400" />
-                        </button>
-                    </div>
-                </div>
-            </div>
 
             {/* Days Scroll Section */}
             <div className="flex-1 overflow-y-auto">
@@ -258,44 +247,40 @@ export default function WeekViewMobile({
                         privateTodosMap.get(day.fullDate) || [];
 
                     return (
-                        <div key={`${day.date}-${idx}`} className="border-b dark:border-neutral-600">
-                            {/* 한 날짜 블록 */}
-                            <div className="px-4 py-4">
+                        <div key={`${day.date}-${idx}`} className="border-b border-gray-300 dark:border-neutral-600">
+                            {/* 한 날짜 블록 (relative 추가) */}
+                            <div className="px-4 py-4 relative">
+
+                                {/* --- 1. [수정] 메모 아이콘 (우측 상단) --- */}
+                                {dayMemos.length > 0 && (
+                                    <button
+                                        onClick={() => onSelectMemo?.(dayMemos[0])} // 첫 번째 메모를 엽니다.
+                                        className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 dark:text-neutral-500 dark:hover:text-neutral-300"
+                                        title={dayMemos[0].content} // 툴팁으로 첫 메모 내용 표시
+                                    >
+                                        <MemoIcon />
+                                    </button>
+                                )}
+                                {/* --- (여기까지) --- */}
+
+
                                 <div className="flex items-start gap-3">
                                     {/* 좌측 원형 날짜 + 요일 이니셜 */}
                                     <div className="flex flex-col items-center w-10">
-                                        <div className="relative">
+
+                                        {/* --- 2. [수정] dot 로직이 삭제되어 div.relative 제거 --- */}
+                                        <div>
                                             <div className="w-7 h-7 rounded-full bg-slate-900 dark:bg-slate-800 text-white text-[13px] font-semibold flex items-center justify-center ">
                                                 {dayNum}
                                             </div>
-                                            {/* 메모 닷 렌더링 로직  */}
-                                            {dayMemos.length > 0 && (
-                                                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5 flex space-x-0.5">
-                                                    {dayMemos
-                                                        .slice(0, 9)
-                                                        .map((memo) => (
-                                                            <div
-                                                                key={memo.id}
-                                                                onClick={() =>
-                                                                    onSelectMemo?.(
-                                                                        memo
-                                                                    )
-                                                                }
-                                                                className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
-                                                                title={
-                                                                    memo.content
-                                                                }
-                                                            />
-                                                        ))}
-                                                </div>
-                                            )}
+                                            {/* --- 3. [삭제] 기존 메모 dot 렌더링 로직 --- */}
                                         </div>
                                         <span className="text-[11px] text-slate-400 mt-1 dark:text-slate-300">
                                             {dayInitial}
                                         </span>
                                     </div>
 
-                                    {/* 우측 콘텐츠 */}
+                                    {/* 우측 콘텐츠 (수정 없음) */}
                                     <div className="flex-1 pt-6">
                                         {/* === Private Todo 섹션 === */}
                                         <div className="pb-3">

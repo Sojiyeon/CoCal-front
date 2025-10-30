@@ -213,8 +213,9 @@ export default function SidebarLeft({
                     description: item.description,
                     status: item.status,
                     type: "PRIVATE" as const,
-                    parentEventColor: "#A0AEC0",
+                    parentEventColor: "#ffffff",
                     parentEventTitle: 'Private',
+                    parentPrivateBorder: "1px solid gray",
                     eventId: 0,
                     date: formattedDate,
                     url: item.url,
@@ -420,7 +421,7 @@ export default function SidebarLeft({
                         {filteredSidebarTodos.length > 0 ? (
                             filteredSidebarTodos.map((todo) => (
                                 <div key={`${todo.type}-${todo.id}`} className={`flex items-center gap-3 p-1 rounded-md ${todo.status === "DONE" ? "opacity-50" : ""}`}>
-                                    <div className="w-2 h-7 rounded" style={{backgroundColor: todo.parentEventColor}}></div>
+                                    <div className="w-2 h-7 rounded" style={{backgroundColor: todo.parentEventColor, border: todo.parentPrivateBorder}}></div>
                                     <div className="flex-1 min-w-0 cursor-pointer" onDoubleClick={() => onEditTodo(todo)}>
                                         <div className={`font-medium truncate dark:text-slate-200 ${todo.status === "DONE" ? "line-through text-slate-400" : ""}`}>{todo.title}</div>
                                         <div className="text-xs text-slate-400 truncate">

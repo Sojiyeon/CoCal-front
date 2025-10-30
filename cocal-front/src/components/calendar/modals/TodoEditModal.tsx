@@ -18,7 +18,8 @@ interface Props {
         eventId?: number | null;
     }) => void;
 
-    todoToEdit: SidebarTodo;onDelete: (projectId: number, todoId: number, eventId: number, type: 'EVENT' | 'PRIVATE') => void;
+    todoToEdit: SidebarTodo;
+    onDelete: (projectId: number, todoId: number, eventId: number, type: 'EVENT' | 'PRIVATE') => void;
     projectId: number;
     events: CalendarEvent[];
 }
@@ -67,8 +68,11 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
             // datetime-local input은 'YYYY-MM-DDTHH:mm' 형식을 기대하므로 변환해줍니다.
             if (todoToEdit.date) {
                 const initialDate = new Date(todoToEdit.date);
-                const formattedDate = new Date(initialDate.getTime() - (initialDate.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
-                setDate(formattedDate);
+                // 'datetime-local' input은 'YYYY-MM-DDTHH:mm' 형식을 사용합니다.
+                const formattedDateTime = new Date(initialDate.getTime() - (initialDate.getTimezoneOffset() * 60000))
+                    .toISOString()
+                    .slice(0, 16); // 10 -> 16으로 변경
+                setDate(formattedDateTime);
             }
             setOffsetMinutes(todoToEdit.offsetMinutes ?? null);
         }
@@ -130,7 +134,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                         </div>
                     </div>
 
-                    {/* [수정] 오른쪽 상단: 아이콘 버튼 (Edit, Delete, Close) */}
+                    {/* 오른쪽 상단: 아이콘 버튼 (Edit, Delete, Close) */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                         {/* 상세 보기 모드일 때만 'Edit' 아이콘 표시 */}
                         {!isEditing && (
@@ -230,7 +234,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                             ) : (
                                 <div className="space-y-4 pt-2">
                                     <input
-                                        type="date"
+                                        type="datetime-local"
                                         name="date"
                                         value={date}
                                         onChange={(e) => setDate(e.target.value)}
@@ -272,9 +276,12 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                                                 year: 'numeric',
                                                 month: 'long',
                                                 day: 'numeric',
+                                                hour: 'numeric', // 시간 추가 (예: '오후 3시')
+                                                minute: '2-digit', // 분 추가 (예: '05분')
+                                                hour12: true // 12시간제로 표시 (true가 기본값이지만 명시)
 
                                             })
-                                            : <span className="text-slate-400">Not set</span>
+                                            : <span className="text-slate-400">No URL</span>
                                         }
                                     </DetailRow>
                                     <DetailRow label="Reminder">
@@ -292,7 +299,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                                         {todoToEdit.url}
                                     </a>
                                 ) : (
-                                    <span className="text-slate-400">Not set</span>
+                                    <span className="text-slate-400">No URL</span>
                                 )}
                             </DetailRow>
                         </>

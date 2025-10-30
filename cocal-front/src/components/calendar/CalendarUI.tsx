@@ -191,6 +191,15 @@ export default function CalendarUI() {
 
         const fetchCalendarData = async () => {
             try {
+                // defaultView 설정
+                const storedProfile = localStorage.getItem("userProfile");
+                if (storedProfile) {
+                    const parsed = JSON.parse(storedProfile);
+                    const defaultView = parsed.defaultView ?? null;
+                    setViewMode(defaultView);
+                    console.log("defaultView", defaultView);
+                    console.log('ViewMode', defaultView);
+                }
                 // 1. 캘린더의 기본 데이터 (이벤트, 메모, 개인 할일)를 가져옵니다.
                 const json = await api.get(`/cal/${projectId}`);
 
@@ -324,7 +333,7 @@ export default function CalendarUI() {
             setIsWeekMobileOpen(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [viewMode, isMobile]);
+    }, [viewMode, isMobile,selectedDate]);
     const shiftDays = (base: Date, delta: number) => {
         const d = new Date(base);
         d.setDate(d.getDate() + delta);
@@ -873,20 +882,35 @@ export default function CalendarUI() {
         const monday = weekStartDate;
         const sunday = new Date(monday);
         sunday.setDate(monday.getDate() + 6);
-
-        const startMonth = monday.toLocaleDateString('en-US', { month: 'long' });
-        const endMonth = sunday.toLocaleDateString('en-US', { month: 'long' });
-        const monthLabel = startMonth === endMonth ? startMonth : `${startMonth} - ${endMonth}`;
-
         const year = monday.getFullYear();
 
-        // 해당 월의 첫 날을 기준으로 몇 번째 주인지 계산
-        const firstDayOfMonth = new Date(monday.getFullYear(), monday.getMonth(), 1);
-        const firstMonday = getMonday(firstDayOfMonth);
-        const weekNum = Math.floor((monday.getTime() - firstMonday.getTime()) / (1000 * 60 * 60 * 24 * 7)) + 1;
+        // 모바일과 데스크톱의 날짜 형식을 분기합니다.
+        if (isMobile) {
+            // --- 모바일용: <Month Week #, Year> (예: October Week 3, 2025) ---
 
-        weekHeaderTitle = `${monthLabel}${year}`;
+            // 1. 월 (Month) - 영어
+            const monthLabelEn = monday.toLocaleDateString('en-US', { month: 'long' }); // "October"
 
+            // 2. 주 (Week Number) - 기존 계산 로직 활용
+            const firstDayOfMonth = new Date(monday.getFullYear(), monday.getMonth(), 1);
+            const firstMonday = getMonday(firstDayOfMonth); // 해당 월의 첫번째 월요일
+            const weekNum = Math.floor((monday.getTime() - firstMonday.getTime()) / (1000 * 60 * 60 * 24 * 7)) + 1;
+            const weekNumLabel = `Week ${weekNum}`; // "Week 3"
+
+            // 3. 년 (Year) - 바깥쪽에 이미 정의된 'year' 변수 사용 (e.g., 2025)
+
+            // 4. 조합 (쉼표 추가)
+            weekHeaderTitle = `${monthLabelEn} ${weekNumLabel}, ${year}`;
+
+        } else {
+            // --- 데스크톱용: (예: October 2025 or October - November 2025) ---
+            const startMonth = monday.toLocaleDateString('en-US', { month: 'long' });
+            const endMonth = sunday.toLocaleDateString('en-US', { month: 'long' });
+            const monthLabel = startMonth === endMonth ? startMonth : `${startMonth} - ${endMonth}`;
+
+            // 기존 로직 유지
+            weekHeaderTitle = `${monthLabel} ${year}`;
+        }
     }
 
     // 이벤트가 해당 주에 걸쳐 있는지 확인하고, 시작 및 끝 요일을 계산하는 헬퍼 함수
@@ -925,7 +949,7 @@ export default function CalendarUI() {
                 const completeTodoForModal: SidebarTodo = {
                     ...todoFromSidebar, // parentEventColor, parentEventTitle 등 기존 값 사용
 
-                    // --- 🔽 API에서 새로 받은 정확한 데이터로 덮어쓰기 🔽 ---
+
                     id: fullTodoData.id,
                     title: fullTodoData.title,
                     description: fullTodoData.description,
@@ -1123,16 +1147,15 @@ export default function CalendarUI() {
                 </div>
             </div>
             {/* ---  모바일 TaskProgress 위치  --- */}
-            {!(isMobile && viewMode === "week") && (
-                <div className="px-4 pt-4 md:hidden">
-                    <TaskProgress
-                        todos={allProjectTodos}
-                        projectStartDate={currentProject?.startDate ? new Date(currentProject.startDate) : undefined}
-                        projectEndDate={currentProject?.endDate ? new Date(currentProject.endDate) : undefined}
-                        projectName={currentProject?.name}
-                    />
-                </div>
-            )}
+            <div className="px-4 pt-4 md:hidden">
+                <TaskProgress
+                    todos={allProjectTodos}
+                    projectStartDate={currentProject?.startDate ? new Date(currentProject.startDate) : undefined}
+                    projectEndDate={currentProject?.endDate ? new Date(currentProject.endDate) : undefined}
+                    projectName={currentProject?.name}
+                />
+            </div>
+
             {/* 메인 영역 */}
             <div className="flex flex-1 overflow-hidden">
                 {/*  --- 반응형 왼쪽 사이드바 ---  */}
@@ -1177,16 +1200,13 @@ export default function CalendarUI() {
                 </div>
 
                 {/* 메인 캘린더  영역 */}
-                <main className={`flex-1 overflow-auto ${
-                    isMobile && isWeekMobileOpen ? "" : "p-2 md:p-5"
-                }`}>
+
+                <main className="flex-1 overflow-auto scrollbar-hide p-2 md:p-5">
                     {/* 메인 캘린더 헤더 */}
                     <div className="flex items-center justify-between mb-4">
                         {/* ← 왼쪽 블록: 항상 렌더. 모바일에서 week(또는 WeekViewMobile 열림)일 때만 invisible */}
                         <div
-                            className={`flex items-center gap-1 md:gap-6 ${
-                                isMobile && (viewMode === "week" || isWeekMobileOpen) ? "invisible" : ""
-                            }`}
+                            className={`flex items-center gap-1 md:gap-6`}
                         >
                             <button onClick={handlePrev}
                                     className="w-8 h-8 md:w-12 md:h-12 flex items-center justify-center text-slate-800 dark:text-neutral-300 hover:text-slate-600 dark:hover:text-slate-400  text-lg md:text-xl p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-100/5">
@@ -1231,14 +1251,15 @@ export default function CalendarUI() {
                         weekMobileData && (
                             <WeekViewMobile
                                 projectId={projectId}
-                                weekTitle={weekMobileData.weekTitle}
-                                projectName={weekMobileData.projectName}
+                                // weekTitle={weekMobileData.weekTitle}
+                                // projectName={weekMobileData.projectName}
                                 days={weekMobileData.days}
-                                onPrevWeek={handlePrevMobileWeek}
-                                onNextWeek={handleNextMobileWeek}
+                                //onPrevWeek={handlePrevMobileWeek}
+                                //onNextWeek={handleNextMobileWeek}
                                 onToggleTodoStatus={handleToggleTodoStatus}
                                 onTodoDataChanged={() => setTodoVersion(v => v + 1)}
                                 onSelectMemo={setSelectedMemo}
+
                             />
                         )
                     ) : (
@@ -1490,7 +1511,21 @@ export default function CalendarUI() {
                                     </div>
                                 </>
                             )}
-                            {viewMode === "week" && (
+                            {/* 2. 주간 뷰 (모바일/데스크톱 분기) */}
+                            {viewMode === "week" && isMobile ? (
+                                // 모바일 주간 뷰
+                                weekMobileData && (
+                                    <WeekViewMobile
+                                        projectId={projectId}
+                                        days={weekMobileData.days}
+                                        onToggleTodoStatus={handleToggleTodoStatus}
+                                        onTodoDataChanged={() => setTodoVersion(v => v + 1)}
+                                        onSelectMemo={setSelectedMemo}
+                                        // weekTitle, onPrevWeek, onNextWeek 등 자체 헤더 props 제거
+                                    />
+                                )
+                            ) : viewMode === "week" && !isMobile ? (
+                                // 데스크톱 주간 뷰
                                 <WeekView
                                     events={weekEvents}
                                     weekStartDate={weekStartDate}
@@ -1499,11 +1534,19 @@ export default function CalendarUI() {
                                     memos={memos}
                                     onSelectMemo={setSelectedMemo}
                                 />
-                            )}
-                            {viewMode === "day" && <DayView events={events} date={selectedDate} onSelectEvent={handleSelectEvent} onToggleTodoStatus={handleToggleTodoStatus} />}
+                            ) : null}
 
+                            {/* 3. 일간 뷰 */}
+                            {viewMode === "day" && (
+                                <DayView
+                                    events={events}
+                                    date={selectedDate}
+                                    onSelectEvent={handleSelectEvent}
+                                    onToggleTodoStatus={handleToggleTodoStatus}
+                                />
+                            )}
                         </>
-                    )}
+                        )}
                 </main>
 
                 {/* --- 오른쪽 사이드바는 lg(1024px) 이상에서만 보이도록 수정 ---  */}

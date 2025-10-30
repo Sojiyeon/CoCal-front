@@ -26,6 +26,7 @@ export interface SidebarTodo extends EventTodo {
     type: 'EVENT' | 'PRIVATE'; // Public(EVENT) / Private 구분
     parentEventTitle?: string;
     parentEventColor?: string;
+    parentPrivateBorder?: string;
     authorId: number | null;
     url?: string;
     eventId: number;
