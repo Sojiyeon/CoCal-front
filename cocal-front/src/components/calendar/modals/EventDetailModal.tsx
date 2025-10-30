@@ -441,7 +441,8 @@ export function EventDetailModal({
     return (
         // 모바일 레이아웃: 하단 정렬 + 둥근 상단 모서리
         <div className="fixed inset-0 bg-black/60 z-50 flex flex-col justify-end sm:items-center sm:justify-center">
-            <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-lg w-full max-w-md sm:max-h-[90vh] h-[90vh] sm:h-auto overflow-hidden">
+            <div
+                className="bg-white rounded-t-2xl sm:rounded-2xl shadow-lg w-full max-w-md sm:max-h-[90vh] h-[90vh] sm:h-auto overflow-hidden flex flex-col">
                 {/* --- 헤더 --- */}
                 <div className="p-4 border-b sticky top-0 bg-white z-10">
                     <div className="flex justify-between items-start">
@@ -480,7 +481,7 @@ export function EventDetailModal({
                 </div>
 
                 {/* --- 컨텐츠 --- */}
-                <div className="p-4 overflow-y-auto h-full">
+                <div className="p-4 overflow-y-auto flex-1 min-h-0">
                     {/* --- 3. 로딩 상태에 따른 조건부 렌더링 --- */}
                     {activeTab === "Event" ? (
                         isLoading ? (
