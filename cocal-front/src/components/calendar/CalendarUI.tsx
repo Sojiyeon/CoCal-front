@@ -1320,6 +1320,15 @@ export default function CalendarUI() {
                                                                             {day}
                                                                         </div>
                                                                         <div
+                                                                            className="md:hidden"> {/* md 사이즈 이상에서 숨깁니다. */}
+                                                                            {dayMemos.length > 0 && (
+                                                                                <div
+                                                                                    className="w-1.5 h-1.5 bg-red-500 rounded-full"
+                                                                                    // onClick 핸들러를 추가하지 않아 클릭되지 않습니다.
+                                                                                />
+                                                                            )}
+                                                                        </div>
+                                                                        <div
                                                                             className="hidden md:flex items-center space-x-1">
                                                                             {dayMemos.length > 0 && (
                                                                                 <div
@@ -1464,6 +1473,7 @@ export default function CalendarUI() {
                                                                                     if (isMobile) {
                                                                                         const d = new Date(event.startAt);
                                                                                         openWeekMobileForDate(d);
+                                                                                        setViewMode("week");
                                                                                     } else {
                                                                                         setSelectedEventId(event.id);
                                                                                     }
@@ -1489,7 +1499,8 @@ export default function CalendarUI() {
 
                                                                             if (isMobile) {
                                                                                 // 모바일에서는 WeekViewMobile을 엽니다.
-                                                                                openWeekMobileForDate(clickedDate);
+                                                                                setSelectedDate(clickedDate);
+                                                                                setViewMode("day");
                                                                             } else {
                                                                                 // 데스크톱에서는 Week 뷰로 이동합니다.
                                                                                 setSelectedDate(clickedDate);
