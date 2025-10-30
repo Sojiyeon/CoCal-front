@@ -219,10 +219,13 @@ export default function DayView({
     };
     return (
         <div className="border border-gray-200 dark:border-neutral-700 rounded-lg overflow-hidden">
-            <div className="grid grid-cols-2 border-b border border-gray-200 bg-slate-50 dark:bg-neutral-900 dark:border-slate-700 text-sm font-medium">
-                <div className="p-2 text-left text-slate-400 dark:text-slate-200">Time</div>
-                <div className="p-2 text-left text-slate-400 dark:text-slate-200">
+            <div className="grid grid-cols-[auto_1fr_auto] items-center border-b border border-gray-200 bg-slate-50 dark:bg-neutral-900 dark:border-slate-700 text-sm font-medium">
 
+                {/* 1열: 'Time' (w-11 적용) */}
+                <div className="p-2 text-left text-slate-400 dark:text-slate-200 w-11">Time</div>
+
+                {/* 2열: 날짜 (text-center 적용) */}
+                <div className="p-2 text-center text-slate-400 dark:text-slate-200">
                     {date.toLocaleDateString("ko-KR", {
                         year: "numeric",
                         month: "2-digit",

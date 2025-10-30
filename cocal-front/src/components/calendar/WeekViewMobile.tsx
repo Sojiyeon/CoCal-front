@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useEffect, useState } from "react";
-import { CalendarEvent, EventTodo, DateMemo } from "./types";
+import { CalendarEvent, EventTodo, DateMemo,SidebarTodo } from "./types";
 //import { ChevronRight, ChevronLeft } from "lucide-react";
 import { api } from "@/components/calendar/utils/api";
 
@@ -19,8 +19,8 @@ interface TodoItemType {
     description: string | null;
 }
 interface WeekViewMobileProps {
-  //  weekTitle: string;
-   // projectName: string;
+    //  weekTitle: string;
+    // projectName: string;
     projectId: number;
     days: {
         date: string;
@@ -35,6 +35,7 @@ interface WeekViewMobileProps {
     onToggleTodoStatus?: (todoId: number) => void;
     onTodoDataChanged?: () => void;
     onSelectMemo?: (memo: DateMemo) => void;
+    onEditTodo: (todo: SidebarTodo) => void;
 }
 
 export default function WeekViewMobile({
@@ -47,6 +48,7 @@ export default function WeekViewMobile({
                                            onToggleTodoStatus,
                                            onTodoDataChanged,
                                            onSelectMemo,
+                                           onEditTodo,
                                        }: WeekViewMobileProps) {
     const [privateTodosMap, setPrivateTodosMap] = useState<
         Map<string, TodoItemType[]>
@@ -95,7 +97,13 @@ export default function WeekViewMobile({
 
         fetchWeekPrivateTodos();
     }, [days, projectId]);
-
+    const todayFullDate = useMemo(() => {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, "0");
+        const d = String(today.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    }, []);
     const handleTogglePrivateTodo = async (
         todoId: number,
         fullDate: string
@@ -155,7 +163,61 @@ export default function WeekViewMobile({
             alert("할 일 상태 변경에 실패했습니다.");
         }
     };
+    const handleEditPrivateTodo = (
+        todo: TodoItemType,
+        fullDate: string
+    ) => {
+        if (!onEditTodo) return;
 
+
+        const sidebarTodo: SidebarTodo = {
+            id: todo.id,
+            title: todo.title,
+            description: todo.description || "",
+            status: todo.status as 'DONE' | 'IN_PROGRESS',
+            type: "PRIVATE",
+            parentEventColor: "#ffffff",
+            parentEventTitle: 'Private',
+            parentPrivateBorder: "1px solid gray",
+            eventId: 0,
+            date: fullDate,
+            url: "",
+            authorId: 0,
+            offsetMinutes: null,
+            orderNo: 0,
+        };
+
+        onEditTodo(sidebarTodo);
+    };
+
+    // [추가] Public Todo (EventTodo)를 클릭했을 때 SidebarTodo로 변환하여 onEditTodo를 호출하는 핸들러
+    const handleEditPublicTodo = (
+        todo: EventTodo,
+        event: CalendarEvent, // 부모 이벤트 정보
+        fullDate: string
+    ) => {
+        if (!onEditTodo) return;
+
+        const sidebarTodo: SidebarTodo = {
+            id: todo.id,
+            title: todo.title,
+
+            description: todo.description || "",
+            status: todo.status as 'DONE' | 'IN_PROGRESS',
+            type: "EVENT",
+            parentEventColor: event.color || "#94a3b8",
+            parentEventTitle: event.title,
+            eventId: event.id,
+            date: fullDate,
+
+            url: todo.url || "",
+            authorId: 0,
+           // offsetMinutes: todo.offsetMinutes ?? null,
+            orderNo: todo.orderNo || 0,
+        };
+
+        onEditTodo(sidebarTodo);
+    };
     //const title = useMemo(() => projectName, [projectName]);
 
     const weekdayInitial = (w: string) => (w?.[0] ?? "").toUpperCase();
@@ -200,34 +262,35 @@ export default function WeekViewMobile({
     const TodoItem = ({
                           todo,
                           onClick,
+                          onTitleClick, // [추가] 제목 클릭 핸들러
                       }: {
         todo: TodoItemType | EventTodo;
         onClick: () => void;
+        onTitleClick: () => void; // [추가]
     }) => (
         <div
             key={todo.id}
-            className={`flex items-center gap-2 ${
-                todo.status === "DONE" ? "opacity-60" : ""
+            className={`flex items-center gap-2 ${todo.status === "DONE" ? "opacity-60" : ""
             }`}
         >
             <button
                 onClick={onClick}
                 aria-label="toggle todo"
-                className={`w-4 h-4 border-2 rounded-md flex items-center justify-center ${
-                    todo.status === "DONE"
-                        ? "border-slate-400"
-                        : "border-slate-300"
+                className={`w-4 h-4 border-2 rounded-md flex items-center justify-center ${todo.status === "DONE"
+                    ? "border-slate-400"
+                    : "border-slate-300"
                 }`}
             >
                 {todo.status === "DONE" && (
                     <div className="w-2 h-2 bg-slate-400 rounded-sm" />
                 )}
             </button>
+            {/* [수정] span에 onClick과 cursor-pointer 추가 */}
             <span
-                className={`text-[14px] ${
-                    todo.status === "DONE"
-                        ? "line-through text-slate-400"
-                        : "text-slate-700"
+                onClick={onTitleClick}
+                className={`text-[14px] cursor-pointer ${todo.status === "DONE"
+                    ? "line-through text-slate-400"
+                    : "text-slate-700"
                 }`}
             >
                 {todo.title}
@@ -240,6 +303,7 @@ export default function WeekViewMobile({
             {/* Days Scroll Section */}
             <div className="flex-1 overflow-y-auto">
                 {days.map((day, idx) => {
+                    const isToday = day.fullDate === todayFullDate;
                     const dayNum = normalizedDayText(day.date, idx + 1);
                     const dayInitial = weekdayInitial(day.weekday);
                     const dayMemos = day.memos || []; // 그날의 메모 가져오기
@@ -261,19 +325,23 @@ export default function WeekViewMobile({
                                         <MemoIcon />
                                     </button>
                                 )}
-                                {/* --- (여기까지) --- */}
+
 
 
                                 <div className="flex items-start gap-3">
                                     {/* 좌측 원형 날짜 + 요일 이니셜 */}
                                     <div className="flex flex-col items-center w-10">
 
-                                        {/* --- 2. [수정] dot 로직이 삭제되어 div.relative 제거 --- */}
+
                                         <div>
-                                            <div className="w-7 h-7 rounded-full bg-slate-900 dark:bg-slate-800 text-white text-[13px] font-semibold flex items-center justify-center ">
+                                            <div
+                                                className={`w-7 h-7 rounded-full text-[13px] font-medium flex items-center justify-center ${
+                                                    isToday
+                                                        ? 'bg-blue-100 text-black' 
+                                                        : 'bg-blue-50 text-black'  
+                                                }`}>
                                                 {dayNum}
                                             </div>
-                                            {/* --- 3. [삭제] 기존 메모 dot 렌더링 로직 --- */}
                                         </div>
                                         <span className="text-[11px] text-slate-400 mt-1 dark:text-slate-300">
                                             {dayInitial}
@@ -284,7 +352,7 @@ export default function WeekViewMobile({
                                     <div className="flex-1 pt-6">
                                         {/* === Private Todo 섹션 === */}
                                         <div className="pb-3">
-                                            {privateTodos.length > 0 && (
+                                        {privateTodos.length > 0 && (
                                                 <div className="mb-2">
                                                     {/* KOR-MOD: 헤더와 리스트를 flex로 나란히 배치 */}
                                                     <div className="flex items-start gap-20">
@@ -310,6 +378,13 @@ export default function WeekViewMobile({
                                                                                 day.fullDate
                                                                             )
                                                                         }
+                                                                        // [추가] 제목 클릭 시 모달 열기
+                                                                        onTitleClick={() =>
+                                                                            handleEditPrivateTodo(
+                                                                                todo,
+                                                                                day.fullDate
+                                                                            )
+                                                                        }
                                                                     />
                                                                 )
                                                             )}
@@ -318,7 +393,6 @@ export default function WeekViewMobile({
                                                 </div>
                                             )}
                                         </div>
-
                                         {/* === KOR-ADD: START :: Public Event/Todo 렌더링 섹션  === */}
                                         {/* 할일 섹션 */}
                                         <div className="pt-3">
@@ -382,6 +456,14 @@ export default function WeekViewMobile({
                                                                                     onClick={() =>
                                                                                         onToggleTodoStatus?.(
                                                                                             todo.id
+                                                                                        )
+                                                                                    }
+                                                                                    // [추가] 제목 클릭 시 모달 열기
+                                                                                    onTitleClick={() =>
+                                                                                        handleEditPublicTodo(
+                                                                                            todo,
+                                                                                            event,
+                                                                                            day.fullDate
                                                                                         )
                                                                                     }
                                                                                 />

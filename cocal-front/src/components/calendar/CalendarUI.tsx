@@ -195,8 +195,15 @@ export default function CalendarUI() {
                 const storedProfile = localStorage.getItem("userProfile");
                 if (storedProfile) {
                     const parsed = JSON.parse(storedProfile);
-                    const defaultView = parsed.defaultView ?? null;
-                    setViewMode(defaultView);
+                    // 1. defaultView가 null일 경우 "month"를 기본값으로 사용
+                    const defaultView = parsed.defaultView ?? "month";
+
+                    // 2. 유효한 값인지 한번 더 확인 (선택 사항이지만 더 안전함)
+                    if (["month", "week", "day"].includes(defaultView)) {
+                        setViewMode(defaultView);
+                    } else {
+                        setViewMode("month"); // 혹시 이상한 값이 들어있다면 "month"로 초기화
+                    }
                     console.log("defaultView", defaultView);
                     console.log('ViewMode', defaultView);
                 }
@@ -1065,12 +1072,13 @@ export default function CalendarUI() {
         return text.substring(0, maxLength) + "...";
     };
     return (
-        <div className="h-screen w-screen overflow-x-hidden flex flex-col bg-white dark:bg-neutral-900">
+        <div className="h-screen w-full md:w-screen flex flex-col bg-white dark:bg-neutral-900 overflow-hidden">
             {/*  --- 데스크톱 헤더 ---  */}
             <div
                 className="hidden md:flex items-center justify-between  px-6 py-3 border-b border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-900 sticky shadow-md z-35">
                 <div className="flex items-center gap-3">
-                    <button onClick={() => router.push("/dashboard")} className="p-1 rounded-full hover:bg-slate-100 dark:text-white dark:hover:bg-gray-700/70">
+                    <button onClick={() => router.push("/dashboard")}
+                            className="p-1 rounded-full hover:bg-slate-100 dark:text-white dark:hover:bg-gray-700/70">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                             <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
                                   strokeLinejoin="round"/>
@@ -1096,7 +1104,7 @@ export default function CalendarUI() {
                 {isUserLoading ? (
                     <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
                 ) : user && user.id ? (
-                    <div  className="flex items-center justify-end space-x-4">
+                    <div className="flex items-center justify-end space-x-4">
                         <NotificationAndInviteIcons
                             userId={user.id}
                             handleLogout={logout}
@@ -1114,10 +1122,12 @@ export default function CalendarUI() {
             </div>
 
             {/*  --- 모바일 헤더 ---  */}
-            <div className="md:hidden relative flex items-center justify-between px-4 py-3 bg-white border-gray-200 dark:bg-neutral-900 border-b dark:border-neutral-600 top-0 shadow-md">
+            <div
+                className="md:hidden relative flex items-center justify-between px-4 py-3 bg-white border-gray-200 dark:bg-neutral-900 border-b dark:border-neutral-600 top-0 shadow-md">
                 {/* 햄버거 버튼 */}
                 <button onClick={() => setIsSidebarOpen(true)} className="p-2 z-10">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-900 dark:text-neutral-300">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                         className="text-gray-900 dark:text-neutral-300">
                         <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                               strokeLinejoin="round"/>
                     </svg>
@@ -1132,7 +1142,7 @@ export default function CalendarUI() {
                         />
                     )}
                 </div>
-                
+
                 {/* 프로필 드롭다운 (이미지만 표시) */}
                 <div className="z-20">
                     {isUserLoading ? (
@@ -1201,7 +1211,7 @@ export default function CalendarUI() {
 
                 {/* 메인 캘린더  영역 */}
 
-                <main className="flex-1 overflow-auto scrollbar-hide p-2 md:p-5">
+                <main className="flex-1 overflow-auto scrollbar-hide px-4 py-2 md:p-5 min-w-0">
                     {/* 메인 캘린더 헤더 */}
                     <div className="flex items-center justify-between mb-4">
                         {/* ← 왼쪽 블록: 항상 렌더. 모바일에서 week(또는 WeekViewMobile 열림)일 때만 invisible */}
@@ -1259,6 +1269,7 @@ export default function CalendarUI() {
                                 onToggleTodoStatus={handleToggleTodoStatus}
                                 onTodoDataChanged={() => setTodoVersion(v => v + 1)}
                                 onSelectMemo={setSelectedMemo}
+                                onEditTodo={handleOpenTodoEditModal}
 
                             />
                         )
@@ -1266,7 +1277,8 @@ export default function CalendarUI() {
                         <>
                             {viewMode === "month" && (
                                 <>
-                                    <div className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2 dark:border-gray-600">
+                                    <div
+                                        className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2 dark:border-gray-600">
                                         {weekdays.map((w) => (
                                             <div key={w} className="text-center">{w.substring(0, 1)}</div>))}
                                     </div>
@@ -1304,18 +1316,31 @@ export default function CalendarUI() {
                                                             <div key={dateKey}
                                                                  className={`min-h-[80px] md:min-h-[120px] border-r border-gray-200 dark:border-neutral-600 p-1 md:p-2 relative ${isToday ? 'bg-blue-50 dark:bg-blue-400/10' : 'bg-white dark:bg-neutral-900'}`}>
                                                                 <div className="flex items-center justify-between">
-                                                                    <div className="flex items-center gap-1 dark:text-white">
+                                                                    <div
+                                                                        className="flex items-center gap-1 dark:text-white">
                                                                         <div
                                                                             className={`text-xs md:text-sm font-medium cursor-pointer hover:text-blue-600 ${isToday ? 'text-blue-600 font-bold' : ''}`}
                                                                             onClick={() => handleMainDateClick(day)}>
                                                                             {day}
                                                                         </div>
                                                                         <div
+                                                                            className="md:hidden"> {/* md 사이즈 이상에서 숨깁니다. */}
+                                                                            {dayMemos.length > 0 && (
+                                                                                <div
+                                                                                    className="w-1.5 h-1.5 bg-red-500 rounded-full"
+                                                                                    // onClick 핸들러를 추가하지 않아 클릭되지 않습니다.
+                                                                                />
+                                                                            )}
+                                                                        </div>
+                                                                        <div
                                                                             className="hidden md:flex items-center space-x-1">
-                                                                            {dayMemos.map(memo => <div key={memo.id}
-                                                                                                       onClick={() => setSelectedMemo(memo)}
-                                                                                                       className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
-                                                                                                       title={memo.content}/>)}
+                                                                            {dayMemos.length > 0 && (
+                                                                                <div
+                                                                                    onClick={() => setSelectedMemo(dayMemos[0])}
+                                                                                    className="w-1.5 h-1.5 bg-red-500 rounded-full cursor-pointer"
+                                                                                    title={dayMemos[0].content}
+                                                                                />
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                     <button
@@ -1452,6 +1477,7 @@ export default function CalendarUI() {
                                                                                     if (isMobile) {
                                                                                         const d = new Date(event.startAt);
                                                                                         openWeekMobileForDate(d);
+                                                                                        setViewMode("week");
                                                                                     } else {
                                                                                         setSelectedEventId(event.id);
                                                                                     }
@@ -1477,7 +1503,8 @@ export default function CalendarUI() {
 
                                                                             if (isMobile) {
                                                                                 // 모바일에서는 WeekViewMobile을 엽니다.
-                                                                                openWeekMobileForDate(clickedDate);
+                                                                                setSelectedDate(clickedDate);
+                                                                                setViewMode("day");
                                                                             } else {
                                                                                 // 데스크톱에서는 Week 뷰로 이동합니다.
                                                                                 setSelectedDate(clickedDate);
@@ -1521,6 +1548,7 @@ export default function CalendarUI() {
                                         onToggleTodoStatus={handleToggleTodoStatus}
                                         onTodoDataChanged={() => setTodoVersion(v => v + 1)}
                                         onSelectMemo={setSelectedMemo}
+                                        onEditTodo={handleOpenTodoEditModal}
                                         // weekTitle, onPrevWeek, onNextWeek 등 자체 헤더 props 제거
                                     />
                                 )
@@ -1533,6 +1561,7 @@ export default function CalendarUI() {
                                     onSelectEvent={handleSelectEvent}
                                     memos={memos}
                                     onSelectMemo={setSelectedMemo}
+                                    //onEditTodo={handleOpenTodoEditModal}
                                 />
                             ) : null}
 
@@ -1546,7 +1575,7 @@ export default function CalendarUI() {
                                 />
                             )}
                         </>
-                        )}
+                    )}
                 </main>
 
                 {/* --- 오른쪽 사이드바는 lg(1024px) 이상에서만 보이도록 수정 ---  */}
@@ -1573,21 +1602,44 @@ export default function CalendarUI() {
 
                 />
             )}
+            {/* [수정] MemoDetailModal 호출부 */}
+            {selectedMemo && (() => {
+                // 1. 클릭된 날짜의 모든 메모를 찾습니다.
+                const memosForDate = memos.filter(m => m.memoDate === selectedMemo.memoDate);
+                // 2. 그 배열에서 클릭된 메모의 순서(index)를 찾습니다.
+                const startIndex = memosForDate.findIndex(m => m.id === selectedMemo.id);
 
-            {selectedMemo && <MemoDetailModal
-                memo={selectedMemo}
-                projectId={projectId}
-                onClose={() => setSelectedMemo(null)}
-                onEdit={(updatedMemo) => {
-                    setMemos((prev) =>
-                        prev.map((m) => (m.id === updatedMemo.id ? updatedMemo : m))
-                    );
-                }}
-                onDelete={(id) => {
-                    setMemos((prev) => prev.filter((m) => m.id !== id));
-                    setSelectedMemo(null);
-                }}
-            />}
+                return (
+                    <MemoDetailModal
+                        memos={memosForDate} // 1. 해당 날짜의 [모든] 메모 배열 전달
+                        startIndex={startIndex !== -1 ? startIndex : 0} // 2. 클릭한 메모의 [순서] 전달
+                        projectId={projectId}
+                        onClose={() => setSelectedMemo(null)}
+                        onEdit={(updatedMemo) => {
+                            // 수정 시 메인 'memos' 상태 업데이트
+                            setMemos((prev) =>
+                                prev.map((m) => (m.id === updatedMemo.id ? updatedMemo : m))
+                            );
+                        }}
+                        onDelete={(id) => {
+                            // 삭제 시 메인 'memos' 상태 업데이트
+                            const remainingMemos = memos.filter((m) => m.id !== id);
+                            setMemos(remainingMemos);
+
+                            // 3. 삭제 후 로직:
+                            // 같은 날짜의 남은 메모가 있는지 확인
+                            const remainingOnDate = remainingMemos.filter(m => m.memoDate === selectedMemo.memoDate);
+                            if (remainingOnDate.length === 0) {
+                                setSelectedMemo(null); // 남은 메모가 없으면 모달 닫기
+                            } else {
+                                // 남은 메모가 있으면, 0번째 메모를 보도록 상태 업데이트
+                                // (삭제 시 모달이 닫히는 것을 방지)
+                                setSelectedMemo(remainingOnDate[0]);
+                            }
+                        }}
+                    />
+                );
+            })()}
 
             {isEventModalOpen && (
                 <EventModal
