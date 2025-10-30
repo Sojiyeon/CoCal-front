@@ -1072,12 +1072,13 @@ export default function CalendarUI() {
         return text.substring(0, maxLength) + "...";
     };
     return (
-        <div className="h-screen w-screen flex flex-col bg-white dark:bg-neutral-900">
+        <div className="min-h-screen w-full overflow-x-hidden flex flex-col bg-white dark:bg-neutral-900">
             {/*  --- 데스크톱 헤더 ---  */}
             <div
                 className="hidden md:flex items-center justify-between  px-6 py-3 border-b border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-900 sticky shadow-md z-35">
                 <div className="flex items-center gap-3">
-                    <button onClick={() => router.push("/dashboard")} className="p-1 rounded-full hover:bg-slate-100 dark:text-white dark:hover:bg-gray-700/70">
+                    <button onClick={() => router.push("/dashboard")}
+                            className="p-1 rounded-full hover:bg-slate-100 dark:text-white dark:hover:bg-gray-700/70">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                             <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
                                   strokeLinejoin="round"/>
@@ -1103,7 +1104,7 @@ export default function CalendarUI() {
                 {isUserLoading ? (
                     <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
                 ) : user && user.id ? (
-                    <div  className="flex items-center justify-end space-x-4">
+                    <div className="flex items-center justify-end space-x-4">
                         <NotificationAndInviteIcons
                             userId={user.id}
                             handleLogout={logout}
@@ -1121,10 +1122,12 @@ export default function CalendarUI() {
             </div>
 
             {/*  --- 모바일 헤더 ---  */}
-            <div className="md:hidden relative flex items-center justify-between px-4 py-3 bg-white border-gray-200 dark:bg-neutral-900 border-b dark:border-neutral-600 top-0 shadow-md">
+            <div
+                className="md:hidden relative flex items-center justify-between px-4 py-3 bg-white border-gray-200 dark:bg-neutral-900 border-b dark:border-neutral-600 top-0 shadow-md">
                 {/* 햄버거 버튼 */}
                 <button onClick={() => setIsSidebarOpen(true)} className="p-2 z-10">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-900 dark:text-neutral-300">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                         className="text-gray-900 dark:text-neutral-300">
                         <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                               strokeLinejoin="round"/>
                     </svg>
@@ -1139,7 +1142,7 @@ export default function CalendarUI() {
                         />
                     )}
                 </div>
-                
+
                 {/* 프로필 드롭다운 (이미지만 표시) */}
                 <div className="z-20">
                     {isUserLoading ? (
@@ -1208,7 +1211,7 @@ export default function CalendarUI() {
 
                 {/* 메인 캘린더  영역 */}
 
-                <main className="flex-1 overflow-auto scrollbar-hide p-2 md:p-5">
+                <main className="flex-1 overflow-auto scrollbar-hide px-4 py-2 md:p-5">
                     {/* 메인 캘린더 헤더 */}
                     <div className="flex items-center justify-between mb-4">
                         {/* ← 왼쪽 블록: 항상 렌더. 모바일에서 week(또는 WeekViewMobile 열림)일 때만 invisible */}
@@ -1274,7 +1277,8 @@ export default function CalendarUI() {
                         <>
                             {viewMode === "month" && (
                                 <>
-                                    <div className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2 dark:border-gray-600">
+                                    <div
+                                        className="grid grid-cols-7 text-xs text-slate-400 border-t border-b py-2 dark:border-gray-600">
                                         {weekdays.map((w) => (
                                             <div key={w} className="text-center">{w.substring(0, 1)}</div>))}
                                     </div>
@@ -1571,7 +1575,7 @@ export default function CalendarUI() {
                                 />
                             )}
                         </>
-                        )}
+                    )}
                 </main>
 
                 {/* --- 오른쪽 사이드바는 lg(1024px) 이상에서만 보이도록 수정 ---  */}
