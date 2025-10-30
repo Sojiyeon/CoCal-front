@@ -236,11 +236,11 @@ export default function DayView({
             </div>
 
             {allDayEventsForDay.length > 0 && (
-                <div className="flex border-b border-gray-200">
+                <div className="flex border-b border-gray-200 dark:border-neutral-700">
                     <div className="w-11 flex-shrink-0">
                         {/* 이 칸은 너비 맞춤용 빈 칸입니다. */}
                     </div>
-                    <div className="relative flex-1 p-1 space-y-1 border-l border-gray-200">
+                    <div className="relative flex-1 p-1 space-y-1 border-l border-gray-200 dark:border-neutral-700">
                         {allDayEventsForDay.map(event => {
                             const todos: EventTodo[] = event.todos || [];
                             return (

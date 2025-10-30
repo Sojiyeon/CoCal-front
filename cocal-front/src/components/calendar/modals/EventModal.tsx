@@ -69,7 +69,7 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
                 type="button"
                 ref={buttonRef}
                 onClick={togglePalette}
-                className="w-full border rounded-md px-3 py-2 text-sm flex items-center gap-2 cursor-pointer hover:bg-slate-50"
+                className="w-full border rounded-md px-3 py-2 text-sm flex items-center gap-2 cursor-pointer hover:bg-slate-50 dark:text-slate-300 dark:border-neutral-700"
             >
                 <div
                     className="w-5 h-5 rounded-full border"
@@ -79,7 +79,7 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
             </button>
             {isPaletteOpen && (
                 <div
-                    className="w-auto bg-white border rounded-md shadow-lg p-3"
+                    className="w-auto bg-white border rounded-md shadow-lg p-3 dark:bg-neutral-800 dark:border-neutral-700"
                     style={paletteStyle}
                 >
 
@@ -474,8 +474,8 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
             onClick={() => setActiveTab(tabName)}
             className={`px-3 py-1 text-xs font-semibold rounded ${
                 activeTab === tabName
-                    ? "bg-slate-200 text-slate-800"
-                    : "bg-white text-slate-500 hover:bg-slate-100"
+                    ? "bg-slate-200 text-slate-800 dark:bg-slate-500/50 dark:text-slate-200"
+                    : "bg-white text-slate-500 hover:bg-slate-100 dark:bg-white/10 dark:text-slate-300"
             }`}
         >
             {tabName}
@@ -494,7 +494,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                             placeholder="Title"
                             value={formData.title}
                             onChange={handleInputChange}
-                            className="w-full text-lg font-semibold border-b pb-1 focus:outline-none focus:border-blue-500"
+                            className="w-full text-lg font-semibold border-b pb-1 focus:outline-none focus:border-blue-500 dark:text-neutral-300 dark:border-neutral-600"
                         />
 
                         <input
@@ -503,7 +503,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                             placeholder="Location"
                             value={formData.location}
                             onChange={handleInputChange}
-                            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-neutral-300 dark:border-neutral-600"
                         />
                         {/* 이벤트 탭에 메모를 입력할 수 있는 textarea 추가 */}
                         <textarea
@@ -511,32 +511,32 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                             placeholder="Write a description for this event..."
                             value={formData.description}
                             onChange={handleInputChange}
-                            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-neutral-300 dark:border-neutral-600"
                             rows={4} // 원하는 높이로 조절
                         />
 
-                        <div className="flex flex-col sm:grid sm:grid-cols-[1fr_auto_1fr] gap-2 items-center">
+                        <div className="flex flex-col sm:grid sm:grid-cols-[1fr_auto_1fr] gap-2 items-center dark:text-neutral-500">
                             <div className="w-full">
-                                <label htmlFor="startAt" className="text-xs text-slate-500">Start</label>
+                                <label htmlFor="startAt" className="text-xs text-slate-500 dark:text-slate-400">Start</label>
                                 <input
                                     id="startAt"
                                     type="datetime-local"
                                     name="startAt"
                                     value={formData.startAt}
                                     onChange={handleInputChange}
-                                    className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-neutral-300 dark:border-neutral-600"
                                 />
                             </div>
                             <span className="hidden sm:inline">-</span>
                             <div className="w-full">
-                                <label htmlFor="endAt" className="text-xs text-slate-500">End</label>
+                                <label htmlFor="endAt" className="text-xs text-slate-500 dark:text-slate-400">End</label>
                                 <input
                                     id="endAt"
                                     type="datetime-local"
                                     name="endAt"
                                     value={formData.endAt}
                                     onChange={handleInputChange}
-                                    className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-neutral-300 dark:border-neutral-600"
                                 />
                             </div>
                         </div>
@@ -555,7 +555,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                                         placeholder={`URL ${index + 1}`}
                                         value={url}
                                         onChange={(e) => handleUrlChange(index, e.target.value)}
-                                        className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-slate-300 dark:border-neutral-600"
                                     />
                                     {formData.urls.length > 1 && (
                                         <button
@@ -578,9 +578,9 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                             </button>
                         </div>
 
-                        <div className="w-full border rounded-md p-3">
+                        <div className="w-full border rounded-md p-3 dark:border-neutral-600">
                             {/* 제목 라벨 */}
-                            <p className="text-xs font-semibold text-slate-500 mb-2">Invitees</p>
+                            <p className="text-xs font-semibold text-slate-500 mb-2 dark:text-slate-400">Invitees</p>
                             {/*  팀원 목록  */}
                             <InviteesList
                                 members={members}
@@ -589,7 +589,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                                 selectedIds={[...selectedSet]} // 중복 클릭 막을 상태 전달
                             />
                             {/* 디버깅용 표시 */}
-                            <div className="mt-2 text-xs text-slate-500">
+                            <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                                 선택된 ID: {[...selectedSet].join(", ") || "-"}
                             </div>
                         </div>
@@ -611,19 +611,19 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                             placeholder="Title"
                             value={formData.title}
                             onChange={handleInputChange}
-                            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-slate-300 dark:border-neutral-600"
                         />
                         <textarea
                             name="description"
                             placeholder="Description..."
                             value={formData.description}
                             onChange={handleInputChange}
-                            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-slate-300 dark:border-neutral-600"
                             rows={3}
                         />
                             {editTodo ? // 수정일 때는 타입 변환 불가능
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Visibility</label>
+                                    <label className="text-sm font-medium text-slate-600 dark:text-slate-300">Visibility</label>
                                     <div className="flex gap-4 mt-2">
                                         <label className="flex items-center gap-2 cursor-default">
                                             <input
@@ -651,7 +651,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                                 </div>
                             : // 생성일 때는 타입 변환 가능
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Visibility</label>
+                                    <label className="text-sm font-medium text-slate-600 dark:text-slate-300">Visibility</label>
                                     <div className="flex gap-4 mt-2">
                                         <label className="flex items-center gap-2 cursor-pointer">
                                             <input
@@ -660,7 +660,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                                                 onChange={() => handleTypeChange("EVENT")}
                                                 className="form-radio h-4 w-4 text-blue-600"
                                             />
-                                            <span className="text-sm">Public</span>
+                                            <span className="text-sm dark:text-slate-300">Public</span>
                                         </label>
                                         <label className="flex items-center gap-2 cursor-pointer">
                                             <input
@@ -669,7 +669,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                                                 onChange={() => handleTypeChange("PRIVATE")}
                                                 className="form-radio h-4 w-4 text-blue-600"
                                             />
-                                            <span className="text-sm">Private</span>
+                                            <span className="text-sm dark:text-slate-300">Private</span>
                                         </label>
                                     </div>
                                 </div>
@@ -679,7 +679,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                         {/* Public일 때만 카테고리(이벤트) 선택창 표시 */}
                         {formData.type === 'EVENT' && (
                             <div>
-                                <label htmlFor="parentEvent" className="text-sm font-medium text-slate-600">
+                                <label htmlFor="parentEvent" className="text-sm font-medium text-slate-600 dark:text-slate-300">
                                     Category (Event)
                                 </label>
                                 <select
@@ -692,7 +692,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                                             eventId: e.target.value ? Number(e.target.value) : undefined,
                                         }))
                                     }
-                                    className="w-full mt-2 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full mt-2 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-600"
                                 >
                                     <option value="">-- Select an event --</option>
                                     {events
@@ -714,7 +714,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                                     name="date"
                                     value={formData.date}
                                     onChange={handleInputChange}
-                                    className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-slate-300 dark:border-neutral-600"
                                 />
                                 <ReminderPicker
                                     value={formData.offsetMinutes ?? null}
@@ -730,7 +730,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                                 placeholder="Add URL..."
                                 value={formData.url}
                                 onChange={handleInputChange}
-                                className="w-full border rounded-md pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className="w-full border rounded-md pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-slate-300 dark:border-neutral-600"
                             />
                             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400">
                 🔗
@@ -748,14 +748,14 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                                 placeholder="Title"
                                 value={formData.title}
                                 onChange={handleInputChange}
-                                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-slate-300 dark:border-neutral-600"
                             />
                             <input
                                 type="date"
                                 name="memoDate"
                                 value={formData.memoDate}
                                 onChange={handleInputChange}
-                                className="border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className="border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-slate-300 dark:border-neutral-600"
                             />
                         </div>
                         <div className="relative">
@@ -765,7 +765,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                                 placeholder="URL"
                                 value={formData.url}
                                 onChange={handleInputChange}
-                                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-slate-300 dark:border-neutral-600"
                             />
                             <button className="absolute right-2 top-1/2 -translate-y-1/2 text-lg font-bold">
                                 +
@@ -776,7 +776,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                             placeholder="Write your memo here..."
                             value={formData.content}
                             onChange={handleInputChange}
-                            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-slate-300 dark:border-neutral-600"
                             rows={6}
                         />
                     </div>
@@ -788,9 +788,9 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-            <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg">
+            <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg dark:bg-neutral-800">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold text-slate-800">{editTodo ? "Edit Todo" : (editEventId ? "Edit Event" : "New")}</h2>
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-white">{editTodo ? "Edit Todo" : (editEventId ? "Edit Event" : "New")}</h2>
 
                     <button
                         onClick={onClose}
@@ -800,7 +800,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                     </button>
                 </div>
                 {!editEventId && !editTodo && (
-                    <div className="flex items-center gap-2 mb-6 border-b pb-2">
+                    <div className="flex items-center gap-2 mb-6 border-b pb-1 dark:border-neutral-600">
                         <TabButton tabName="Event"/>
                         <TabButton tabName="Todo"/>
                         <TabButton tabName="Memo"/>
