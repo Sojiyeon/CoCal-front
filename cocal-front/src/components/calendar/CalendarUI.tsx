@@ -1072,7 +1072,7 @@ export default function CalendarUI() {
         return text.substring(0, maxLength) + "...";
     };
     return (
-        <div className="min-h-screen w-full overflow-x-hidden flex flex-col bg-white dark:bg-neutral-900">
+        <div className="h-screen w-full md:w-screen flex flex-col bg-white dark:bg-neutral-900 overflow-hidden">
             {/*  --- 데스크톱 헤더 ---  */}
             <div
                 className="hidden md:flex items-center justify-between  px-6 py-3 border-b border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-900 sticky shadow-md z-35">
@@ -1211,7 +1211,7 @@ export default function CalendarUI() {
 
                 {/* 메인 캘린더  영역 */}
 
-                <main className="flex-1 overflow-auto scrollbar-hide px-4 py-2 md:p-5">
+                <main className="flex-1 overflow-auto scrollbar-hide px-4 py-2 md:p-5 min-w-0">
                     {/* 메인 캘린더 헤더 */}
                     <div className="flex items-center justify-between mb-4">
                         {/* ← 왼쪽 블록: 항상 렌더. 모바일에서 week(또는 WeekViewMobile 열림)일 때만 invisible */}
