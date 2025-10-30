@@ -97,7 +97,13 @@ export default function WeekViewMobile({
 
         fetchWeekPrivateTodos();
     }, [days, projectId]);
-
+    const todayFullDate = useMemo(() => {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, "0");
+        const d = String(today.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    }, []);
     const handleTogglePrivateTodo = async (
         todoId: number,
         fullDate: string
@@ -297,6 +303,7 @@ export default function WeekViewMobile({
             {/* Days Scroll Section */}
             <div className="flex-1 overflow-y-auto">
                 {days.map((day, idx) => {
+                    const isToday = day.fullDate === todayFullDate;
                     const dayNum = normalizedDayText(day.date, idx + 1);
                     const dayInitial = weekdayInitial(day.weekday);
                     const dayMemos = day.memos || []; // 그날의 메모 가져오기
@@ -327,10 +334,14 @@ export default function WeekViewMobile({
 
 
                                         <div>
-                                            <div className="w-7 h-7 rounded-full bg-slate-900 dark:bg-slate-800 text-white text-[13px] font-semibold flex items-center justify-center ">
+                                            <div
+                                                className={`w-7 h-7 rounded-full text-[13px] font-medium flex items-center justify-center ${
+                                                    isToday
+                                                        ? 'bg-blue-100 text-black' 
+                                                        : 'bg-blue-50 text-black'  
+                                                }`}>
                                                 {dayNum}
                                             </div>
-
                                         </div>
                                         <span className="text-[11px] text-slate-400 mt-1 dark:text-slate-300">
                                             {dayInitial}
@@ -341,7 +352,7 @@ export default function WeekViewMobile({
                                     <div className="flex-1 pt-6">
                                         {/* === Private Todo 섹션 === */}
                                         <div className="pb-3">
-                                            {privateTodos.length > 0 && (
+                                        {privateTodos.length > 0 && (
                                                 <div className="mb-2">
                                                     {/* KOR-MOD: 헤더와 리스트를 flex로 나란히 배치 */}
                                                     <div className="flex items-start gap-20">
