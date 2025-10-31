@@ -8,6 +8,7 @@ interface User {
     email: string | null;
     name: string | null;
     profileImageUrl: string | null;
+    defaultView?: string;
 }
 
 interface UserContextType {

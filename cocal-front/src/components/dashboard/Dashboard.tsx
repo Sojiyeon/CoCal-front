@@ -2,7 +2,7 @@
 
 import React, { useState, FC, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from "next/image";
-import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X, Check, XCircle, Dog, Cat } from 'lucide-react';
+import { Folder, MoreVertical, Moon, Settings, LogOut, Plus, Bell, Mail, X, Check, XCircle, Dog, Cat,View } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
@@ -15,7 +15,8 @@ import {inviteAation} from "@/api/inviteApi";
 import useNotificationStream from "@/hooks/useNotificationStream";
 import { NotificationItem } from "@/types/notification";
 import Toast from "@/components/common/Toast";
-
+import DefaultViewModal from '@/components/modals/DefaultViewModal';
+import { updateDefaultView } from '@/api/defaultviewApi';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 const API_PROJECTS_ENDPOINT = `${API_BASE_URL}/api/projects`;
 
@@ -79,6 +80,7 @@ interface CurrentUser {
     name: string;
     email: string;
     profileImageUrl: string;
+    defaultView?: string;
 }
 
 // 사용자 정보의 기본값
@@ -87,6 +89,7 @@ const DEFAULT_USER: CurrentUser = {
     name: 'Guest',
     email: 'guest@example.com',
     profileImageUrl: 'https://placehold.co/100x100/A0BFFF/FFFFFF?text=User', // 임시 이미지
+    defaultView: 'MONTH',
 };
 
 interface ExpectedApiEndpoints {
@@ -333,10 +336,11 @@ const EmptyState: FC<{ selectedCategory: ProjectCategory }> = ({ selectedCategor
 
 interface ProfileDropdownProps {
     onOpenSettings: () => void;
+    onOpenDefaultView: () => void;
     onLogout: () => void;
 }
 
-export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLogout }) => {
+export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings,onOpenDefaultView, onLogout }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [user, setUser] = useState<CurrentUser | null>(null);
     const { isDarkMode, toggleTheme } = useTheme();
@@ -379,6 +383,14 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
             isToggled: isDarkMode
         },
         {
+            label: 'Default View',
+            icon: View, // 위에서 import한 아이콘
+            action: () => {
+                onOpenDefaultView();
+                setIsOpen(false);
+            }
+        },
+        {
             label: 'Profile Settings',
             icon: Settings,
             action: () => {
@@ -392,7 +404,7 @@ export const ProfileDropdown: FC<ProfileDropdownProps> = ({ onOpenSettings, onLo
             action: onLogout,
             isDestructive: true
         },
-    ], [onOpenSettings, onLogout, isDarkMode, toggleTheme]);
+    ], [onOpenSettings,onOpenDefaultView, onLogout, isDarkMode, toggleTheme]);
 
     // 아직 유저 정보가 없을 경우 (로딩 상태)
     if (!user) {
@@ -894,6 +906,7 @@ const ProjectDashboardPage: React.FC = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    const [isDefaultViewModalOpen, setIsDefaultViewModalOpen] = useState(false);
     const [descriptionModalProject, setDescriptionModalProject] = useState<Project | null>(null);
     const [isChanged, setIsChanged] = useState(false); // 이름 변경 여부 상태 추가
 
@@ -914,7 +927,27 @@ const ProjectDashboardPage: React.FC = () => {
         await logout();
         router.push('/');
     }, [logout, router]);
+    const handleUpdateDefaultView = async (newView: 'DAY' | 'WEEK' | 'MONTH') => {
+        console.log(`기본 뷰 변경 시도: ${newView}`);
+        try {
+            const result = await updateDefaultView(newView); // 1. API 호출
 
+            console.log("Default View 변경 성공:", result.message);
+
+            // 2. 유저 정보 새로고침
+            const token = localStorage.getItem("accessToken");
+            if (token) {
+                fetchUserProfile(token);
+            }
+
+            // 3. 모달 닫기
+            setIsDefaultViewModalOpen(false);
+
+        } catch (error) {
+            console.error(error);
+            alert('기본 뷰 설정에 실패했습니다.');
+        }
+    };
     const fetchProjects = useCallback(async () => {
         if (!user) return;
         setIsLoadingProjects(true);
@@ -1231,6 +1264,7 @@ const ProjectDashboardPage: React.FC = () => {
                     {/* 유저 프로필 */}
                     <ProfileDropdown
                         onOpenSettings={handleOpenSettingsModal}
+                        onOpenDefaultView={() => setIsDefaultViewModalOpen(true)}
                         onLogout={handleLogout}
                     />
                 </div>
@@ -1294,6 +1328,13 @@ const ProjectDashboardPage: React.FC = () => {
                 apiEndpoints={API_ENDPOINTS}
                 onChanged={() => setIsChanged(true)}
             />
+        <DefaultViewModal
+            isOpen={isDefaultViewModalOpen}
+            onClose={() => setIsDefaultViewModalOpen(false)}
+            // user 객체에 defaultView가 없으면 'MONTH'를 기본값으로 사용
+            currentView={user.defaultView || 'MONTH'}
+            onSave={handleUpdateDefaultView}
+        />
             {/* editingProject가 null이 아닐 때만 렌더링 */}
             {editingProject && (
                 <>

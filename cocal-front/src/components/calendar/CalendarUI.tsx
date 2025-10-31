@@ -19,6 +19,8 @@ import {TeamModal} from "./modals/TeamModal";
 import {MemoDetailModal} from "./modals/MemoDetailModal";
 import {TodoEditModal} from "./modals/TodoEditModal";
 import WeekViewMobile from "./WeekViewMobile";
+import DefaultViewModal from '@/components/modals/DefaultViewModal';
+import { updateDefaultView } from '@/api/defaultviewApi';
 // 전역 사용자 정보와 타입 정의, 유틸 함수, 샘플 데이터
 import { useUser } from "@/contexts/UserContext";
 import {
@@ -97,6 +99,7 @@ export default function CalendarUI() {
     const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [isProjectSettingsModalOpen, setIsProjectSettingsModalOpen] = useState(false);
+    const [isDefaultViewModalOpen, setIsDefaultViewModalOpen] = useState(false);
     // 생성/수정 모달에 전달할 초기 데이터 상태
     const [modalInitialDate, setModalInitialDate] = useState<string | null>(null);
     const [eventToEdit, setEventToEdit] = useState<CalendarEvent | null>(null);
@@ -418,7 +421,24 @@ export default function CalendarUI() {
     // 프로젝트 설정 모달 열기/닫기
     const handleOpenProjectSettingsModal = () => setIsProjectSettingsModalOpen(true);
     const handleCloseProjectSettingsModal = () => setIsProjectSettingsModalOpen(false);
+    // Default View 모달 열기/닫기
+    const handleOpenDefaultViewModal = () => setIsDefaultViewModalOpen(true);
 
+    // Default View 저장 핸들러
+
+    const handleUpdateDefaultView = async (newView: 'DAY' | 'WEEK' | 'MONTH') => {
+        // 1. API 호출
+        await updateDefaultView(newView);
+
+        // 2. 유저 정보 새로고침
+        const token = localStorage.getItem("accessToken");
+        if (token) {
+            fetchUserProfile(token);
+        }
+
+        setViewMode(newView.toLowerCase() as "day" | "week" | "month");
+
+    };
     // 이벤트 '수정 모드'로 전환
     const handleEditEvent = (event: CalendarEvent) => {
         setSelectedEventId(null);
@@ -1111,6 +1131,7 @@ export default function CalendarUI() {
                         />
                         <ProfileDropdown
                             onOpenSettings={handleOpenSettingsModal}
+                            onOpenDefaultView={handleOpenDefaultViewModal}
                             onLogout={logout}
                         />
                     </div>
@@ -1149,6 +1170,7 @@ export default function CalendarUI() {
                         <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse"></div>) : user && user.id ? (
                         <ProfileDropdown
                             onOpenSettings={handleOpenSettingsModal}
+                            onOpenDefaultView={handleOpenDefaultViewModal}
                             onLogout={logout}
                         />
                     ) : (<div>
@@ -1689,7 +1711,12 @@ export default function CalendarUI() {
                     events={events}
                 />
             )}
-
+            <DefaultViewModal
+                isOpen={isDefaultViewModalOpen}
+                onClose={() => setIsDefaultViewModalOpen(false)}
+                currentView={user?.defaultView || 'MONTH'}
+                onSave={handleUpdateDefaultView}
+            />
         </div>
     );
 }
