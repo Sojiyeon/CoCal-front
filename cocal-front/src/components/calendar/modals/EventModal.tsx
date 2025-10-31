@@ -331,44 +331,62 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                 onClose();
 
             } else if (activeTab === "Todo") {
-                // --- 유효성 검사 로직 추가 ---
+                // --- 유효성 검사 로직 (변경 없음) ---
                 const hasParentEvent = typeof formData.eventId === "number" && Number.isFinite(formData.eventId);
-
-                // 사용자가 "Public"을 의도했지만 부모 이벤트를 선택하지 않은 경우
                 if (formData.type === "EVENT" && !hasParentEvent) {
                     alert("Please select a parent event for the public todo.");
-                    setIsLoading(false); // 로딩 상태 해제
-                    return; // 저장 프로세스 중단
+                    setIsLoading(false);
+                    return;
                 }
 
-                // --- 서버에 보낼 데이터 재구성 ---
                 const isPublicType = formData.type === 'EVENT';
-                const selectedEvent = isPublicType ? events.find(e => e.id === formData.eventId) : undefined;
-                const safeDate = formData.date || formData.startAt || `${formData.memoDate}T00:00`;
-                const dateForTodo = isPublicType ? (selectedEvent?.startAt ?? safeDate) : safeDate;
+                let dateForServer: string; // [FIX] 서버로 보낼 최종 UTC 날짜 문자열
 
+                if (isPublicType) {
+                    // --- Public Todo (EVENT) ---
+                    const selectedEvent = events.find(e => e.id === formData.eventId)!; // 유효성 검사 통과했으므로 ! 사용
+
+                    // 'events' prop에서 온 startAt은 이미 UTC 문자열이므로 변환이 필요 없습니다.
+                    dateForServer = selectedEvent.startAt;
+
+                } else {
+                    // --- Private Todo (PRIVATE) ---
+                    // formData.date는 KST 문자열입니다 (예: "2025-10-31T20:30")
+                    const kstString = formData.date;
+
+                    if (!kstString) {
+                        alert("Please select a date for the private todo.");
+                        setIsLoading(false);
+                        return;
+                    }
+
+                    // [FIX] KST 문자열을 Date 객체로 변환 후, UTC ISO 문자열로 변경
+                    const kstDate = new Date(kstString);
+                    dateForServer = kstDate.toISOString(); // "2025-10-31T11:30:00.000Z"
+                }
+
+                // --- 서버에 보낼 데이터 ---
                 const serverPayload = {
                     title: formData.title,
                     description: formData.description,
                     url: formData.url,
-                    date: dateForTodo,
+                    date: dateForServer, // [FIX] 항상 UTC 문자열을 전송합니다.
                     offsetMinutes: typeof formData.offsetMinutes === "number" ? formData.offsetMinutes : 15,
                     projectId,
-                    type: formData.type, // 사용자의 선택을 그대로 반영
-                    // Public 타입일 때만 eventId를 포함
+                    type: formData.type,
                     ...(isPublicType && { eventId: formData.eventId! }),
                 };
 
-                // --- 부모 컴포넌트에 전달할 데이터 (기존 로직 유지) ---
+                // --- 부모 컴포넌트에 전달할 데이터 ---
                 const normalizedForParent: ModalFormData = {
                     title: formData.title,
                     description: formData.description || "",
                     url: formData.url || "",
-                    startAt: dateForTodo,
-                    endAt: dateForTodo,
+                    startAt: dateForServer, // [FIX] 부모에게도 UTC 전달
+                    endAt: dateForServer,
                     location: "",
                     visibility: isPublicType ? "PUBLIC" : "PRIVATE",
-                    memoDate: (dateForTodo || "").split("T")[0] || formData.memoDate,
+                    memoDate: (dateForServer || "").split("T")[0],
                     content: formData.description || "",
                     category: "Todo",
                     color: formData.color || "#3b82f6",
@@ -381,7 +399,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                 };
 
                 await createTodo(projectId, serverPayload);
-                onSave(normalizedForParent, "Todo",editTodo?.id);
+                onSave(normalizedForParent, "Todo", editTodo?.id);
 
                 onClose(); // 성공 후 모달 닫기
             } else if (activeTab === "Event") {
