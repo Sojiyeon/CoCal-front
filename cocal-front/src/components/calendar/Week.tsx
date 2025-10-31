@@ -306,15 +306,15 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
             </div>
             {/* "종일" 이벤트 섹션 */}
             {allDayLayout.totalRows > 0 && (
-                <div className="flex border-b border-gray-200">
+                <div className="flex border-b border-gray-200 dark:border-neutral-700">
                     <div className="w-16 flex-shrink-0 p-1 text-center text-xs text-slate-400 self-stretch"></div>
-                    <div className="grid grid-cols-7 flex-1 relative border-l border-gray-200 dark:border-neutral-600"
+                    <div className="grid grid-cols-7 flex-1 relative border-l border-gray-200 dark:border-neutral-700"
                          style={{minHeight: `${allDayLayout.totalRows * allDayEventHeight}px`}}>
                         {allDayLayout.positionedEvents.map(({event, startDayIndex, span, topIndex}) => (
                             <div
                                 key={event.id}
                                 onClick={() => onSelectEvent(event)}
-                                className="absolute h-[22px] rounded p-1 text-xs text-white shadow overflow-hidden cursor-pointer"
+                                className="absolute h-[22px] rounded p-1 text-xs text-white shadow overflow-hidden cursor-pointer dark:text-neutral-500"
                                 style={{
                                     top: `${topIndex * allDayEventHeight + 1}px`,
                                     left: `calc(${(startDayIndex / 7) * 100}% + 1px)`,
@@ -323,7 +323,7 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
                                     zIndex: 10 + topIndex,
                                 }}
                             >
-                                <div className="font-medium truncate">{event.title}</div>
+                                <div className="font-medium truncate dark:text-white">{event.title}</div>
                             </div>
                         ))}
                     </div>

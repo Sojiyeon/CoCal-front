@@ -140,7 +140,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                     </h2>
                     <div className="flex items-center gap-4">
                         {myRole !== "MEMBER" && (
-                            <button onClick={handleCopyLink} className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                            <button onClick={handleCopyLink} className="flex items-center gap-2 text-sm text-blue-600 hover:underline dark:text-blue-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
                                      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                                      strokeLinejoin="round" className="lucide lucide-link-icon lucide-link">
@@ -166,7 +166,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                                     handleInvite();
                                 }
                             }}
-                            className="flex-1 border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            className="flex-1 border rounded-md px-3 py-2 text-sm dark:text-neutral-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         />
                         <button
                             onClick={() => void handleInvite()} // [수정] Promise 반환 무시 경고를 해결합니다.

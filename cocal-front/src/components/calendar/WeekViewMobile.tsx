@@ -290,7 +290,7 @@ export default function WeekViewMobile({
                 onClick={onTitleClick}
                 className={`text-[14px] cursor-pointer ${todo.status === "DONE"
                     ? "line-through text-slate-400"
-                    : "text-slate-700"
+                    : "text-slate-700 dark:text-slate-200"
                 }`}
             >
                 {todo.title}
@@ -298,7 +298,7 @@ export default function WeekViewMobile({
         </div>
     );
     return (
-        <div className="w-full h-full bg-white flex flex-col dark:bg-neutral-900">
+        <div className="flex flex-col h-full-y-auto bg-white dark:bg-neutral-900">
 
             {/* Days Scroll Section */}
             <div className="flex-1 overflow-y-auto">
@@ -337,7 +337,7 @@ export default function WeekViewMobile({
                                             <div
                                                 className={`w-7 h-7 rounded-full text-[13px] font-medium flex items-center justify-center ${
                                                     isToday
-                                                        ? 'bg-blue-100 text-black' 
+                                                        ? 'bg-blue-200 text-black' 
                                                         : 'bg-blue-50 text-black'  
                                                 }`}>
                                                 {dayNum}
@@ -357,7 +357,7 @@ export default function WeekViewMobile({
                                                     {/* KOR-MOD: 헤더와 리스트를 flex로 나란히 배치 */}
                                                     <div className="flex items-start gap-20">
                                                         {/* 헤더 */}
-                                                        <p className="text-[11px] text-slate-500 font-semibold w-16 flex-shrink-0 pt-1">
+                                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold w-16 flex-shrink-0 pt-1">
                                                             Private Todo
                                                         </p>
 
@@ -419,7 +419,7 @@ export default function WeekViewMobile({
                                                                         "#94a3b8",
                                                                 }}
                                                             />
-                                                            <span className="text-[12px] text-slate-500">
+                                                            <span className="text-[12px] text-slate-500 dark:text-slate-400">
                                                                 {timeRange(
                                                                     event
                                                                 )}
