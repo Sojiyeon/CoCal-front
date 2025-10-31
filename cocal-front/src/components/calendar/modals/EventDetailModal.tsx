@@ -305,13 +305,21 @@ export function EventDetailModal({
     };
     // 2025-10-11 11:00 형식
     const formatISO = (dateString: string) => {
-        const date = new Date(dateString);
+        if (!dateString) return ""; // 빈 값 처리
+
+        // [FIX] 서버가 'Z' 없이 UTC 시간을 보낼 경우, 수동으로 'Z'를 추가합니다.
+        // "2025-10-31T11:30:00" -> "2025-10-31T11:30:00Z"
+        const utcDateString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+
+        // "Z"가 붙은 UTC 문자열로 Date를 생성하면, 브라우저가 자동으로 KST로 변환합니다.
+        const date = new Date(utcDateString); // (예: KST 20:30 객체로 변환됨)
+
         const y = date.getFullYear();
         const m = String(date.getMonth() + 1).padStart(2, "0");
         const d = String(date.getDate()).padStart(2, "0");
-        const h = String(date.getHours()).padStart(2, "0");
-        const min = String(date.getMinutes()).padStart(2, "0");
-        return `${y}.${m}.${d} ${h}:${min}`;
+        const h = String(date.getHours()).padStart(2, "0"); // KST 20시
+        const min = String(date.getMinutes()).padStart(2, "0"); // KST 30분
+        return `${y}.${m}.${d} ${h}:${min}`; // "2025.10.31 20:30" 반환
     };
 
     const handleMainEditClick = () => {
