@@ -458,17 +458,19 @@ export default function SidebarLeft({
                                         key={`${ri}-${ci}`}
                                         onClick={() => day && handleSidebarDateSelect(day)}
                                         // 'relative'를 추가하여 점의 기준점을 잡습니다.
-                                        className={`h-7 flex items-center justify-center rounded cursor-pointer relative ${
+                                        className={`h-7 flex flex-col items-center justify-center rounded cursor-pointer ${
                                             isTodayDate ? "bg-slate-800 dark:bg-slate-700 text-white"
                                                 : isSelected ? "bg-slate-200 dark:bg-slate-400/30 text-slate-800 dark:text-slate-100"
                                                     : "text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-100/10"
                                         }`}
                                     >
-                                        {day ?? ""}
+                                        <span className="leading-none">{day ?? ""}</span>
 
-                                        {/* To-do가 있는 날짜에 점(dot) 표시 */}
-                                        {isDayActive && (
-                                            <div className={`w-1 h-1 rounded-full absolute bottom-1 ${dotColor}`}></div>
+
+                                        {isDayActive ? (
+                                            <div className={`w-1 h-1 rounded-full mt-0.5 ${dotColor}`}></div>
+                                        ) : (
+                                            <div className="w-1 h-1 mt-0.5"/> // 레이아웃 유지를 위한 빈 공간
                                         )}
                                     </div>
                                 );
