@@ -693,7 +693,7 @@ export default function CalendarUI() {
     }) => {
 
         if (!todoToEdit || todoToEdit.id !== todoId) {
-            console.error("수정할 Todo 상태(todoToEdit)가 잘못되었습니다.");
+          //  console.error("수정할 Todo 상태(todoToEdit)가 잘못되었습니다.");
             return;
         }
 
