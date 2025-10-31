@@ -36,7 +36,6 @@ interface ApiPrivateTodo {
     offsetMinutes?: number | null;
 }
 
-// ✨ FIX: CalendarUI로부터 더 많은 함수를 받기 위해 props 타입을 확장합니다.
 interface SidebarLeftProps {
     miniYear: number;
     miniMonth: number;
@@ -60,6 +59,21 @@ interface SidebarLeftProps {
     onGoToMonthView: () => void;
     // [추가]
     todoVersion: number;
+}
+
+
+// 1. /active-days API의 응답 타입
+interface ActiveDaysResponse {
+    activeDays: (string | number)[]; // API가 ["1", "5"] 또는 [1, 5]를 반환할 수 있음
+}
+
+// 2. 목록 조회를 위한 제네릭 API 응답 타입
+// (eventData, privateData에서 공통으로 data.items 구조를 사용하므로)
+interface ApiListResponse<T> {
+    data: {
+        items: T[];
+    };
+    // 필요에 따라 success, pageInfo 등 다른 공통 필드 추가 가능
 }
 const AddIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -162,13 +176,14 @@ export default function SidebarLeft({
         const monthForApi = miniMonth + 1;
         const fetchActiveDays = async () => {
             try {
-                const response = await api.get(`/cal/${projectId}/active-days?year=${miniYear}&month=${monthForApi}`);
 
-                // API가 날짜를 ["1", "5", "10"] (문자열)으로 보낼 경우를 대비해
-                // 강제로 숫자(number) 배열로 변환하는 헬퍼 함수입니다.
-                const parseDaysToNumbers = (daysArray: any[]): number[] => {
-                    if (!Array.isArray(daysArray)) return []; // 배열이 아니면 빈 배열 반환
+                const response = (await api.get(
+                    `/cal/${projectId}/active-days?year=${miniYear}&month=${monthForApi}`
+                )) as ActiveDaysResponse;
 
+
+                const parseDaysToNumbers = (daysArray: (string | number)[]): number[] => {
+                    if (!Array.isArray(daysArray)) return [];
                     return daysArray
                         .map(day => parseInt(String(day), 10)) // 문자열로 변환 후 10진수 숫자로 파싱
                         .filter(day => !isNaN(day)); // NaN (숫자 아님) 값은 제거
@@ -224,9 +239,13 @@ export default function SidebarLeft({
         console.log("✅ [2단계] 응답 내부의 data.items:", eventDataResponse?.data?.items);*/
 
         try {
-            const eventData = await api.get(`/projects/${projectId}/events/todos?date=${formattedDate}`);
-            const privateData = await api.get(`/projects/${projectId}/todos?date=${formattedDate}`);
+            const eventData = (await api.get(
+                `/projects/${projectId}/events/todos?date=${formattedDate}`
+            )) as ApiListResponse<ApiEventTodo>;
 
+            const privateData = (await api.get(
+                `/projects/${projectId}/todos?date=${formattedDate}`
+            )) as ApiListResponse<ApiPrivateTodo>;
             const eventItems: ApiEventTodo[] = eventData?.data?.items || [];
             const privateItems: ApiPrivateTodo[] = privateData?.data?.items || [];
 
@@ -439,17 +458,19 @@ export default function SidebarLeft({
                                         key={`${ri}-${ci}`}
                                         onClick={() => day && handleSidebarDateSelect(day)}
                                         // 'relative'를 추가하여 점의 기준점을 잡습니다.
-                                        className={`h-7 flex items-center justify-center rounded cursor-pointer relative ${
+                                        className={`h-7 flex flex-col items-center justify-center rounded cursor-pointer ${
                                             isTodayDate ? "bg-slate-800 dark:bg-slate-700 text-white"
                                                 : isSelected ? "bg-slate-200 dark:bg-slate-400/30 text-slate-800 dark:text-slate-100"
                                                     : "text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-100/10"
                                         }`}
                                     >
-                                        {day ?? ""}
+                                        <span className="leading-none">{day ?? ""}</span>
 
-                                        {/* To-do가 있는 날짜에 점(dot) 표시 */}
-                                        {isDayActive && (
-                                            <div className={`w-1 h-1 rounded-full absolute bottom-1 ${dotColor}`}></div>
+
+                                        {isDayActive ? (
+                                            <div className={`w-1 h-1 rounded-full mt-0.5 ${dotColor}`}></div>
+                                        ) : (
+                                            <div className="w-1 h-1 mt-0.5"/> // 레이아웃 유지를 위한 빈 공간
                                         )}
                                     </div>
                                 );

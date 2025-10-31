@@ -403,18 +403,36 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
 
                 onClose(); // 성공 후 모달 닫기
             } else if (activeTab === "Event") {
+                // --- KST → UTC 변환 로직 추가 ---
+                if (!formData.startAt || !formData.endAt) {
+                    alert("시작과 종료 시간을 모두 입력해주세요.");
+                    return;
+                }
+
+                // KST 문자열을 Date로 변환한 뒤, UTC ISO 문자열로 변환
+                const startKST = new Date(formData.startAt); // 예: "2025-10-31T20:30"
+                const endKST = new Date(formData.endAt);
+
+                // ISO 문자열 (UTC)로 변환
+                const startUTC = startKST.toISOString(); // "2025-10-31T11:30:00.000Z"
+                const endUTC = endKST.toISOString();
+
                 // 날짜 넘어가는 이벤트인지 확인
-                const start = new Date(formData.startAt);
-                const end = new Date(formData.endAt);
+                const start = new Date(startUTC);
+                const end = new Date(endUTC);
                 if (end < start) {
                     alert("The end time cannot be earlier than the start time.");
                     console.log("종료 시간이 시작 시간보다 이전입니다.");
                     return;
                 }
-                const allDay:boolean = start.toDateString() !== end.toDateString();
-                // Date/time 으로 분리
-                const [startDate, startTime] = formData.startAt.split("T");
-                const [endDate, endTime] = formData.endAt.split("T");
+
+                const allDay: boolean = start.toDateString() !== end.toDateString();
+
+                // Date/time 분리 (서버가 date + time 따로 받는 구조일 경우)
+                const [startDate, startTimeWithZ] = startUTC.split("T");
+                const [endDate, endTimeWithZ] = endUTC.split("T");
+                const startTime = startTimeWithZ.replace("Z", ""); // 끝의 Z 제거
+                const endTime = endTimeWithZ.replace("Z", "");
 
                 // 생성/수정할 이벤트 정보
                 const requestEvent: EventRequest = {
