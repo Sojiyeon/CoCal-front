@@ -244,7 +244,7 @@ export default function SidebarLeft({
                     parentEventTitle: item.eventTitle,
                     date: formattedDate,
                     url: item.url,
-                    authorId: user?.userId || 0, // 필요시 서버 응답에 맞춰 수정
+                    authorId: user?.userId || 0, // 필요시 서버 응답에  맞춰 수정
 
                     // --- ✅ API에서 직접 받은 데이터 사용으로 변경 --
 
