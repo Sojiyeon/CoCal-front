@@ -69,7 +69,7 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
                 type="button"
                 ref={buttonRef}
                 onClick={togglePalette}
-                className="w-full border rounded-md px-3 py-2 text-sm flex items-center gap-2 cursor-pointer hover:bg-slate-50 dark:text-slate-300 dark:border-neutral-700"
+                className="w-full border rounded-md px-3 py-2 text-sm flex items-center gap-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-50/5 dark:text-slate-300 dark:border-neutral-700"
             >
                 <div
                     className="w-5 h-5 rounded-full border"
@@ -79,7 +79,7 @@ function ColorPaletteSelector({ selectedColor, onColorChange }: ColorPaletteProp
             </button>
             {isPaletteOpen && (
                 <div
-                    className="w-auto bg-white border rounded-md shadow-lg p-3 dark:bg-neutral-800 dark:border-neutral-700"
+                    className="w-auto bg-white border rounded-md shadow-lg p-3 dark:bg-neutral-950 dark:border-neutral-700"
                     style={paletteStyle}
                 >
 
@@ -475,7 +475,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
             className={`px-3 py-1 text-xs font-semibold rounded ${
                 activeTab === tabName
                     ? "bg-slate-200 text-slate-800 dark:bg-slate-500/50 dark:text-slate-200"
-                    : "bg-white text-slate-500 hover:bg-slate-100 dark:bg-white/10 dark:text-slate-300"
+                    : "bg-white text-slate-500 hover:bg-slate-100 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-slate-500/20"
             }`}
         >
             {tabName}
@@ -572,7 +572,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                             <button
                                 type="button"
                                 onClick={addUrlField}
-                                className="text-blue-600 text-sm hover:underline mt-1"
+                                className="text-blue-600 text-sm hover:underline mt-1 dark:text-blue-400"
                             >
                                 + URL
                             </button>
@@ -692,7 +692,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                                             eventId: e.target.value ? Number(e.target.value) : undefined,
                                         }))
                                     }
-                                    className="w-full mt-2 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-600"
+                                    className="w-full mt-2 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-neutral-600 dark:text-slate-300 dark:bg-neutral-950"
                                 >
                                     <option value="">-- Select an event --</option>
                                     {events
@@ -788,7 +788,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
-            <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg dark:bg-neutral-800">
+            <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-lg dark:bg-neutral-950">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold text-slate-800 dark:text-white">{editTodo ? "Edit Todo" : (editEventId ? "Edit Event" : "New")}</h2>
 
@@ -806,7 +806,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                         <TabButton tabName="Memo"/>
                     </div>
                 )}
-                <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
+                <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden scrollbar-hide">
                     {renderForm()}
                 </div>
 

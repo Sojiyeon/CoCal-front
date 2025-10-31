@@ -682,15 +682,15 @@ export default function CalendarUI() {
     };
     // todo 수정
     const handleUpdateTodo = async (todoId: number, newData:
-        {
-            title: string;
-            description: string;
-            visibility: 'PUBLIC' | 'PRIVATE';
-            url: string;
-            date?: string;
-            offsetMinutes?: number | null;
-            eventId?: number | null;
-        }) => {
+    {
+        title: string;
+        description: string;
+        visibility: 'PUBLIC' | 'PRIVATE';
+        url: string;
+        date?: string;
+        offsetMinutes?: number | null;
+        eventId?: number | null;
+    }) => {
 
         if (!todoToEdit || todoToEdit.id !== todoId) {
             console.error("수정할 Todo 상태(todoToEdit)가 잘못되었습니다.");
@@ -1341,7 +1341,7 @@ export default function CalendarUI() {
                                                                     <div
                                                                         className="flex items-center gap-1 dark:text-white">
                                                                         <div
-                                                                            className={`text-xs md:text-sm font-medium cursor-pointer hover:text-blue-600 ${isToday ? 'text-blue-600 font-bold' : ''}`}
+                                                                            className={`text-xs md:text-sm font-medium cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 ${isToday ? 'text-blue-600 dark:text-blue-400 font-bold' : ''}`}
                                                                             onClick={() => handleMainDateClick(day)}>
                                                                             {day}
                                                                         </div>
@@ -1367,7 +1367,7 @@ export default function CalendarUI() {
                                                                     </div>
                                                                     <button
                                                                         onClick={() => handleOpenEventModal(dateKey)}
-                                                                        className="w-5 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-full text-lg">+
+                                                                        className="w-5 h-5 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-full text-lg dark:hover:bg-slate-100/10">+
                                                                     </button>
                                                                 </div>
                                                             </div>
