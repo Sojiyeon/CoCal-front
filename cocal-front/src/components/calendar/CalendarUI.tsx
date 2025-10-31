@@ -433,7 +433,7 @@ export default function CalendarUI() {
         // 2. 유저 정보 새로고침
         const token = localStorage.getItem("accessToken");
         if (token) {
-            fetchUserProfile(token);
+            await fetchUserProfile(token);
         }
 
         setViewMode(newView.toLowerCase() as "day" | "week" | "month");
