@@ -152,6 +152,52 @@ export default function SidebarLeft({
     }: { projectId: number; user: UserSummary | null } & SidebarLeftProps) {
     const [sidebarTodos, setSidebarTodos] = useState<SidebarTodo[]>([]);
     const [todoFilter, setTodoFilter] = useState('ALL');
+    const [activeDays, setActiveDays] = useState<number[]>([]);
+
+    useEffect(() => {
+        // projectId가 유효하지 않으면 API를 호출하지 않습니다.
+        if (!projectId || isNaN(projectId)) return;
+
+        // API는 1월=1, 2월=2... 이지만 miniMonth는 0-index (0=1월)
+        const monthForApi = miniMonth + 1;
+        const fetchActiveDays = async () => {
+            try {
+                const response = await api.get(`/cal/${projectId}/active-days?year=${miniYear}&month=${monthForApi}`);
+
+                // API가 날짜를 ["1", "5", "10"] (문자열)으로 보낼 경우를 대비해
+                // 강제로 숫자(number) 배열로 변환하는 헬퍼 함수입니다.
+                const parseDaysToNumbers = (daysArray: any[]): number[] => {
+                    if (!Array.isArray(daysArray)) return []; // 배열이 아니면 빈 배열 반환
+
+                    return daysArray
+                        .map(day => parseInt(String(day), 10)) // 문자열로 변환 후 10진수 숫자로 파싱
+                        .filter(day => !isNaN(day)); // NaN (숫자 아님) 값은 제거
+                };
+
+
+                // response.success와 response.data를 확인하는 대신,
+                // API 명세와 콘솔 로그에 찍힌대로 response.activeDays를 직접 확인합니다.
+                if (response && Array.isArray(response.activeDays)) {
+                    setActiveDays(parseDaysToNumbers(response.activeDays));
+                }
+
+                else {
+                    // response가 { activeDays: [] } 처럼 비어있는 경우도
+                    // 위 if문을 통과하고 parseDaysToNumbers가 빈 배열을 반환합니다.
+                    // 이 else 블록은 response가 아예 없거나, activeDays 필드가 없는 경우입니다.
+                    console.warn("active-days API 응답 형식이 다릅니다:", response);
+                    setActiveDays([]);
+                }
+            } catch (error) {
+                console.error("To-do가 있는 날짜 조회 실패:", error);
+                setActiveDays([]); // 에러 발생 시 빈 배열로 초기화
+                // catch 블록 내부의 불필요한 디버깅 코드를 제거했습니다.
+            }
+        };
+        fetchActiveDays();
+
+        // projectId, miniYear, miniMonth가 변경될 때마다 이 API를 다시 호출
+    }, [projectId, miniYear, miniMonth,todoVersion]);
     // ✨ FIX: 모바일에서 '기능' 뷰와 '캘린더' 뷰를 전환하기 위한 상태
     //const [mobileView, setMobileView] = useState<'actions' | 'calendar'>('actions');
 
@@ -368,7 +414,7 @@ export default function SidebarLeft({
                     <div className="flex items-center justify-between">
                         <button onClick={prevMiniMonth} className="text-xs dark:text-gray-100">&#x276E;</button>
                         <div className="text-sm font-medium dark:text-gray-100">
-                            {new Date(miniYear, miniMonth).toLocaleString("en-US", {month: "long", year: "numeric"})}
+                            {new Date(miniYear, miniMonth).toLocaleString("ko-KR", {month: "long", year: "numeric"})}
                         </div>
                         <button onClick={nextMiniMonth} className="text-xs dark:text-gray-100">&#x276F;</button>
                     </div>
@@ -382,36 +428,54 @@ export default function SidebarLeft({
                             week.map((day, ci) => {
                                 const isTodayDate = day && miniYear === today.getFullYear() && miniMonth === today.getMonth() && day === today.getDate();
                                 const isSelected = day && miniYear === selectedSidebarDate.getFullYear() && miniMonth === selectedSidebarDate.getMonth() && day === selectedSidebarDate.getDate();
+
+                                // 이 날짜에 To-do가 있는지 확인
+                                const isDayActive = day && activeDays.includes(day);
+                                // 점 색깔 결정 (오늘 날짜면 흰색, 아니면 '오늘' 색상)
+                                const dotColor = isTodayDate ? "bg-white" : "bg-slate-800 dark:bg-slate-700";
+
                                 return (
                                     <div
                                         key={`${ri}-${ci}`}
                                         onClick={() => day && handleSidebarDateSelect(day)}
-                                        className={`h-7 flex items-center justify-center rounded cursor-pointer ${isTodayDate ? "bg-slate-800 dark:bg-slate-700 text-white" : isSelected ? "bg-slate-200 dark:bg-slate-400/30 text-slate-800 dark:text-slate-100" : "text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-100/10"}`}
+                                        // 'relative'를 추가하여 점의 기준점을 잡습니다.
+                                        className={`h-7 flex items-center justify-center rounded cursor-pointer relative ${
+                                            isTodayDate ? "bg-slate-800 dark:bg-slate-700 text-white"
+                                                : isSelected ? "bg-slate-200 dark:bg-slate-400/30 text-slate-800 dark:text-slate-100"
+                                                    : "text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-100/10"
+                                        }`}
                                     >
                                         {day ?? ""}
+
+                                        {/* To-do가 있는 날짜에 점(dot) 표시 */}
+                                        {isDayActive && (
+                                            <div className={`w-1 h-1 rounded-full absolute bottom-1 ${dotColor}`}></div>
+                                        )}
                                     </div>
                                 );
                             })
                         )}
                     </div>
                 </div>
-
                 {/* 2️⃣ Todo 필터 버튼 (고정) */}
                 <div className="mb-2 flex items-center justify-between">
                     <h3 className="text-sm font-medium dark:text-gray-200">To do</h3>
                     <div className="flex items-center gap-1">
-                    <button
+                        <button
                             onClick={() => setTodoFilter('ALL')}
                             className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'ALL' ? 'bg-slate-800 text-white' : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-400'}`}
-                        >All</button>
+                        >All
+                        </button>
                         <button
                             onClick={() => setTodoFilter('PUBLIC')}
                             className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'PUBLIC' ? 'bg-slate-800 text-white' : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-400'}`}
-                        >Public</button>
+                        >Public
+                        </button>
                         <button
                             onClick={() => setTodoFilter('PRIVATE')}
                             className={`px-2 py-0.5 text-xs rounded-full ${todoFilter === 'PRIVATE' ? 'bg-slate-800 text-white' : 'bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-400'}`}
-                        >Private</button>
+                        >Private
+                        </button>
                     </div>
                 </div>
 
@@ -420,10 +484,16 @@ export default function SidebarLeft({
                     <div className="space-y-3 text-sm">
                         {filteredSidebarTodos.length > 0 ? (
                             filteredSidebarTodos.map((todo) => (
-                                <div key={`${todo.type}-${todo.id}`} className={`flex items-center gap-3 p-1 rounded-md ${todo.status === "DONE" ? "opacity-50" : ""}`}>
-                                    <div className="w-2 h-7 rounded" style={{backgroundColor: todo.parentEventColor, border: todo.parentPrivateBorder}}></div>
-                                    <div className="flex-1 min-w-0 cursor-pointer" onDoubleClick={() => onEditTodo(todo)}>
-                                        <div className={`font-medium truncate dark:text-slate-200 ${todo.status === "DONE" ? "line-through text-slate-400" : ""}`}>{todo.title}</div>
+                                <div key={`${todo.type}-${todo.id}`}
+                                     className={`flex items-center gap-3 p-1 rounded-md ${todo.status === "DONE" ? "opacity-50" : ""}`}>
+                                    <div className="w-2 h-7 rounded" style={{
+                                        backgroundColor: todo.parentEventColor,
+                                        border: todo.parentPrivateBorder
+                                    }}></div>
+                                    <div className="flex-1 min-w-0 cursor-pointer"
+                                         onDoubleClick={() => onEditTodo(todo)}>
+                                        <div
+                                            className={`font-medium truncate dark:text-slate-200 ${todo.status === "DONE" ? "line-through text-slate-400" : ""}`}>{todo.title}</div>
                                         <div className="text-xs text-slate-400 truncate">
                                             {todo.type === 'PRIVATE' ? (todo.description || 'No description') : `${user?.name || 'Unassigned'} - ${todo.description || ''}`}
                                         </div>
