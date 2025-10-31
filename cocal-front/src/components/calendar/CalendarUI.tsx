@@ -1306,20 +1306,47 @@ export default function CalendarUI() {
                                     </div>
                                     <div className="grid grid-cols-1 border-l border-gray-200 dark:border-neutral-600">
                                         {matrix.map((week, weekIndex) => {
+                                            // [FIX] weekEndDate 정의를 여기에 추가합니다.
+                                            const weekStartDay = week.find(d => d);
+                                            const weekEndDay = [...week].reverse().find(d => d); // 1. 주의 마지막 날(null이 아닌)을 찾습니다.
+
+                                            // 2. 만약 주가 비어있다면(e.g., [null, null, ...]) weekEvents는 빈 배열이 됩니다.
+                                            if (!weekStartDay || !weekEndDay) {
+                                                return (
+                                                    <div key={weekIndex}
+                                                         className="grid grid-cols-7 relative border-b border-gray-200 dark:border-neutral-600">
+                                                        {/* 이 week 배열은 [null, null, null, null, null, null, null] 입니다.
+                                                          따라서 아래 map은 7번 반복되며,
+                                                          if (!day) 조건이 항상 true가 되어 빈 div 7개만 렌더링합니다.
+                                                        */}
+                                                        {week.map((day, dayIndex) => {
+                                                            if (!day) return <div key={`empty-${dayIndex}`}
+                                                                                  className="min-h-[80px] md:min-h-[120px] border-r border-gray-200 bg-gray-50 dark:bg-neutral-800 dark:border-neutral-600"></div>;
+
+                                                            // 텅 빈 주에서는 이 코드가 실행될 수 없습니다.
+                                                            return null;
+                                                        })}
+                                                    </div>
+                                                );
+                                            }
+
+                                            // 3. weekStartDate와 weekEndDate를 정의합니다.
+                                            const weekStartDate = new Date(viewYear, viewMonth, weekStartDay);
+                                            const weekEndDate = new Date(viewYear, viewMonth, weekEndDay);
+
                                             const weekEvents = events.filter(event => {
                                                 if (event.title.startsWith('Todo:')) {
                                                     return false;
                                                 }
-                                                const eventStart = new Date(event.startAt.split('T')[0]);
-                                                const weekStartDay = week.find(d => d);
-                                                if (!weekStartDay) return false;
-                                                const weekStartDate = new Date(viewYear, viewMonth, weekStartDay);
 
-                                                const eventEnd = new Date(event.endAt.split('T')[0]);
-                                                const weekEndDay = [...week].reverse().find(d => d);
-                                                if (!weekEndDay) return false;
-                                                const weekEndDate = new Date(viewYear, viewMonth, weekEndDay);
+                                                // [FIX] 로컬 시간 기준으로 날짜를 파싱합니다.
+                                                const eventStart = new Date(event.startAt);
+                                                eventStart.setHours(0, 0, 0, 0);
 
+                                                const eventEnd = new Date(event.endAt);
+                                                eventEnd.setHours(0, 0, 0, 0);
+
+                                                // 이제 weekEndDate가 정의되었으므로 오류가 발생하지 않습니다.
                                                 return eventStart <= weekEndDate && eventEnd >= weekStartDate;
                                             });
 
@@ -1378,10 +1405,16 @@ export default function CalendarUI() {
                                                         {(() => {
                                                             // --- 1. & 2. 이벤트 정보 처리 (span, cols 계산) ---
                                                             const processedEvents = weekEvents.map(event => {
-                                                                const eventStart = new Date(event.startAt.split('T')[0]);
-                                                                const eventEnd = new Date(event.endAt.split('T')[0]);
+                                                                // [FIX] 1번 필터와 동일하게 로컬 시간 기준으로 파싱합니다.
+                                                                const eventStart = new Date(event.startAt);
+                                                                eventStart.setHours(0, 0, 0, 0);
+
+                                                                const eventEnd = new Date(event.endAt);
+                                                                eventEnd.setHours(0, 0, 0, 0);
+
                                                                 let startCol = 0;
                                                                 let endCol = 6;
+
                                                                 let foundStart = false;
 
                                                                 for (let i = 0; i < 7; i++) {
