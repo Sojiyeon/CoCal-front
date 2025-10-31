@@ -80,7 +80,7 @@ const TodoListTab = ({ event, onSelectTodo }: Props & { onSelectTodo?: (todo: Re
             onSelectTodo(eventTodos[currentTodoIndex]);
         }
     }, [currentTodoIndex, eventTodos, onSelectTodo]);
-    
+
     // 이벤트 투두 완료 핸들러
     const onTodoComplete = async (projectId:number, currentTodo:RealEventTodo) => {
         if (!currentTodo) return;
@@ -112,7 +112,7 @@ const TodoListTab = ({ event, onSelectTodo }: Props & { onSelectTodo?: (todo: Re
         }
     };
 
-   // ---  삭제 후 UI 오류 방지 로직 ---
+    // ---  삭제 후 UI 오류 방지 로직 ---
     useEffect(() => {
         // 할 일이 삭제되어 현재 인덱스가 배열 범위를 벗어나는 경우,
         // 인덱스를 유효한 마지막 값으로 재설정하여 오류를 방지합니다.
@@ -145,7 +145,7 @@ const TodoListTab = ({ event, onSelectTodo }: Props & { onSelectTodo?: (todo: Re
 
     // ---  삭제 후 UI 오류 방지 로직 ---
     if (eventTodos.length === 0) {
-        return <p className="text-center text-sm text-slate-500 py-8">연관된 할 일이 없습니다.</p>;
+        return <p className="text-center text-sm text-slate-500 dark:text-neutral-300 py-8">연관된 할 일이 없습니다.</p>;
     }
     const currentTodo = eventTodos?.[currentTodoIndex];
 
@@ -160,11 +160,11 @@ const TodoListTab = ({ event, onSelectTodo }: Props & { onSelectTodo?: (todo: Re
     };
     const DetailRow = ({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) => (
         <div className="flex text-sm">
-            <div className="w-28 text-slate-500 flex items-center gap-2 flex-shrink-0">
+            <div className="w-28 text-slate-500 dark:text-slate-400 flex items-center gap-2 flex-shrink-0">
                 {icon}
-                <span className="font-semibold">{label}</span>
+                <span className="font-sm">{label}</span>
             </div>
-            <div className="text-slate-800 break-words min-w-0">{children}</div>
+            <div className="text-slate-800 dark:text-neutral-300 break-words min-w-0">{children}</div>
         </div>
     );
 
@@ -184,7 +184,7 @@ const TodoListTab = ({ event, onSelectTodo }: Props & { onSelectTodo?: (todo: Re
 
                 <DetailRow label="URL" >
                     {currentTodo?.url ? (
-                        <a href={currentTodo?.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
+                        <a href={currentTodo?.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate dark:text-blue-400">
                             {currentTodo?.url}
                         </a>
                     ) : (
@@ -201,7 +201,7 @@ const TodoListTab = ({ event, onSelectTodo }: Props & { onSelectTodo?: (todo: Re
                             className="w-4 h-4 accent-blue-600 cursor-pointer"
                             disabled={!currentTodo} // currentTodo 없으면 비활성화
                         />
-                        <span className={currentTodo?.status === "DONE" ? "text-green-600" : "text-slate-500"}>
+                        <span className={currentTodo?.status === "DONE" ? "text-green-600" : "text-slate-500 dark:text-neutral-300"}>
                           {currentTodo?.status === "DONE" ? "DONE" : "IN_PROGRESS"}
                         </span>
                     </div>
@@ -209,7 +209,7 @@ const TodoListTab = ({ event, onSelectTodo }: Props & { onSelectTodo?: (todo: Re
 
                 {/* 제목, 수정/삭제/탐색 버튼 */}
                 <div className="flex justify-center items-center pt-3">
-                    <h3 className="text-1xl font-bold text-slate-800 truncate"></h3>
+                    <h3 className="text-1xl font-bold text-slate-800 dark:text-neutral-300 truncate"></h3>
                     <div className="flex items-center gap-3 text-slate-600 ">
                         {/* 할 일이 2개 이상일 때만 화살표 표시 */}
                         {eventTodos.length > 1 && (
@@ -287,7 +287,7 @@ export function EventDetailModal({
                                      members,
                                  }: Props) {
     const [activeTab, setActiveTab] = useState<ActiveTab>("Event");
-   // const [currentTodoIndex, setCurrentTodoIndex] = useState(0);
+    // const [currentTodoIndex, setCurrentTodoIndex] = useState(0);
     const [currentTodo, setCurrentTodo] = useState<RealEventTodo | null>(null);
     // 이벤트 정보 담는 상태
     const [eventData, setEventData] = useState<EventData | null>(null);
@@ -363,19 +363,19 @@ export function EventDetailModal({
         })();
     }, [event]);
 
-   // /** Event 탭 콘텐츠 */
+    // /** Event 탭 콘텐츠 */
     const EventContent = () => (
         <div className="space-y-4 text-sm p-1">
             <div className="flex items-center">
-                <span className="w-24 text-slate-500">Time</span>
-                <span className="text-slate-800 font-medium">
+                <span className="w-24 text-slate-500 dark:text-slate-400">Time</span>
+                <span className="text-slate-800 dark:text-neutral-300 font-medium">
           {`${formatISO(eventData?.startAt ?? "")} ~ ${formatISO(eventData?.endAt ?? "")}`}
         </span>
             </div>
 
             {/*  Team: 실제 멤버 표시 */}
             <div className="flex items-center">
-                <span className="w-24 text-slate-500">Team</span>
+                <span className="w-24 text-slate-500 dark:text-slate-400">Team</span>
                 {eventMembers && eventMembers.length > 0 ? (
                     <TeamAvatars list={eventMembers}/>
                 ) : (
@@ -384,26 +384,26 @@ export function EventDetailModal({
             </div>
 
             <div className="flex items-center">
-                <span className="w-24 text-slate-500">Location</span>
-                <span className="text-slate-800">{eventData?.location || "Not specified"}</span>
+                <span className="w-24 text-slate-500 dark:text-slate-400">Location</span>
+                <span className="text-slate-800 dark:text-neutral-300">{eventData?.location || "Not specified"}</span>
             </div>
 
             <div className="flex items-start">
-                <span className="w-24 text-slate-500 pt-1">Memo</span>
-                <div className="flex-1 text-slate-800 bg-slate-50 p-2 rounded-md text-xs min-h-[4rem]">
+                <span className="w-24 text-slate-500 dark:text-slate-400 pt-1">Memo</span>
+                <div className="flex-1 text-slate-800 dark:text-neutral-300 bg-slate-50 dark:bg-neutral-900 p-2 rounded-md text-xs min-h-[4rem]">
                     {eventData?.description || "No description available."}
                 </div>
             </div>
 
 
             <div className="flex items-center">
-                <span className="w-24 text-slate-500">Reminder</span>
-                <span className="text-slate-800">{getReminderLabel(eventData?.offsetMinutes ?? null)}</span>
+                <span className="w-24 text-slate-500 dark:text-slate-400">Reminder</span>
+                <span className="text-slate-800 dark:text-neutral-300">{getReminderLabel(eventData?.offsetMinutes ?? null)}</span>
             </div>
 
             <div className="flex items-start">
-                <span className="w-24 text-slate-500 mt-1">URL</span>
-                <div className="flex flex-col gap-1">
+                <span className="w-24 text-slate-500 dark:text-slate-400 mt-1">URL</span>
+                <div className="flex flex-col gap-1 dark:text-neutral-300">
                     {eventData?.urls && eventData.urls.length > 0 ? (
                         eventData.urls.map((urlObj, index) => (
                             <a
@@ -411,7 +411,7 @@ export function EventDetailModal({
                                 href={typeof urlObj === "string" ? urlObj : urlObj.url} // EventUrl[] 형태면 .url 접근
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 truncate hover:underline"
+                                className="text-blue-600 dark:text-blue-400 truncate hover:underline"
                             >
                                 {typeof urlObj === "string" ? urlObj : urlObj.url}
                             </a>
@@ -430,8 +430,8 @@ export function EventDetailModal({
             onClick={() => setActiveTab(tabName)}
             className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
                 activeTab === tabName
-                    ? "text-blue-600 border-blue-600"
-                    : "text-slate-500 border-transparent hover:text-slate-800"
+                    ? "text-blue-600 border-blue-600 dark:text-blue-400 dark:border-blue-400"
+                    : "text-slate-500 border-transparent hover:text-slate-800 dark:hover:text-slate-300"
             }`}
         >
             {tabName}
@@ -442,27 +442,27 @@ export function EventDetailModal({
         // 모바일 레이아웃: 하단 정렬 + 둥근 상단 모서리
         <div className="fixed inset-0 bg-black/60 z-50 flex flex-col justify-end sm:items-center sm:justify-center">
             <div
-                className="bg-white rounded-t-2xl sm:rounded-2xl shadow-lg w-full max-w-md sm:max-h-[90vh] h-[90vh] sm:h-auto overflow-hidden flex flex-col">
+                className="bg-white dark:bg-neutral-950 rounded-t-2xl sm:rounded-2xl shadow-lg w-full max-w-md sm:max-h-[90vh] h-[90vh] sm:h-auto overflow-hidden flex flex-col">
                 {/* --- 헤더 --- */}
-                <div className="p-4 border-b sticky top-0 bg-white z-10">
+                <div className="p-4 border-b sticky top-0 bg-white z-10 dark:bg-neutral-950 dark:border-neutral-700">
                     <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">
                             <div className="w-2.5 h-10 rounded-full" style={{backgroundColor: eventData?.color}}></div>
-                            <h2 className="text-xl font-bold text-slate-800 truncate">{eventData?.title}</h2>
+                            <h2 className="text-xl font-bold text-slate-800 truncate dark:text-white">{eventData?.title}</h2>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                             {/* --- START: 수정된 부분 --- */}
                             {/* 메인 Edit 버튼에 새로운 핸들러를 연결합니다. */}
                             <button
                                 onClick={handleMainEditClick}
-                                className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors duration-150"
+                                className="p-1 rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-100/20 hover:text-slate-800 dark:hover:text-slate-300 transition-colors duration-150"
                                 aria-label="Edit item"
                             >
                                 <EditIcon/>
                             </button>
                             <button
                                 onClick={handleMainDeleteClick}
-                                className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-red-600 transition-colors duration-150"
+                                className="p-1 rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-100/20 hover:text-red-600 transition-colors duration-150"
                                 aria-label="Delete item"
                             >
                                 <TrashIcon/>
@@ -475,7 +475,7 @@ export function EventDetailModal({
                 </div>
 
                 {/* --- 탭 버튼 --- */}
-                <div className="flex border-b sticky top-[3.5rem] bg-white z-10">
+                <div className="flex border-b sticky top-[3.5rem] bg-white dark:bg-neutral-950 z-10 dark:border-neutral-700">
                     <TabButton tabName="Event"/>
                     <TabButton tabName="Todo"/>
                 </div>
@@ -485,7 +485,7 @@ export function EventDetailModal({
                     {/* --- 3. 로딩 상태에 따른 조건부 렌더링 --- */}
                     {activeTab === "Event" ? (
                         isLoading ? (
-                            <div className="text-center text-slate-500 py-8">
+                            <div className="text-center text-slate-500 dark:text-neutral-300 py-8">
                                 Loading...
                             </div>
                         ) : (

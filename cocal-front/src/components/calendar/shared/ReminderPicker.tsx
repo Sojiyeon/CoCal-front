@@ -32,11 +32,11 @@ export function ReminderPicker({
     return (
         <div
             className={clsx(
-                "w-full border rounded-md px-3 py-2 text-sm flex items-center justify-between",
+                "w-full border rounded-md px-3 py-2 text-sm flex items-center justify-between dark:border-neutral-700 dark:text-neutral-300",
                 className
             )}
         >
-            <span className="text-slate-600">{label}</span>
+            <span className="text-slate-600 dark:text-neutral-300">{label}</span>
             <select
                 value={value === null ? "null" : String(value)}
                 onChange={(e) => {
@@ -44,7 +44,7 @@ export function ReminderPicker({
                     onChange(v === "null" ? null : Number(v));
                 }}
                 disabled={disabled}
-                className="ml-2 border rounded px-2 py-1 text-sm text-slate-700 bg-white"
+                className="ml-2 border rounded px-2 py-1 text-sm text-slate-700 bg-white dark:text-slate-300 dark:border-neutral-700 dark:bg-neutral-950"
                 aria-label="Reminder"
             >
                 {REMINDER_OPTIONS.map((opt) => (

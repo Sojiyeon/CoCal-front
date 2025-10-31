@@ -6,7 +6,7 @@ import { X } from 'lucide-react'; // 닫기 아이콘 사용
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
-    title: string;
+    title?: string;
     children: ReactNode;
     className?: string;
     titleClassName?: string;

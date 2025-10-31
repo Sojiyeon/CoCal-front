@@ -27,8 +27,8 @@ interface Props {
 // 상세 정보 행을 위한 헬퍼 컴포넌트 (EventDetailModal에서 가져옴)
 const DetailRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
     <div className="flex text-sm">
-        <div className="w-28 text-slate-500 flex-shrink-0 font-semibold">{label}</div>
-        <div className="text-slate-800 break-words min-w-0">{children}</div>
+        <div className="w-28 text-slate-500 flex-shrink-0 font-sm dark:text-slate-400">{label}</div>
+        <div className="text-slate-800 break-words min-w-0 dark:text-slate-300">{children}</div>
     </div>
 );
 
@@ -115,21 +115,21 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
     // --- 🔽 [STEP 2] 렌더링할 JSX를 isEditing 상태에 따라 분기 🔽 ---
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="bg-white rounded-xl shadow-lg w-full max-w-md">
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-md dark:bg-neutral-950">
                 {/* --- 헤더 --- */}
-                <div className="p-4 border-b flex justify-between items-start">
+                <div className="p-4 border-b flex justify-between items-start dark:border-neutral-700">
 
                     {/* [유지] 왼쪽 상단: 타이틀 및 카테고리 */}
                     <div className="flex items-center gap-3">
                         <div className="w-2.5 h-10 rounded-full"
                              style={{backgroundColor: todoToEdit.parentEventColor}}></div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-800">
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-300">
                                 {isEditing ? "Edit To-do" : todoToEdit.title}
                             </h2>
                             {/* 상세 보기 모드일 때만 카테고리 표시 */}
                             {!isEditing && (
-                                <p className="text-xs text-slate-500">{todoToEdit.parentEventTitle}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{todoToEdit.parentEventTitle}</p>
                             )}
                         </div>
                     </div>
@@ -140,7 +140,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                         {!isEditing && (
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors duration-150"
+                                className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-100/20 dark:hover:text-slate-300 transition-colors duration-150"
                                 aria-label="Edit To-do"
                             >
                                 <EditIcon/>
@@ -151,14 +151,14 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                         {!isEditing && (
                             <button
                                 onClick={handleDelete}
-                                className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-red-600 transition-colors duration-150"
+                                className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-red-600 dark:hover:bg-slate-100/20 transition-colors duration-150"
                                 aria-label="Delete To-do"
                             >
                                 <TrashIcon/>
                             </button>
                         )}
 
-                        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl">×</button>
+                        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-2xl dark:hover:text-slate-300">×</button>
                     </div>
                 </div>
                 {/* --- 컨텐츠 (상세 정보 또는 수정 폼) --- */}
@@ -168,13 +168,13 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                         <>
                             <input
                                 type="text" value={title} onChange={(e) => setTitle(e.target.value)}
-                                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-neutral-300 dark:border-neutral-700"
                                 placeholder="To-do Title"
                             />
                             <textarea
                                 value={description} onChange={(e) => setDescription(e.target.value)}
                                 rows={3}
-                                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-neutral-300 dark:border-neutral-700"
                                 placeholder="Description..."
                             />
                             <div>
@@ -238,7 +238,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                                         name="date"
                                         value={date}
                                         onChange={(e) => setDate(e.target.value)}
-                                        className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:text-neutral-300 dark:border-neutral-700"
                                     />
                                     <ReminderPicker
                                         value={offsetMinutes}
@@ -295,7 +295,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                             <DetailRow label="URL">
                                 {todoToEdit.url ? (
                                     <a href={todoToEdit.url} target="_blank" rel="noopener noreferrer"
-                                       className="text-blue-600 hover:underline truncate">
+                                       className="text-blue-600 hover:underline dark:text-blue-400 truncate">
                                         {todoToEdit.url}
                                     </a>
                                 ) : (
@@ -307,7 +307,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                 </div>
 
                 {/* --- 푸터 (버튼) --- */}
-                <div className="p-4 bg-slate-50 rounded-b-xl flex justify-end items-center gap-4">
+                <div className="p-4 bg-slate-50 rounded-b-xl flex justify-end items-center gap-4 dark:bg-neutral-900">
                     {/* 삭제 버튼은 헤더로 옮겨졌으므로 여기서는 제거 */}
                     {/* 수정 모드일 때만 'Save' 버튼 표시 */}
                     {isEditing && (

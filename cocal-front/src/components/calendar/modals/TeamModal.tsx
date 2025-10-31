@@ -131,7 +131,7 @@ export function TeamModal({ projectId, onClose }: Props) {
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="bg-white rounded-xl shadow-lg p-6 w-[480px] text-slate-800 dark:bg-neutral-800">
+            <div className="bg-white rounded-xl shadow-lg p-6 w-[480px] text-slate-800 dark:bg-neutral-950">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-semibold dark:text-white">
                         {myRole !== "MEMBER" ?
@@ -166,7 +166,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                                     handleInvite();
                                 }
                             }}
-                            className="flex-1 border rounded-md px-3 py-2 text-sm dark:text-neutral-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            className="flex-1 border rounded-md px-3 py-2 text-sm dark:text-neutral-300 dark:border-neutral-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         />
                         <button
                             onClick={() => void handleInvite()} // [수정] Promise 반환 무시 경고를 해결합니다.
@@ -225,7 +225,7 @@ export function TeamModal({ projectId, onClose }: Props) {
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">?</div>
                                     <div>
-                                        <div className="font-semibold italic">{invite.email}</div>
+                                        <div className="font-semibold italic dark:text-gray-200">{invite.email}</div>
                                         <div className="text-xs text-slate-400">{invite.status}...</div>
                                     </div>
                                 </div>

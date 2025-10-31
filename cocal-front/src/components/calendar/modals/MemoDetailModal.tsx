@@ -9,7 +9,8 @@ import { deleteMemo, updateMemo } from "@/api/memoApi";
 const ChevronLeftIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
          viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+         className="dark:text-slate-200">
         <polyline points="15 18 9 12 15 6"></polyline>
     </svg>
 );
@@ -17,7 +18,8 @@ const ChevronLeftIcon = () => (
 const ChevronRightIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
          viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+         className="dark:text-slate-200">
         <polyline points="9 18 15 12 9 6"></polyline>
     </svg>
 );
@@ -110,7 +112,7 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
-            <div className="bg-white rounded-2xl shadow-lg w-[400px] p-6">
+            <div className="bg-white rounded-2xl shadow-lg w-[400px] p-6 dark:bg-neutral-950">
                 {/* 상단 헤더 */}
                 <div className="flex justify-between items-center mb-4">
                     {/* 메모 제목 */}
@@ -119,12 +121,12 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
                             type="text"
                             value={editTitle}
                             onChange={(e) => setEditTitle(e.target.value)}
-                            className="flex-1 text-lg font-semibold text-slate-800 border-b border-slate-300 focus:outline-none focus:border-blue-400"
+                            className="flex-1 text-lg font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-300 dark:border-neutral-700 focus:outline-none focus:border-blue-400"
                             placeholder="Enter a title"
                         />
                     ) : (
                         <div className="flex items-center space-x-2">
-                            <h2 className="text-lg font-bold text-slate-800">
+                            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">
                                 {currentMemo.title || "Untitle"}
                             </h2>
                             <span className="text-xs text-slate-400">
@@ -134,7 +136,7 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
                     )}
 
                     <div className="flex items-center space-x-2">
-                        <button onClick={() => setIsEditing(true)} className="text-slate-400 hover:text-blue-500">
+                        <button onClick={() => setIsEditing(true)} className="text-slate-400 hover:text-blue-500 dark:hover:text-blue-400">
                             <Pencil size={18} />
                         </button>
                         <button onClick={handleDeleteClick} className="text-slate-400 hover:text-red-500" disabled={isLoading}>
@@ -149,23 +151,23 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
                 {/* 본문 */}
                 <div className="space-y-4 text-sm pt-3">
                     <div className="flex">
-                        <span className="w-20 text-slate-500">작성자</span>
-                        <span className="text-slate-800 font-medium">{author?.name || "Unknown user"}</span>
+                        <span className="w-20 text-slate-500 dark:text-slate-400">작성자</span>
+                        <span className="text-slate-800 font-medium dark:text-slate-200">{author?.name || "Unknown user"}</span>
                     </div>
 
                     {/* 날짜 */}
                     <div className="flex items-start">
-                        <span className="w-20 text-slate-500 pt-1">날짜</span>
+                        <span className="w-20 text-slate-500 pt-1 dark:text-slate-400">날짜</span>
                         <div className="flex-1">
                             {isEditing ? (
                                 <input
                                     type="date"
                                     value={editDate}
                                     onChange={(e) => setEditDate(e.target.value)}
-                                    className="border border-slate-300 rounded-md p-2 w-full focus:ring-2 focus:ring-blue-400"
+                                    className="border border-slate-300 rounded-md p-2 w-full focus:ring-2 focus:ring-blue-400 dark:text-slate-200 dark:border-neutral-700"
                                 />
                             ) : (
-                                <span className="text-slate-800">
+                                <span className="text-slate-800 dark:text-slate-200">
                                     {currentMemo.memoDate || "No Date"}
                                 </span>
                             )}
@@ -174,14 +176,14 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
 
                     {/* URL */}
                     <div className="flex items-start">
-                        <span className="w-20 text-slate-500 pt-1">URL</span>
-                        <div className="flex-1 text-slate-800 break-all">
+                        <span className="w-20 text-slate-500 dark:text-slate-400 pt-1">URL</span>
+                        <div className="flex-1 text-slate-800 break-all dark:text-slate-200">
                             {isEditing ? (
                                 <input
                                     type="text"
                                     value={editUrl}
                                     onChange={(e) => setEditUrl(e.target.value)}
-                                    className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-400"
+                                    className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-400 dark:text-slate-200 dark:border-neutral-700"
                                     placeholder="https://example.com"
                                 />
                             ) : currentMemo.url ? (
@@ -196,17 +198,17 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
 
                     {/* 내용 */}
                     <div className="flex items-start">
-                        <span className="w-20 text-slate-500 pt-1">내용</span>
+                        <span className="w-20 text-slate-500 dark:text-slate-400 pt-1">내용</span>
                         <div className="flex-1">
                             {isEditing ? (
                                 <>
                                     <textarea
                                         value={editContent}
                                         onChange={(e) => setEditContent(e.target.value)}
-                                        className="w-full h-[120px] p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-400 text-slate-800"
+                                        className="w-full h-[120px] p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-400 text-slate-800 dark:border-neutral-700 dark:text-slate-200"
                                     />
                                     <div className="flex justify-end space-x-2 mt-2">
-                                        <button onClick={() => setIsEditing(false)} className="px-3 py-1 text-sm rounded-md bg-slate-200 text-slate-700 hover:bg-slate-300">
+                                        <button onClick={() => setIsEditing(false)} className="px-3 py-1 text-sm rounded-md bg-slate-200 text-slate-700 hover:bg-slate-300 dark:text-slate-200 dark:bg-neutral-800 dark:hover:bg-slate-500/50">
                                             Cancel
                                         </button>
                                         <button onClick={handleSaveEdit} className="px-3 py-1 text-sm rounded-md bg-blue-500 text-white hover:bg-blue-600">
@@ -215,7 +217,7 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
                                     </div>
                                 </>
                             ) : (
-                                <div className="text-slate-800 bg-slate-50 p-3 rounded-md min-h-[100px] whitespace-pre-wrap">
+                                <div className="text-slate-800 bg-slate-50 p-3 rounded-md min-h-[100px] whitespace-pre-wrap dark:bg-neutral-900 dark:text-slate-200">
                                     {currentMemo.content || "No content"}
                                 </div>
                             )}
@@ -228,17 +230,17 @@ export function MemoDetailModal({ memos, startIndex, projectId, onClose, onEdit,
                             <button
                                 onClick={goToPrev}
                                 disabled={currentIndex === 0}
-                                className="p-1 rounded-full hover:bg-slate-100 disabled:opacity-40"
+                                className="p-1 rounded-full hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-slate-100/10"
                             >
                                 <ChevronLeftIcon />
                             </button>
 
-                            <span className="text-xs font-mono">{currentIndex + 1} / {memos.length}</span>
+                            <span className="text-xs font-mono dark:text-slate-200">{currentIndex + 1} / {memos.length}</span>
 
                             <button
                                 onClick={goToNext}
                                 disabled={currentIndex === memos.length - 1}
-                                className="p-1 rounded-full hover:bg-slate-100 disabled:opacity-40"
+                                className="p-1 rounded-full hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-slate-100/20"
                             >
                                 <ChevronRightIcon />
                             </button>

@@ -774,7 +774,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                                     </p>
 
                                     <div className="flex justify-between items-center mt-2 mb-1.5">
-                                        <div className="flex flex-col text-xs text-gray-500 dark:text-gray-400">
+                                        <div className="flex flex-col text-xs text-blue-500 dark:text-blue-400">
                                             <span>만료일: {formatDate(invite.expiresAt)}</span>
                                         </div>
                                         <div className="flex justify-end gap-1">
