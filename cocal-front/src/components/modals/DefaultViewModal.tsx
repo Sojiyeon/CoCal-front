@@ -17,9 +17,10 @@ interface DefaultViewModalProps {
 
 // 모달에 표시할 옵션 목록
 const viewOptions: { key: ViewOption, label: string }[] = [
-    { key: 'DAY', label: 'Day' },
-    { key: 'WEEK', label: 'Week' },
     { key: 'MONTH', label: 'Month' },
+    { key: 'WEEK', label: 'Week' },
+    { key: 'DAY', label: 'Day' },
+
 ];
 
 const DefaultViewModal: FC<DefaultViewModalProps> = ({ isOpen, onClose, currentView, onSave }) => {
@@ -40,6 +41,7 @@ const DefaultViewModal: FC<DefaultViewModalProps> = ({ isOpen, onClose, currentV
         setIsLoading(true);
         try {
             await onSave(selectedView);
+            onClose();
         } catch (error) {
             console.error("Failed to save default view:", error);
             alert("Failed to save settings.");
