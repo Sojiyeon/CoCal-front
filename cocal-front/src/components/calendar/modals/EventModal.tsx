@@ -366,7 +366,6 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
 
                 } else {
                     // --- Private Todo (PRIVATE) ---
-                    // formData.date는 KST 문자열입니다 (예: "2025-10-31T20:30")
                     const kstString = formData.date;
 
                     if (!kstString) {
@@ -375,9 +374,10 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                         return;
                     }
 
-                    // [FIX] KST 문자열을 Date 객체로 변환 후, UTC ISO 문자열로 변경
-                    const kstDate = new Date(kstString);
-                    dateForServer = kstDate.toISOString(); // "2025-10-31T11:30:00.000Z"
+                    // [FIX] KST 문자열에 "+09:00" (KST 오프셋)을 붙여 UTC로 정확히 변환합니다.
+                    // 이렇게 하면 브라우저 시간대와 상관없이 항상 KST 9시로 해석됩니다.
+                    const kstDate = new Date(kstString + "+09:00");
+                    dateForServer = kstDate.toISOString(); // 9시 KST -> "2025-11-01T00:00:00.000Z"
                 }
 
                 // --- 서버에 보낼 데이터 ---
@@ -424,12 +424,14 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                     return;
                 }
 
-                // KST 문자열을 Date로 변환한 뒤, UTC ISO 문자열로 변환
-                const startKST = new Date(formData.startAt); // 예: "2025-10-31T20:30"
-                const endKST = new Date(formData.endAt);
+                // --- KST → UTC 변환 로직 추가 ---
+                // ...
+                // KST 문자열에 "+09:00"을 붙여 KST 기준으로 Date 객체를 생성
+                const startKST = new Date(formData.startAt + "+09:00");
+                const endKST = new Date(formData.endAt + "+09:00");
 
                 // ISO 문자열 (UTC)로 변환
-                const startUTC = startKST.toISOString(); // "2025-10-31T11:30:00.000Z"
+                const startUTC = startKST.toISOString();
                 const endUTC = endKST.toISOString();
 
                 // 날짜 넘어가는 이벤트인지 확인
