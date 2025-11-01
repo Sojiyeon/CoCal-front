@@ -282,7 +282,7 @@ export default function SidebarLeft({
                     parentEventTitle: 'Private',
                     parentPrivateBorder: "1px solid gray",
                     eventId: 0,
-                    date: formattedDate,
+                    date: item.date,
                     url: item.url,
                     authorId: user?.userId || 0,
                     offsetMinutes: item.offsetMinutes ?? null, // 서버에서 받은 값 사용
@@ -333,23 +333,11 @@ export default function SidebarLeft({
                 orderNo: todoToToggle.orderNo,
             };
 
-            // 변경 후 (날짜를 YYYY-MM-DD로 정규화해서 보냄)
-            // 날짜 변환 함수 수정
-            const normalizeToDateTime = (isoOrYmd: string) => {
-                // "YYYY-MM-DD" 또는 ISO 모두 대응
-                const d = new Date(isoOrYmd);
-                const y = d.getFullYear();
-                const m = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                return `${y}-${m}-${day}T00:00:00`;
-            };
-
-
             if (todoToToggle.type === "PRIVATE") {
                 await api.put(`/projects/${projectId}/todos/${todoToToggle.id}`, {
                     ...payload,
                     type: "PRIVATE",
-                    date: normalizeToDateTime(todoToToggle.date),
+                    date: todoToToggle.date,
                 });
             } else { // EVENT
                 const finalPayload = {
