@@ -31,7 +31,15 @@ const DetailRow = ({ label, children }: { label: string; children: React.ReactNo
         <div className="text-slate-800 break-words min-w-0 dark:text-slate-300">{children}</div>
     </div>
 );
-
+const safeUTCDate = (dateString: string | undefined | null): Date => {
+    if (!dateString) {
+        return new Date();
+    }
+    // "2025-11-01T03:00:00" -> "2025-11-01T03:00:00Z"
+    const fixedString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+    // "Z"가 붙은 문자열을 파싱하면 KST로 올바르게 변환됩니다.
+    return new Date(fixedString);
+};
 export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId,events = [] }: Props) {
     // --- 🔽 [STEP 1] 모드 전환을 위한 상태 추가 🔽 ---
     const [isEditing, setIsEditing] = useState(false);
@@ -67,7 +75,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
             // --- 👇 4. 상태 초기화 로직 추가 ---
             // datetime-local input은 'YYYY-MM-DDTHH:mm' 형식을 기대하므로 변환해줍니다.
             if (todoToEdit.date) {
-                const initialDate = new Date(todoToEdit.date);
+                const initialDate = safeUTCDate(todoToEdit.date);
                 // 'datetime-local' input은 'YYYY-MM-DDTHH:mm' 형식을 사용합니다.
                 const formattedDateTime = new Date(initialDate.getTime() - (initialDate.getTimezoneOffset() * 60000))
                     .toISOString()
@@ -272,7 +280,7 @@ export function TodoEditModal({ onClose, onSave, onDelete, todoToEdit, projectId
                                 <>
                                     <DetailRow label="Date">
                                         {todoToEdit.date
-                                            ? new Date(todoToEdit.date).toLocaleString('ko-KR', {
+                                            ? safeUTCDate(todoToEdit.date).toLocaleString('ko-KR', {
                                                 year: 'numeric',
                                                 month: 'long',
                                                 day: 'numeric',

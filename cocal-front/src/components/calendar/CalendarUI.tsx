@@ -39,7 +39,15 @@ import { sampleEvents, sampleMemos } from "./sampleData";
 import {api} from "@/components/calendar/utils/api";
 import {deleteTodo, TodoUpdatePayload} from "@/api/todoApi";
 
-
+const safeUTCDate = (dateString: string | undefined | null): Date => {
+    if (!dateString) {
+        return new Date();
+    }
+    // "2025-11-01T03:00:00" -> "2025-11-01T03:00:00Z"
+    const fixedString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+    // "Z"가 붙은 문자열을 파싱하면 KST로 올바르게 변환됩니다.
+    return new Date(fixedString);
+};
 // 오늘 날짜를 저장하는 상수
 const today = new Date();
 
@@ -1340,10 +1348,10 @@ export default function CalendarUI() {
                                                 }
 
                                                 // [FIX] 로컬 시간 기준으로 날짜를 파싱합니다.
-                                                const eventStart = new Date(event.startAt);
+                                                const eventStart = safeUTCDate(event.startAt);
                                                 eventStart.setHours(0, 0, 0, 0);
 
-                                                const eventEnd = new Date(event.endAt);
+                                                const eventEnd = safeUTCDate(event.endAt);
                                                 eventEnd.setHours(0, 0, 0, 0);
 
                                                 // 이제 weekEndDate가 정의되었으므로 오류가 발생하지 않습니다.
@@ -1406,10 +1414,10 @@ export default function CalendarUI() {
                                                             // --- 1. & 2. 이벤트 정보 처리 (span, cols 계산) ---
                                                             const processedEvents = weekEvents.map(event => {
                                                                 // [FIX] 1번 필터와 동일하게 로컬 시간 기준으로 파싱합니다.
-                                                                const eventStart = new Date(event.startAt);
+                                                                const eventStart = safeUTCDate(event.startAt);
                                                                 eventStart.setHours(0, 0, 0, 0);
 
-                                                                const eventEnd = new Date(event.endAt);
+                                                                const eventEnd = safeUTCDate(event.endAt);
                                                                 eventEnd.setHours(0, 0, 0, 0);
 
                                                                 let startCol = 0;

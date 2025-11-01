@@ -10,7 +10,18 @@ import {createTodo} from "@/api/todoApi";
 import {getEvent, createEvent, updateEvent} from "@/api/eventApi";
 
 export type ActiveTab = "Event" | "Todo" | "Memo";
+const convertUTCToLocalInputString = (utcDate: string | null | undefined): string => {
+    if (!utcDate) return "";
 
+    // 1. "Z"가 없으면 추가하여 UTC로 올바르게 인식
+    const fixedString = utcDate.endsWith('Z') ? utcDate : utcDate + 'Z';
+    const dateObj = new Date(fixedString); // KST Date 객체로 자동 변환
+
+    // 2. KST Date 객체를 "YYYY-MM-DDTHH:mm" 형식의 문자열로 만듭니다.
+    return new Date(dateObj.getTime() - dateObj.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+};
 const palettes = [
     ["#19183B", "#708993", "#A1C2BD", "#E7F2EF"],
     ["#F8FAFC", "#D9EAFD", "#BCCCDC", "#9AA6B2"],
@@ -207,6 +218,9 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
         if (editTodo) {
             setActiveTab("Todo"); // 탭을 'Todo'로 강제 전환
             if (editTodo.eventId) {editTodo.type="EVENT";} // eventId가 있으면 type=EVENT로 설정
+            const localDateForInput = convertUTCToLocalInputString(
+                (editTodo as RealEventTodo & { date?: string }).date
+            );
             setFormData(prev => ({
                 ...prev,
                 title: editTodo.title,
@@ -214,7 +228,8 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                 url: editTodo.url || "",
                 type: editTodo.type,
                 eventId: editTodo.eventId,
-                // date, offsetMinutes 등 editTodo에 있는 다른 필드도 채워줍니다.
+                date: editTodo.type === 'PRIVATE' ? localDateForInput : prev.date,
+                offsetMinutes: (editTodo as RealEventTodo & { offsetMinutes?: number | null }).offsetMinutes ?? prev.offsetMinutes,
             }));
         }
         else if (editEventId) {
@@ -230,8 +245,8 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                         ...prev,
                         title: eventData.title,
                         description: eventData.description,
-                        startAt: eventData.startAt,
-                        endAt: eventData.endAt,
+                        startAt: convertUTCToLocalInputString(eventData.startAt),
+                        endAt: convertUTCToLocalInputString(eventData.endAt),
                         location: eventData.location ?? "",
                         visibility: eventData.visibility,
                         color: eventData.color ?? "",
@@ -286,7 +301,7 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                 date: startDateTime,
             }));
         }
-    }, [initialDate, editEventId, editTodo,editEventId]);
+    },[initialDate, editEventId, editTodo, projectId]);
 
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
