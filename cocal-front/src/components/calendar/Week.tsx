@@ -30,7 +30,16 @@ interface MoreButton {
 }
 // MAX_VISIBLE_EVENTS를 컴포넌트 스코프로 이동
 const MAX_VISIBLE_EVENTS = 3; // 한 번에 보여줄 최대 이벤트 수
-
+const safeUTCDate = (dateString: string | undefined | null): Date => {
+    if (!dateString) {
+        // 혹시 모를 null/undefined 방어. (실제로는 event.startAt이므로 항상 값이 있을 것)
+        return new Date();
+    }
+    // "2025-11-01T03:00:00" -> "2025-11-01T03:00:00Z"
+    const fixedString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+    // "Z"가 붙은 문자열을 파싱하면 KST로 올바르게 변환됩니다.
+    return new Date(fixedString);
+};
 export default function WeekView({events, memos, weekStartDate, onNavigateToDay, onSelectEvent, onSelectMemo}: WeekViewProps) {
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -43,8 +52,8 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
         const timed: CalendarEvent[] = [];
 
         events.forEach(event => {
-            const start = new Date(event.startAt);
-            const end = new Date(event.endAt || event.startAt);
+            const start = safeUTCDate(event.startAt);
+            const end = safeUTCDate(event.endAt || event.startAt);
             const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
 
             if (event.allDay || durationHours >= 24) {
@@ -69,9 +78,8 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
         allDayOrMultiDayEvents
             .sort((a, b) => (new Date(b.endAt).getTime() - new Date(b.startAt).getTime()) - (new Date(a.endAt).getTime() - new Date(a.startAt).getTime()))
             .forEach(event => {
-                const eventStart = new Date(event.startAt);
-                const eventEnd = new Date(event.endAt);
-
+                const eventStart = safeUTCDate(event.startAt);
+                const eventEnd = safeUTCDate(event.endAt);
                 const startDayIndex = (new Date(Math.max(eventStart.getTime(), weekStart.getTime())).getDay() + 6) % 7;
                 const endDayIndex = (new Date(Math.min(eventEnd.getTime(), weekEnd.getTime())).getDay() + 6) % 7;
                 const span = endDayIndex - startDayIndex + 1;
@@ -126,14 +134,14 @@ export default function WeekView({events, memos, weekStartDate, onNavigateToDay,
             // 1. 해당 날짜에 속하는 시간 지정 이벤트만 필터링
             const eventsForThisDay = timedEvents
                 .filter(event => {
-                    const start = new Date(event.startAt);
-                    const end = new Date(event.endAt || event.startAt);
+                    const start = safeUTCDate(event.startAt);
+                    const end = safeUTCDate(event.endAt || event.startAt);
                     return start <= dayEnd && end >= dayStart;
                 })
                 .map(event => ({
                     event,
-                    start: new Date(event.startAt),
-                    end: new Date(event.endAt || event.startAt),
+                    start: safeUTCDate(event.startAt),
+                    end: safeUTCDate(event.endAt || event.startAt),
                     column: -1, // -1: 아직 처리되지 않음
                     totalColumns: 1,
                 }))

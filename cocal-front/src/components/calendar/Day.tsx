@@ -17,7 +17,15 @@ interface PositionedEvent {
     column: number;
     totalColumns: number;
 }
-
+const safeUTCDate = (dateString: string | undefined | null): Date => {
+    if (!dateString) {
+        return new Date();
+    }
+    // "2025-11-01T03:00:00" -> "2025-11-01T03:00:00Z"
+    const fixedString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+    // "Z"가 붙은 문자열을 파싱하면 KST로 올바르게 변환됩니다.
+    return new Date(fixedString);
+};
 
 export default function DayView({
                                      events,
@@ -34,8 +42,8 @@ export default function DayView({
         const viewDate = new Date(day.getFullYear(), day.getMonth(), day.getDate());
 
         events.forEach((event) => {
-            const start = new Date(event.startAt);
-            const end = new Date(event.endAt || event.startAt);
+            const start = safeUTCDate(event.startAt);
+            const end = safeUTCDate(event.endAt || event.startAt);
 
             // 1. 오늘 날짜에 겹치는지 확인 (기존 dayEvents 필터 로직)
             const eventStart = new Date(
@@ -70,8 +78,8 @@ export default function DayView({
         const eventsWithPos = timedEventsForDay
             .map(event => ({
                 event,
-                start: new Date(event.startAt),
-                end: new Date(event.endAt || event.startAt),
+                start: safeUTCDate(event.startAt),
+                end: safeUTCDate(event.endAt || event.startAt),
                 column: -1, // -1: 아직 처리되지 않음
                 totalColumns: 1,
             }))
