@@ -290,7 +290,7 @@ export function EventDetailModal({
     // const [currentTodoIndex, setCurrentTodoIndex] = useState(0);
     const [currentTodo, setCurrentTodo] = useState<RealEventTodo | null>(null);
     // 이벤트 정보 담는 상태
-    const [eventData, setEventData] = useState<EventData | null>(null);
+    const [eventData, setEventData] = useState<EventData | null>(event as unknown as EventData);
     // 이벤트 멤버 담는 상태
     const [eventMembers, setEventMembers] = useState<ProjectMember[]>([]);
     // --- 1. 로딩 상태 추가 ---
