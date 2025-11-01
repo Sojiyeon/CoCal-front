@@ -17,6 +17,7 @@ import { NotificationItem } from "@/types/notification";
 import Toast from "@/components/common/Toast";
 import DefaultViewModal from '@/components/modals/DefaultViewModal';
 import { updateDefaultView } from '@/api/defaultviewApi';
+import {utcToKst} from '@/utils/timezone'
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 const API_PROJECTS_ENDPOINT = `${API_BASE_URL}/api/projects`;
 
@@ -690,24 +691,15 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
         };
     };
 
-    // 날짜 포맷 함수
-    const formatDate = (dateString: string) =>
-        new Date(dateString).toLocaleString("ko-KR", {
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-
     // 날짜 포맷팅 헬퍼 함수
-    const formatSentAt = (dateStr: string) => {
-        const date = new Date(dateStr);
-        return date.toLocaleString('ko-KR', {
+    const formatKstSentAt = (utcString: string) => {
+        const kst = utcToKst(utcString);
+        return kst.toLocaleString('ko-KR', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
             hour: '2-digit',
-            minute: '2-digit'
+            minute: '2-digit',
         });
     };
 
@@ -761,39 +753,41 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                                 Nothing here<Dog className="stroke-1"/>
                             </p>
                         ) : (
-                            pendingInvites.map((invite, idx) => (
-                                <div
-                                    key={idx}
-                                    className="px-3 pt-4 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition duration-150 border-b border-gray-200 dark:border-neutral-700 last:border-b-0"
-                                >
-                                    <p className="text-sm font-medium text-gray-800 dark:text-white truncate">
-                                        {invite.projectName}
-                                    </p>
-                                    <p className="text-xs text-gray-500 dark:text-neutral-400 mt-0.5">
-                                        초대한 사람: {invite.inviterEmail}
-                                    </p>
+                            pendingInvites.slice() // 원본 배열 변형 방지용 복사
+                                .sort((a, b) => new Date(b.expiresAt).getTime() - new Date(a.expiresAt).getTime())
+                                .map((invite, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="px-3 pt-4 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition duration-150 border-b border-gray-200 dark:border-neutral-700 last:border-b-0"
+                                    >
+                                        <p className="text-sm font-medium text-gray-800 dark:text-white truncate">
+                                            {invite.projectName}
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-neutral-400 mt-0.5">
+                                            초대한 사람: {invite.inviterEmail}
+                                        </p>
 
-                                    <div className="flex justify-between items-center mt-2 mb-1.5">
-                                        <div className="flex flex-col text-xs text-blue-500 dark:text-blue-400">
-                                            <span>만료일: {formatDate(invite.expiresAt)}</span>
-                                        </div>
-                                        <div className="flex justify-end gap-1">
-                                            <button
-                                                onClick={() => handleInviteAction(invite.id, "accept")}
-                                                className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 px-2 py-1 rounded-md hover:bg-green-50 dark:hover:bg-green-900/30 transition"
-                                            >
-                                                <Check className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleInviteAction(invite.id, "decline")}
-                                                className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 transition"
-                                            >
-                                                <XCircle className="w-4 h-4" />
-                                            </button>
+                                        <div className="flex justify-between items-center mt-2 mb-1.5">
+                                            <div className="flex flex-col text-xs text-blue-500 dark:text-blue-400">
+                                                <span>만료일: {formatKstSentAt(invite.expiresAt)}</span>
+                                            </div>
+                                            <div className="flex justify-end gap-1">
+                                                <button
+                                                    onClick={() => handleInviteAction(invite.id, "accept")}
+                                                    className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 px-2 py-1 rounded-md hover:bg-green-50 dark:hover:bg-green-900/30 transition"
+                                                >
+                                                    <Check className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleInviteAction(invite.id, "decline")}
+                                                    className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 transition"
+                                                >
+                                                    <XCircle className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))
+                                ))
                         )}
                     </div>
                 )}
@@ -837,7 +831,9 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                             <p className="p-3 text-sm text-gray-500 text-center inline-flex items-center justify-center gap-1">
                                 Nothing here<Cat className="stroke-1"/></p>
                         ) : (
-                            unreadNotifications.map((n) => (
+                            unreadNotifications.slice() // 원본 보호용 복사
+                                .sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime())
+                                .map((n) => (
                                 <div
                                     key={n.id}
                                     onClick={() => handleNotificationClick(n)}
@@ -852,7 +848,7 @@ export const NotificationAndInviteIcons: FC<NotificationAndInviteIconsProps> = (
                                             프로젝트: <span className="font-medium not-italic text-gray-700 dark:text-gray-300">{n.projectName}</span>
                                         </p>
                                         <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
-                                            {formatSentAt(n.sentAt)}
+                                            {formatKstSentAt(n.sentAt)}
                                         </p>
                                     </div>
 
