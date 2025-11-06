@@ -455,7 +455,9 @@ export function EventDetailModal({
                     <div className="flex justify-between items-start">
                         <div className="flex items-center gap-3">
                             <div className="w-2.5 h-10 rounded-full" style={{backgroundColor: eventData?.color}}></div>
-                            <h2 className="text-xl font-bold text-slate-800 truncate dark:text-white">{eventData?.title}</h2>
+                            <h2 className="text-xl font-bold text-slate-800 break-words whitespace-normal dark:text-white">
+                                {eventData?.title}
+                            </h2>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                             {/* --- START: 수정된 부분 --- */}

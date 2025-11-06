@@ -642,9 +642,9 @@ export function EventModal({onClose, onSave, editEventId, editTodo, initialDate,
                                 selectedIds={[...selectedSet]} // 중복 클릭 막을 상태 전달
                             />
                             {/* 디버깅용 표시 */}
-                            <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                                선택된 ID: {[...selectedSet].join(", ") || "-"}
-                            </div>
+                            {/*<div className="mt-2 text-xs text-slate-500 dark:text-slate-400">*/}
+                            {/*    선택된 ID: {[...selectedSet].join(", ") || "-"}*/}
+                            {/*</div>*/}
                         </div>
 
                         <ColorPaletteSelector
