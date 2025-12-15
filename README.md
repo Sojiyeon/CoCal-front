@@ -60,8 +60,8 @@ CoCal은 팀 프로젝트를 진행하는 사람들을 위한 협업 캘린더 �
 
 ## 기술 스택
 
-- Next.js 15
-- React 19
+- Next.js 16.0.10
+- React 19.2.3
 - TypeScript
 - Tailwind CSS
 
